@@ -774,6 +774,52 @@ function renderIntradayList(listId,arr,rmFn){
 }
 
 // ── Recorrências ──
+function getProximasOcorrencias(r, diasFrente){
+  // Retorna lista de datas ISO nos próximos diasFrente dias (excluindo hoje)
+  var datas=[];
+  var hoje=new Date(todayStr+'T00:00:00');
+  var restantes=r.maxRep&&r.maxRep>0?(r.maxRep-(r.repCount||0)):999;
+  if(restantes<=0)return datas;
+  for(var i=1;i<=diasFrente*3&&datas.length<diasFrente;i++){
+    var d=new Date(hoje);d.setDate(hoje.getDate()+i);
+    var iso=d.toISOString().slice(0,10);
+    var ok=false;
+    if(r.repeat==='daily')ok=true;
+    else if(r.repeat==='weekly'&&d.getDay()===r.dayOfWeek)ok=true;
+    else if(r.repeat==='monthly'&&d.getDate()===r.dayOfMonth)ok=true;
+    if(ok)datas.push(iso);
+    if(datas.length>=restantes-1)break;
+  }
+  return datas;
+}
+function gerarTarefasFuturas(){
+  var gerou=false;
+  recorrencias.forEach(function(r){
+    if(!r.active)return;
+    var restantes=r.maxRep&&r.maxRep>0?(r.maxRep-(r.repCount||0)):999;
+    if(restantes<=0)return;
+    var proximas=getProximasOcorrencias(r,7);
+    proximas.forEach(function(dataIso){
+      var ja=tasks.some(function(t){return t.repeatId===r.id&&t.taskDate===dataIso&&!t._futuro===false;});
+      if(!ja){
+        // Conta quantas ocorrências futuras ainda haverá APÓS esta
+        var totalFuturas=proximas.length;
+        var posAtual=proximas.indexOf(dataIso);
+        var faltam=totalFuturas-posAtual-1;
+        tasks.push({
+          id:Date.now()+Math.floor(Math.random()*99999),
+          text:r.text,done:false,addedAt:'',doneAt:'',
+          schedule:r.schedule||'',taskDate:dataIso,
+          alertFired:false,paraQuem:r.paraQuem||'',
+          repeatId:r.id,obs:'',priority:r.priority||'',
+          _futuro:true,_faltam:faltam
+        });
+        gerou=true;
+      }
+    });
+  });
+  if(gerou)save();
+}
 function processarRecorrencias(){
   var hoje=new Date(todayStr+'T00:00:00'),dow=hoje.getDay(),dom=hoje.getDate(),gerou=false;
   recorrencias.forEach(function(r){
@@ -789,16 +835,18 @@ function processarRecorrencias(){
     if(r.repeat==='intraday'){
       (r.times||[]).forEach(function(hr){
         var ja=tasks.some(function(t){return t.repeatId===r.id&&t.schedule===hr&&(t.taskDate||todayStr)===todayStr;});
-        if(!ja){tasks.push({id:Date.now()+Math.floor(Math.random()*9999),text:r.text,done:false,addedAt:timeNow(),doneAt:'',schedule:hr,taskDate:todayStr,alertFired:false,paraQuem:r.paraQuem||'',repeatId:r.id,obs:''});gerou=true;}
+        if(!ja){tasks.push({id:Date.now()+Math.floor(Math.random()*9999),text:r.text,done:false,addedAt:timeNow(),doneAt:'',schedule:hr,taskDate:todayStr,alertFired:false,paraQuem:r.paraQuem||'',repeatId:r.id,obs:'',priority:r.priority||''});gerou=true;}
       });
     } else {
       var ja=tasks.some(function(t){return t.repeatId===r.id&&(t.taskDate||todayStr)===todayStr;});
-      if(!ja){tasks.push({id:Date.now()+Math.floor(Math.random()*9999),text:r.text,done:false,addedAt:timeNow(),doneAt:'',schedule:r.schedule||'',taskDate:todayStr,alertFired:false,paraQuem:r.paraQuem||'',repeatId:r.id,obs:''});gerou=true;}
+      if(!ja){tasks.push({id:Date.now()+Math.floor(Math.random()*9999),text:r.text,done:false,addedAt:timeNow(),doneAt:'',schedule:r.schedule||'',taskDate:todayStr,alertFired:false,paraQuem:r.paraQuem||'',repeatId:r.id,obs:'',priority:r.priority||''});gerou=true;}
     }
     r.repCount=(r.repCount||0)+1;r.lastGenerated=todayStr;
     if(r.maxRep&&r.maxRep>0&&r.repCount>=r.maxRep)r.active=false;
   });
   if(gerou){save();saveRecorrencias();}
+  // Gera tarefas futuras dos próximos 7 dias
+  gerarTarefasFuturas();
 }
 function adicionarRecorrencia(r){
   var idx=recorrencias.findIndex(function(x){return x.id===r.id;});
@@ -1283,7 +1331,7 @@ function makeEl(t){
     sc.className='task-schedule'+(t.alertFired?' fired':'')+(ov?' overdue':'');
     sc.textContent=(t.alertFired?'✓ Alerta disparado às ':'⏰ Alerta às ')+t.schedule;body.appendChild(sc);
   }
-  if(t.repeatId){var r=recorrencias.find(function(x){return x.id===t.repeatId;});if(r){var rb=document.createElement('span');rb.className='task-repeat-badge';rb.textContent=REPEAT_LABELS[r.repeat]||'🔁';body.appendChild(rb);}}
+  if(t.repeatId){var r=recorrencias.find(function(x){return x.id===t.repeatId;});if(r){var rb=document.createElement('span');rb.className='task-repeat-badge';rb.textContent=REPEAT_LABELS[r.repeat]||'🔁';if(t._futuro&&t._faltam>0){rb.textContent+=' (faltam '+t._faltam+' futuras)';}body.appendChild(rb);}}
   if(t.obs){var od=document.createElement('div');od.className='task-obs';od.textContent='📝 '+t.obs;body.appendChild(od);}
   var tm=document.createElement('div');tm.className='task-time';
   tm.textContent=t.done&&t.doneAt?'✓ '+t.doneAt:(t.addedAt?t.addedAt:'');
