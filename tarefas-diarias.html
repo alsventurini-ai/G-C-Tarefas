@@ -346,6 +346,7 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
   </div>
 
   <div class="action-bar">
+    <button class="btn" style="border-color:#8e44ad;color:#8e44ad;" onclick="abrirModalLicitacao()">🏛 Licitação</button>
     <button class="btn btn-print" onclick="doPrint()">🖨 Relatório</button>
     <button class="btn btn-pq" onclick="doRelatorioPQ()">👤 Por Para Quem</button>
     <button class="btn btn-backup" onclick="fazerBackupManual()">💾 Backup</button>
@@ -497,6 +498,48 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
   </div>
 </div>
 
+<!-- Modal Licitação -->
+<div id="lic-modal" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-head" style="background:#6c3483;">
+      <span class="modal-head-title">🏛 Nova Licitação</span>
+      <button class="modal-close" onclick="fecharModalLicitacao()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-row">
+        <div class="modal-field">
+          <label>🏙 Município</label>
+          <input type="text" id="lic-municipio" class="modal-input" placeholder="Nome da cidade…" autocomplete="off">
+        </div>
+      </div>
+      <div class="modal-row">
+        <div class="modal-field">
+          <label>📅 Data da Disputa</label>
+          <input type="date" id="lic-data" class="modal-input">
+        </div>
+        <div class="modal-field">
+          <label>⏰ Horário da Disputa</label>
+          <input type="time" id="lic-hora" class="modal-input">
+        </div>
+      </div>
+      <div class="modal-field" style="margin-bottom:14px;">
+        <label>📝 Observações (opcional)</label>
+        <textarea id="lic-obs" class="modal-textarea" placeholder="Número do pregão, plataforma, observações…" style="min-height:60px;"></textarea>
+      </div>
+      <div style="background:#f5f0fa;border:1px solid #c9a8e8;border-radius:3px;padding:12px 14px;font-size:12.5px;color:#6c3483;line-height:1.7;">
+        <strong>Serão criadas automaticamente:</strong><br>
+        🏛 <strong>Disputa</strong> — na data informada<br>
+        ⚠️ <strong>Impugnação</strong> — 4 dias úteis antes, mesmo horário<br>
+        📋 <strong>Análise de Edital</strong> — 8 dias corridos antes, às 08:00
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-modal-cancel" onclick="fecharModalLicitacao()">Cancelar</button>
+      <button class="btn-modal-primary" style="background:#6c3483;" onclick="criarLicitacao()">🏛 Criar 3 tarefas</button>
+    </div>
+  </div>
+</div>
+
 <!-- Firebase -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
@@ -609,6 +652,36 @@ function mostrarToast(msg,isAlert,taskId){
       };})(op.m);
       sr.appendChild(sb);
     });
+    // Botão Reagendar
+    var brg=document.createElement('button');brg.className='btn-snooze';brg.style.cssText='flex:none;width:100%;margin-top:4px;background:rgba(255,255,255,.1);';brg.textContent='📅 Reagendar para outro dia';
+    brg.onclick=function(){
+      pararAlerta();t.remove();
+      var tk=taskId?tasks.find(function(x){return x.id===taskId;}):null;
+      if(!tk)return;
+      // Cria modal de reagendamento
+      var ov=document.createElement('div');ov.className='modal-overlay';
+      ov.innerHTML='<div class="modal-box"><div class="modal-head"><span class="modal-head-title">📅 Reagendar tarefa</span><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div>'
+        +'<div class="modal-body"><div style="font-size:14px;color:var(--ink);margin-bottom:16px;font-weight:500;">'+tk.text+'</div>'
+        +'<div class="modal-row">'
+        +'<div class="modal-field"><label>📅 Nova data</label><input type="date" id="rg-data" class="modal-input" value="'+todayStr+'"></div>'
+        +'<div class="modal-field"><label>⏰ Novo horário</label><input type="time" id="rg-hora" class="modal-input" value="'+(tk.schedule||'08:00')+'"></div>'
+        +'</div></div>'
+        +'<div class="modal-foot">'
+        +'<button class="btn-modal-cancel" onclick="this.closest(\'.modal-overlay\').remove()">Cancelar</button>'
+        +'<button class="btn-modal-primary" id="rg-confirmar">📅 Confirmar</button>'
+        +'</div></div>';
+      document.body.appendChild(ov);
+      document.getElementById('rg-confirmar').onclick=function(){
+        var novaData=document.getElementById('rg-data').value;
+        var novaHora=document.getElementById('rg-hora').value;
+        if(!novaData){alert('Informe a data.');return;}
+        tk.taskDate=novaData;tk.schedule=novaHora||tk.schedule;tk.alertFired=false;tk.done=false;tk.doneAt='';
+        save();render();ov.remove();
+        mostrarToast('✅ Reagendado para '+fmtDate(novaData)+(novaHora?' às '+novaHora:''),false);
+      };
+      ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
+    };
+    sr.appendChild(brg);
     t.appendChild(sr);
     var sb2=document.createElement('button');sb2.className='toast-stop';sb2.textContent='⏹ Parar alerta';
     sb2.onclick=function(){pararAlerta();t.remove();};t.appendChild(sb2);
@@ -1311,6 +1384,53 @@ function render(){
   document.getElementById('footer-el').textContent='Dados salvos automaticamente · '+now.getDate()+' de '+MONTHS[now.getMonth()]+' de '+now.getFullYear();
   atualizarFiltros();
 }
+
+// ── Licitação ──
+function abrirModalLicitacao(){
+  document.getElementById('lic-municipio').value='';
+  document.getElementById('lic-data').value='';
+  document.getElementById('lic-hora').value='';
+  document.getElementById('lic-obs').value='';
+  document.getElementById('lic-modal').style.display='flex';
+  setTimeout(function(){document.getElementById('lic-municipio').focus();},80);
+}
+function fecharModalLicitacao(){document.getElementById('lic-modal').style.display='none';}
+function somarDiasUteis(dataIso,dias){
+  var d=new Date(dataIso+'T00:00:00');
+  var restantes=dias;
+  while(restantes>0){
+    d.setDate(d.getDate()-1);
+    var dow=d.getDay();
+    if(dow!==0&&dow!==6)restantes--;
+  }
+  return d.toISOString().slice(0,10);
+}
+function somarDiasCorridos(dataIso,dias){
+  var d=new Date(dataIso+'T00:00:00');
+  d.setDate(d.getDate()-dias);
+  return d.toISOString().slice(0,10);
+}
+function criarLicitacao(){
+  var municipio=document.getElementById('lic-municipio').value.trim();
+  var dataDisputa=document.getElementById('lic-data').value;
+  var horaDisputa=document.getElementById('lic-hora').value;
+  var obs=document.getElementById('lic-obs').value.trim();
+  if(!municipio){alert('Informe o município.');document.getElementById('lic-municipio').focus();return;}
+  if(!dataDisputa){alert('Informe a data da disputa.');document.getElementById('lic-data').focus();return;}
+  if(!horaDisputa){alert('Informe o horário da disputa.');document.getElementById('lic-hora').focus();return;}
+  var dataImpug=somarDiasUteis(dataDisputa,4);
+  var dataAnalise=somarDiasCorridos(dataDisputa,8);
+  var now2=Date.now();
+  // Tarefa 1 — Disputa
+  tasks.push({id:now2,text:'🏛 Disputa — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataDisputa,alertFired:false,paraQuem:'Licitações',obs:obs,priority:'alta',tags:['licitação',municipio],pinned:false,duracao:''});
+  // Tarefa 2 — Impugnação
+  tasks.push({id:now2+1,text:'⚠️ Impugnação — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataImpug,alertFired:false,paraQuem:'Licitações',obs:'Prazo de impugnação — '+municipio,priority:'alta',tags:['licitação','impugnação',municipio],pinned:false,duracao:''});
+  // Tarefa 3 — Análise de Edital
+  tasks.push({id:now2+2,text:'📋 Análise de Edital — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataAnalise,alertFired:false,paraQuem:'Licitações',obs:'Análise do edital — '+municipio,priority:'alta',tags:['licitação','edital',municipio],pinned:false,duracao:''});
+  save();render();atualizarFiltros();fecharModalLicitacao();
+  mostrarToast('✅ 3 tarefas criadas para '+municipio+'!',false);
+}
+document.getElementById('lic-modal').addEventListener('click',function(e){if(e.target===this)fecharModalLicitacao();});
 
 // ── Init ──
 document.getElementById('task-input').addEventListener('keydown',function(e){if(e.key==='Enter')addTask();});
