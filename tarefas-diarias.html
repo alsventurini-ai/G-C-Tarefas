@@ -881,6 +881,9 @@ function gerarTarefasFuturas(){
     if(!r.active)return;
     var proximas=getProximasOcorrencias(r);
     proximas.forEach(function(dataIso,idx){
+      // Não gera se a data foi explicitamente excluída
+      var excluidas=r._datasExcluidas||[];
+      if(excluidas.indexOf(dataIso)>=0)return;
       var faltam=proximas.length-idx-1;
       tasks.push({
         id:r.id*1000+idx+1,text:r.text,done:false,addedAt:'',doneAt:'',
@@ -993,8 +996,23 @@ function arquivarTarefa(id){
   var t=tasks.find(function(x){return x.id===id;});if(!t)return;
   archived.push(Object.assign({},t,{archivedAt:new Date().toISOString()}));
   tasks=tasks.filter(function(x){return x.id!==id;});
-  save();saveArchived();render();renderArchived();
-  mostrarToast('✅ Tarefa arquivada.',false);
+  // Se for recorrente, força regeneração da próxima ocorrência
+  if(t.repeatId){
+    var r=recorrencias.find(function(x){return x.id===t.repeatId;});
+    if(r){
+      // Remove a data atual das futuras geradas para permitir regeneração
+      tasks=tasks.filter(function(x){return!(x.repeatId===t.repeatId&&x._futuro&&x.taskDate===t.taskDate);});
+      // Incrementa repCount se necessário
+      if(r.lastGenerated!==t.taskDate){
+        r.repCount=(r.repCount||0)+1;
+        r.lastGenerated=t.taskDate;
+      }
+      saveRecorrencias();
+      gerarTarefasFuturas();
+    }
+  }
+  save();saveArchived();render();
+  mostrarToast('✅ Tarefa arquivada. Próximas ocorrências mantidas.',false);
 }
 function desarquivar(id){
   var t=archived.find(function(x){return x.id===id;});if(!t)return;
@@ -1096,6 +1114,15 @@ function toggle(id){
 }
 function del(id){
   var t=tasks.find(function(x){return x.id===id;});if(!t)return;
+  if(t._futuro){
+    if(!confirm('Remover esta ocorrência futura?\n\nA recorrência continua ativa para as demais datas.'))return;
+    // Marca a data como excluída para não regenerar
+    if(t.repeatId){
+      var r=recorrencias.find(function(x){return x.id===t.repeatId;});
+      if(r){r._datasExcluidas=r._datasExcluidas||[];r._datasExcluidas.push(t.taskDate);saveRecorrencias();}
+    }
+    tasks=tasks.filter(function(x){return x.id!==id;});save();render();return;
+  }
   if(!confirm('Remover esta tarefa?'))return;
   tasks=tasks.filter(function(x){return x.id!==id;});save();render();
 }
@@ -1161,8 +1188,17 @@ function salvarModalEdicao(){
     if(novaData&&novaData>hoje){t.taskDate=novaData;t.done=false;t.doneAt='';t.alertFired=false;}
     else if(novaData===hoje&&novoTime&&novoTime>timeNow()){t.taskDate=novaData;t.done=false;t.doneAt='';t.alertFired=false;}
     else{t.taskDate=novaData||'';t.alertFired=false;}
+    // Se for recorrente, pergunta se aplica a todas as futuras
+    if(t.repeatId&&novoRepeat!=='none'){
+      var r2=recorrencias.find(function(x){return x.id===t.repeatId;});
+      if(r2&&confirm('Aplicar alterações a TODAS as ocorrências futuras desta recorrência também?')){
+        r2.text=novoText;r2.paraQuem=novoPQ;r2.priority=novoPriority;r2.tags=novoTags;r2.schedule=novoTime||'';r2.link=novoLink;
+        tasks.forEach(function(ft){if(ft.repeatId===t.repeatId&&ft._futuro){ft.text=novoText;ft.paraQuem=novoPQ;ft.priority=novoPriority;ft.tags=novoTags;ft.schedule=novoTime||'';ft.link=novoLink;}});
+        saveRecorrencias();
+      }
+    }
     if(novoRepeat==='none'&&t.repeatId){if(confirm('Remover também a repetição?'))removerRecorrencia(t.repeatId);t.repeatId=undefined;}
-    else if(novoRepeat!=='none'){
+    else if(novoRepeat!=='none'&&!t.repeatId){
       var hoje2=new Date(todayStr+'T00:00:00');
       var existR=t.repeatId?recorrencias.find(function(x){return x.id===t.repeatId;}):null;
       var novaRecorr={id:t.repeatId||t.id,text:novoText,paraQuem:novoPQ,schedule:novoTime||'',repeat:novoRepeat,active:true,maxRep:novoMaxRep,repCount:existR?existR.repCount||0:0,dayOfWeek:hoje2.getDay(),dayOfMonth:hoje2.getDate(),lastGenerated:todayStr,priority:novoPriority,tags:novoTags};
