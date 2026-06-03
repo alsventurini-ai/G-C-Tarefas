@@ -1092,12 +1092,10 @@ function addTask(){
 }
 function toggle(id){
   var t=tasks.find(function(x){return x.id===id;});if(!t)return;
-  if(t._futuro)return; // não pode concluir tarefa futura
   t.done=!t.done;t.doneAt=t.done?timeNow():'';save();render();
 }
 function del(id){
   var t=tasks.find(function(x){return x.id===id;});if(!t)return;
-  if(t._futuro){mostrarToast('Tarefas futuras são gerenciadas pelas repetições.',false);return;}
   if(!confirm('Remover esta tarefa?'))return;
   tasks=tasks.filter(function(x){return x.id!==id;});save();render();
 }
@@ -1105,7 +1103,6 @@ function del(id){
 // ── Modal edição ──
 function abrirModalEdicao(id){
   var t=tasks.find(function(x){return x.id===id;});if(!t)return;
-  if(t._futuro){mostrarToast('Edite pela repetição correspondente.',false);return;}
   _editingId=id;
   document.getElementById('em-pq').value=t.paraQuem||'';
   document.getElementById('em-text').value=t.text;
@@ -1350,18 +1347,16 @@ function makeEl(t){
   var tm=document.createElement('div');tm.className='task-time';
   tm.textContent=t.done&&t.doneAt?'✓ '+t.doneAt:(t.addedAt?t.addedAt:'');
   var acts=document.createElement('div');acts.className='task-actions';
-  if(!t._futuro){
-    var be=document.createElement('button');be.className='btn-icon';be.textContent='✏️';be.title='Editar';be.onclick=(function(id){return function(){abrirModalEdicao(id);};})(t.id);
-    var bo=document.createElement('button');bo.className='btn-icon';bo.textContent='📝';bo.title='Observação';
-    bo.onclick=(function(id,task){return function(){abrirObsInline(id,task);};})(t.id,t);
-    var bpin=document.createElement('button');bpin.className='btn-icon';bpin.textContent=t.pinned?'📌':'📍';bpin.title=t.pinned?'Desafixar':'Fixar no topo';
-    bpin.onclick=(function(id){return function(){var tt=tasks.find(function(x){return x.id===id;});if(tt){tt.pinned=!tt.pinned;save();render();}};})(t.id);
-    var ba=document.createElement('button');ba.className='btn-icon';ba.textContent='🗂';ba.title='Arquivar';
-    ba.onclick=(function(id){return function(){arquivarTarefa(id);};})(t.id);
-    var bd=document.createElement('button');bd.className='btn-icon del';bd.textContent='×';bd.title='Remover';bd.style.fontSize='20px';
-    bd.onclick=(function(id){return function(){del(id);};})(t.id);
-    acts.appendChild(be);acts.appendChild(bo);acts.appendChild(bpin);acts.appendChild(ba);acts.appendChild(bd);
-  }
+  var be=document.createElement('button');be.className='btn-icon';be.textContent='✏️';be.title='Editar';be.onclick=(function(id){return function(){abrirModalEdicao(id);};})(t.id);
+  var bo=document.createElement('button');bo.className='btn-icon';bo.textContent='📝';bo.title='Observação';
+  bo.onclick=(function(id,task){return function(){abrirObsInline(id,task);};})(t.id,t);
+  var bpin=document.createElement('button');bpin.className='btn-icon';bpin.textContent=t.pinned?'📌':'📍';bpin.title=t.pinned?'Desafixar':'Fixar no topo';
+  bpin.onclick=(function(id){return function(){var tt=tasks.find(function(x){return x.id===id;});if(tt){tt.pinned=!tt.pinned;save();render();}};})(t.id);
+  var ba=document.createElement('button');ba.className='btn-icon';ba.textContent='🗂';ba.title='Arquivar';
+  ba.onclick=(function(id){return function(){arquivarTarefa(id);};})(t.id);
+  var bd=document.createElement('button');bd.className='btn-icon del';bd.textContent='×';bd.title='Remover';bd.style.fontSize='20px';
+  bd.onclick=(function(id){return function(){del(id);};})(t.id);
+  acts.appendChild(be);acts.appendChild(bo);acts.appendChild(bpin);acts.appendChild(ba);acts.appendChild(bd);
   div.appendChild(chk);div.appendChild(body);div.appendChild(tm);div.appendChild(acts);
   return div;
 }
