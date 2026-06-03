@@ -314,6 +314,9 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
       </select>
       <input type="number" id="duracao-input" class="input-field" placeholder="⏱ min" title="Duração estimada (minutos)" style="width:90px;" min="1">
     </div>
+    <div class="input-meta-row">
+      <input type="url" id="link-input" class="input-field" placeholder="🔗 Link do edital / PNCP (opcional)" style="flex:1;" autocomplete="off">
+    </div>
     <div class="repeat-row">
       <label>🔁 Repetição:</label>
       <select id="repeat-input" class="meta-select">
@@ -486,6 +489,12 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
         </div>
         <div class="intraday-times" id="em-intraday-list"></div>
       </div>
+      <div class="modal-row">
+        <div class="modal-field">
+          <label>🔗 Link do edital / PNCP</label>
+          <input type="url" id="em-link" class="modal-input" placeholder="https://…">
+        </div>
+      </div>
       <div style="margin-top:14px;">
         <label class="modal-sub-label">📝 Observações</label>
         <textarea id="em-obs" class="modal-textarea" placeholder="Observações, resultado, próximos passos…"></textarea>
@@ -521,6 +530,10 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
           <label>⏰ Horário da Disputa</label>
           <input type="time" id="lic-hora" class="modal-input">
         </div>
+      </div>
+      <div class="modal-field" style="margin-bottom:14px;">
+        <label>🔗 Link do edital / PNCP (opcional)</label>
+        <input type="url" id="lic-link" class="modal-input" placeholder="https://pncp.gov.br/…">
       </div>
       <div class="modal-field" style="margin-bottom:14px;">
         <label>📝 Observações (opcional)</label>
@@ -1050,6 +1063,7 @@ function addTask(){
   var priority=document.getElementById('priority-input').value||'';
   var tags=parseTags(document.getElementById('tags-input').value);
   var duracao=document.getElementById('duracao-input').value||'';
+  var link=document.getElementById('link-input').value.trim();
   var repeat=repeatSel.value||'none';
   if(repeat==='intraday'){
     if(intradayTimes.length===0){alert('Adicione ao menos um horário.');return;}
@@ -1061,7 +1075,7 @@ function addTask(){
     document.getElementById('intraday-section').style.display='none';
   } else {
     var tid=Date.now();
-    tasks.push({id:tid,text:txt,done:false,addedAt:timeNow(),doneAt:'',schedule:timeSel.value||'',taskDate:dateSel.value||'',alertFired:false,paraQuem:pq,obs:obsVal,priority:priority,tags:tags,duracao:duracao,pinned:false});
+    tasks.push({id:tid,text:txt,done:false,addedAt:timeNow(),doneAt:'',schedule:timeSel.value||'',taskDate:dateSel.value||'',alertFired:false,paraQuem:pq,obs:obsVal,priority:priority,tags:tags,duracao:duracao,link:link,pinned:false});
     if(repeat!=='none'){
       var recorr2={id:tid,text:txt,paraQuem:pq,schedule:timeSel.value||'',repeat:repeat,active:true,maxRep:maxRep,repCount:1,dayOfWeek:now.getDay(),dayOfMonth:now.getDate(),lastGenerated:todayStr,priority:priority,tags:tags};
       tasks[tasks.length-1].repeatId=tid;adicionarRecorrencia(recorr2);
@@ -1071,6 +1085,7 @@ function addTask(){
   document.getElementById('maxrep-input').value='';document.getElementById('maxrep-wrap').style.display='none';
   document.getElementById('obs-new-input').value='';document.getElementById('priority-input').value='';
   document.getElementById('tags-input').value='';document.getElementById('duracao-input').value='';
+  document.getElementById('link-input').value='';
   document.getElementById('obs-new-wrap').style.display='none';
   document.getElementById('btn-obs-nova').textContent='📝 Observação';
   save();render();atualizarFiltros();inp.focus();
@@ -1101,6 +1116,7 @@ function abrirModalEdicao(id){
   document.getElementById('em-tags').value=(t.tags||[]).join(', ');
   document.getElementById('em-pin').value=t.pinned?'1':'';
   document.getElementById('em-duracao').value=t.duracao||'';
+  document.getElementById('em-link').value=t.link||'';
   var curRepeat=t.repeatId?(recorrencias.find(function(x){return x.id===t.repeatId;})||{}).repeat||'none':'none';
   document.getElementById('em-repeat').value=curRepeat;
   var curR=t.repeatId?recorrencias.find(function(x){return x.id===t.repeatId;}):null;
@@ -1128,6 +1144,7 @@ function salvarModalEdicao(){
   var novoTags=parseTags(document.getElementById('em-tags').value);
   var novoPin=document.getElementById('em-pin').value==='1';
   var novoDuracao=document.getElementById('em-duracao').value||'';
+  var novoLink=document.getElementById('em-link').value.trim()||'';
   var novoRepeat=document.getElementById('em-repeat').value;
   var novoMaxRep=parseInt(document.getElementById('em-maxrep').value)||0;
   var mode=document.getElementById('edit-modal').dataset.mode;
@@ -1142,7 +1159,7 @@ function salvarModalEdicao(){
     }
   } else {
     var t=tasks.find(function(x){return x.id===_editingId;});if(!t)return;
-    t.text=novoText;t.paraQuem=novoPQ;t.obs=novoObs;t.priority=novoPriority;t.tags=novoTags;t.pinned=novoPin;t.duracao=novoDuracao;t.schedule=novoTime||'';
+    t.text=novoText;t.paraQuem=novoPQ;t.obs=novoObs;t.priority=novoPriority;t.tags=novoTags;t.pinned=novoPin;t.duracao=novoDuracao;t.schedule=novoTime||'';t.link=novoLink;
     var hoje=new Date().toISOString().slice(0,10);
     if(novaData&&novaData>hoje){t.taskDate=novaData;t.done=false;t.doneAt='';t.alertFired=false;}
     else if(novaData===hoje&&novoTime&&novoTime>timeNow()){t.taskDate=novaData;t.done=false;t.doneAt='';t.alertFired=false;}
@@ -1329,6 +1346,7 @@ function makeEl(t){
   }
   if(t._futuro){var fb=document.createElement('div');fb.className='futuro-badge';fb.textContent='🔮 Tarefa futura agendada';body.appendChild(fb);}
   if(t.obs){var od=document.createElement('div');od.className='task-obs';od.textContent='📝 '+t.obs;body.appendChild(od);}
+  if(t.link){var lk=document.createElement('a');lk.href=t.link;lk.target='_blank';lk.rel='noopener';lk.style.cssText='display:inline-flex;align-items:center;gap:4px;font-size:12px;color:#2980b9;margin-top:4px;word-break:break-all;';lk.textContent='🔗 '+t.link;body.appendChild(lk);}
   var tm=document.createElement('div');tm.className='task-time';
   tm.textContent=t.done&&t.doneAt?'✓ '+t.doneAt:(t.addedAt?t.addedAt:'');
   var acts=document.createElement('div');acts.className='task-actions';
@@ -1414,6 +1432,7 @@ function criarLicitacao(){
   var municipio=document.getElementById('lic-municipio').value.trim();
   var dataDisputa=document.getElementById('lic-data').value;
   var horaDisputa=document.getElementById('lic-hora').value;
+  var licLink=document.getElementById('lic-link').value.trim()||'';
   var obs=document.getElementById('lic-obs').value.trim();
   if(!municipio){alert('Informe o município.');document.getElementById('lic-municipio').focus();return;}
   if(!dataDisputa){alert('Informe a data da disputa.');document.getElementById('lic-data').focus();return;}
@@ -1422,17 +1441,16 @@ function criarLicitacao(){
   var dataAnalise=somarDiasCorridos(dataDisputa,8);
   var now2=Date.now();
   // Tarefa 1 — Disputa
-  tasks.push({id:now2,text:'🏛 Disputa — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataDisputa,alertFired:false,paraQuem:'Licitações',obs:obs,priority:'alta',tags:['licitação',municipio],pinned:false,duracao:''});
+  tasks.push({id:now2,text:'🏛 Disputa — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataDisputa,alertFired:false,paraQuem:'Licitações',obs:obs,priority:'alta',tags:['licitação',municipio],pinned:false,duracao:'',link:licLink});
   // Tarefa 2 — Impugnação
-  tasks.push({id:now2+1,text:'⚠️ Impugnação — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataImpug,alertFired:false,paraQuem:'Licitações',obs:'Prazo de impugnação — '+municipio,priority:'alta',tags:['licitação','impugnação',municipio],pinned:false,duracao:''});
+  tasks.push({id:now2+1,text:'⚠️ Impugnação — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataImpug,alertFired:false,paraQuem:'Licitações',obs:'Prazo de impugnação — '+municipio,priority:'alta',tags:['licitação','impugnação',municipio],pinned:false,duracao:'',link:licLink});
   // Tarefa 3 — Análise de Edital
-  tasks.push({id:now2+2,text:'📋 Análise de Edital — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataAnalise,alertFired:false,paraQuem:'Licitações',obs:'Análise do edital — '+municipio,priority:'alta',tags:['licitação','edital',municipio],pinned:false,duracao:''});
+  tasks.push({id:now2+2,text:'📋 Análise de Edital — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataAnalise,alertFired:false,paraQuem:'Licitações',obs:'Análise do edital — '+municipio,priority:'alta',tags:['licitação','edital',municipio],pinned:false,duracao:'',link:licLink});
   save();render();atualizarFiltros();fecharModalLicitacao();
   mostrarToast('✅ 3 tarefas criadas para '+municipio+'!',false);
 }
 document.getElementById('lic-modal').addEventListener('click',function(e){if(e.target===this)fecharModalLicitacao();});
 
-// ── Init ──
 document.getElementById('task-input').addEventListener('keydown',function(e){if(e.key==='Enter')addTask();});
 load();
 if(!localStorage.getItem(DATE_KEY)||localStorage.getItem(DATE_KEY)===todayStr){
