@@ -342,6 +342,7 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
   <!-- Abas -->
   <div class="tab-bar">
     <button class="tab-btn active" id="tab-btn-tarefas" onclick="mudarAba('tarefas')">📋 Tarefas</button>
+    <button class="tab-btn" id="tab-btn-licitacoes" onclick="mudarAba('licitacoes')">🏛 Licitações <span class="tab-badge" id="tab-lic-badge" style="display:none;">0</span></button>
     <button class="tab-btn" id="tab-btn-certidoes" onclick="mudarAba('certidoes')">📜 Certidões <span class="tab-badge" id="tab-cert-badge" style="display:none;">!</span></button>
   </div>
 
@@ -412,7 +413,7 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
 
   <div class="action-bar">
     <div style="display:inline-flex;align-items:center;gap:4px;background:#f5f0fa;border:1.5px solid #8e44ad;border-radius:3px;padding:3px 6px;">
-      <button class="btn" style="border-color:#8e44ad;color:#8e44ad;background:transparent;font-weight:600;" onclick="abrirModalLicitacao()">🏛 Licitação</button>
+      <button class="btn" style="border-color:#8e44ad;color:#8e44ad;background:transparent;font-weight:600;" onclick="mudarAba('licitacoes')">🏛 Licitações</button>
     </div>
     <button class="btn btn-print" onclick="doPrint()">🖨 Relatório</button>
     <button class="btn btn-pq" onclick="doRelatorioPQ()">👤 Por Para Quem</button>
@@ -439,6 +440,21 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
       <button class="btn" style="font-size:12px;padding:4px 10px;" onclick="toggleArchivePanel()">Fechar ×</button>
     </div>
     <div id="archive-list"></div>
+  </div>
+
+  <!-- Aba Licitações -->
+  </div>
+  <div id="tab-licitacoes" class="tab-content">
+  <div class="cert-panel" style="border-top-color:#8e44ad;">
+    <div class="cert-panel-head">
+      <span class="cert-panel-title">🏛 Licitações</span>
+      <div class="cert-panel-actions">
+        <button class="btn" style="border-color:#8e44ad;color:#8e44ad;font-weight:600;" onclick="abrirModalLicitacao()">+ Nova Licitação</button>
+      </div>
+    </div>
+    <div id="lic-stats-row" style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;"></div>
+    <div id="lic-lista"></div>
+  </div>
   </div>
 
   <!-- Aba Certidões -->
@@ -2002,11 +2018,70 @@ function certExportCSV(){
   a.click();
 }
 function mudarAba(aba){
-  document.getElementById('tab-tarefas').classList.toggle('active', aba==='tarefas');
-  document.getElementById('tab-certidoes').classList.toggle('active', aba==='certidoes');
-  document.getElementById('tab-btn-tarefas').classList.toggle('active', aba==='tarefas');
-  document.getElementById('tab-btn-certidoes').classList.toggle('active', aba==='certidoes');
+  ['tarefas','licitacoes','certidoes'].forEach(function(a){
+    document.getElementById('tab-'+a).classList.toggle('active', a===aba);
+    document.getElementById('tab-btn-'+a).classList.toggle('active', a===aba);
+  });
   if(aba==='certidoes') certRender();
+  if(aba==='licitacoes') renderLicitacoes();
+}
+
+function renderLicitacoes(){
+  var lista=document.getElementById('lic-lista');
+  var stats=document.getElementById('lic-stats-row');
+  if(!lista) return;
+  // Filtra tarefas de licitação
+  var lics=tasks.filter(function(t){
+    return (t.paraQuem&&t.paraQuem.toLowerCase().indexOf('licitaç')>=0)||
+           (t.tags&&t.tags.some(function(g){return g.toLowerCase().indexOf('licitaç')>=0||g.toLowerCase().indexOf('licitac')>=0;}))||
+           (t.text&&(t.text.indexOf('Disputa')===0||t.text.indexOf('Impugnação')===0||t.text.indexOf('Análise de Edital')===0||t.text.indexOf('🏛')===0||t.text.indexOf('⚠️ Impugnação')===0||t.text.indexOf('📋 Análise')===0));
+  });
+  // Atualiza badge
+  var badge=document.getElementById('tab-lic-badge');
+  var pendentes=lics.filter(function(t){return !t.done;}).length;
+  if(pendentes>0){badge.textContent=pendentes;badge.style.display='inline';}
+  else{badge.style.display='none';}
+  // Stats
+  var total=lics.length,pend=lics.filter(function(t){return !t.done;}).length,conc=lics.filter(function(t){return t.done;}).length;
+  stats.innerHTML='<div class="cert-stat"><div class="cert-stat-num" style="color:var(--navy)">'+total+'</div><div class="cert-stat-lbl">Total</div></div>'+
+    '<div class="cert-stat"><div class="cert-stat-num" style="color:var(--amber)">'+pend+'</div><div class="cert-stat-lbl">Pendentes</div></div>'+
+    '<div class="cert-stat"><div class="cert-stat-num" style="color:var(--green)">'+conc+'</div><div class="cert-stat-lbl">Concluídas</div></div>';
+  if(lics.length===0){
+    lista.innerHTML='<div class="cert-empty">Nenhuma tarefa de licitação encontrada.</div>';
+    return;
+  }
+  // Agrupa por município (extrai do texto)
+  var grupos={};
+  lics.forEach(function(t){
+    var municipio='Geral';
+    var m=t.text.match(/[-—]\s*(.+)$/);
+    if(m) municipio=m[1].trim();
+    else if(t.paraQuem&&t.paraQuem!=='Licitações') municipio=t.paraQuem;
+    if(!grupos[municipio]) grupos[municipio]=[];
+    grupos[municipio].push(t);
+  });
+  var html='';
+  Object.keys(grupos).sort().forEach(function(mun){
+    var ts=grupos[mun];
+    html+='<div style="margin-bottom:14px;">';
+    html+='<div style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:600;padding:8px 0 6px;border-bottom:1.5px solid var(--border);margin-bottom:8px;">🏛 '+mun+'</div>';
+    ts.forEach(function(t){
+      var statusCor=t.done?'var(--green)':'var(--amber)';
+      var statusTxt=t.done?'✔ Concluída':'⏳ Pendente';
+      var dataStr=t.taskDate?(' — <b>'+fmtDate(t.taskDate)+'</b>'):'';
+      var horaStr=t.schedule?(' às '+t.schedule):'';
+      html+='<div class="cert-card" style="border-left-color:'+statusCor+';">'+
+        '<div class="cert-card-top">'+
+        '<span class="cert-card-name">'+t.text+'</span>'+
+        '<span class="cert-badge" style="background:'+(t.done?'#e8f5e9':'#fff8e1')+';color:'+(t.done?'#2e7d32':'#c78a1a')+';border:1px solid '+(t.done?'#c8e6c9':'#ffe082')+';">'+statusTxt+'</span>'+
+        '</div>'+
+        '<div class="cert-dates"><span class="cert-date">Data:'+dataStr+horaStr+'</span>'+(t.paraQuem?'<span class="cert-date">Para: <b>'+t.paraQuem+'</b></span>':'')+'</div>'+
+        (t.obs?'<div class="cert-file-name" style="white-space:normal;font-style:italic;color:var(--muted);">'+t.obs.substring(0,120)+(t.obs.length>120?'…':'')+'</div>':'')+
+        '</div>';
+    });
+    html+='</div>';
+  });
+  lista.innerHTML=html;
 }
 certLoad();
 </script>
