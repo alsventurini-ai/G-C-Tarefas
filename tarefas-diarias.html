@@ -1644,7 +1644,7 @@ function certProcessFile(file){
   }).then(function(result){
     certidoes.push({
       id:Date.now()+Math.random(),
-      nome:result.nome||file.name.replace('.pdf',''),
+      nome:file.name.replace(/\.pdf$/i,''),
       emissao:result.emissao||null,
       vencimento:result.vencimento||null,
       municipio:result.municipio||result.orgao||'',
@@ -1654,7 +1654,7 @@ function certProcessFile(file){
     });
     certSave();certRender();
   }).catch(function(){
-    certidoes.push({id:Date.now()+Math.random(),nome:file.name.replace('.pdf',''),emissao:null,vencimento:null,municipio:'',arquivo:file.name,tipo:'mensal',adicionado:new Date().toISOString()});
+    certidoes.push({id:Date.now()+Math.random(),nome:file.name.replace(/\.pdf$/i,''),emissao:null,vencimento:null,municipio:'',arquivo:file.name,tipo:'mensal',adicionado:new Date().toISOString()});
     certSave();certRender();
     mostrarToast('⚠️ Não foi possível extrair datas de "'+file.name+'". Edite manualmente.',false);
   }).finally(function(){
