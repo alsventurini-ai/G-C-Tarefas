@@ -1881,8 +1881,8 @@ function certRender(){
   var list=document.getElementById('cert-list');
   var statsRow=document.getElementById('cert-stats-row');
   if(certidoes.length===0){
-    list.innerHTML='<div class="cert-empty">Nenhuma certidão cadastrada. Envie PDFs acima.</div>';
-    statsRow.style.display='none';alertBar.style.display='none';
+    list.innerHTML='<div class="cert-empty">Nenhuma certidão cadastrada. Use + Nova Certidão.</div>';
+    statsRow.style.display='none';
     certAtualizarBadge();return;
   }
   statsRow.style.display='';
