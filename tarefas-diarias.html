@@ -306,7 +306,6 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
 .tab-content.active{display:block;}
 
 .cert-empty{text-align:center;color:var(--muted);font-size:13px;padding:20px 0;font-style:italic;opacity:.7;}
-.tab-tarefas-hide .filter-bar,.tab-tarefas-hide .tasks-area{display:none!important;}
 
 /* Modal certidão */
 .cert-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:10000;animation:toastIn .2s ease;}
@@ -483,7 +482,7 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
     <button class="btn" style="border-color:#8e44ad;color:#8e44ad;font-weight:600;" onclick="abrirModalLicitacao()">+ Nova Licitação</button>
   </div>
   <div id="lic-stats-row" style="display:flex;gap:10px;margin:0 30px 14px;flex-wrap:wrap;"></div>
-  <div class="tasks-area" id="lic-lista"></div>
+  <div id="lic-lista" style="padding:0 30px 24px;background:var(--cream);"></div>
   </div>
 
   <!-- Aba Certidões -->
@@ -501,7 +500,7 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
   <div class="action-bar">
     <button class="btn" style="border-color:#b03a2e;color:#b03a2e;font-weight:600;" onclick="certNovaManual()">+ Nova Certidão</button>
   </div>
-  <div class="tasks-area" id="cert-list"></div>
+  <div id="cert-list" style="display:block!important;padding:0 30px 24px;background:var(--cream);"></div>
   </div>
 
   <div class="footer" id="footer-el">Dados salvos automaticamente</div>
@@ -2014,8 +2013,9 @@ function mudarAba(aba){
     document.getElementById('tab-'+a).classList.toggle('active', a===aba);
     document.getElementById('tab-btn-'+a).classList.toggle('active', a===aba);
   });
-  var clip=document.querySelector('.clipboard');
-  clip.classList.toggle('tab-tarefas-hide', aba!=='tarefas');
+  var isTarefas=aba==='tarefas';
+  document.querySelector('.filter-bar').style.display=isTarefas?'':'none';
+  document.querySelector('.tasks-area').style.display=isTarefas?'':'none';
   if(aba==='certidoes') certRender();
   if(aba==='licitacoes') renderLicitacoes();
 }
