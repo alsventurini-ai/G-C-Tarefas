@@ -19,8 +19,8 @@
   --amber:#c78a1a;--white:#ffffff;--purple:#7b4fa0;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:0 0 48px;}
-.clipboard{width:100%;max-width:780px;border-radius:0;box-shadow:0 2px 6px rgba(0,0,0,.14);}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:28px 16px 48px;}
+.clipboard{width:100%;max-width:780px;border-radius:3px;box-shadow:0 6px 32px rgba(0,0,0,.28),0 2px 6px rgba(0,0,0,.14);}
 .clip{background:linear-gradient(to bottom,#9a9a9a,#b8b8b8);border-radius:3px 3px 0 0;padding:10px 0;display:flex;justify-content:center;}
 .clip-inner{width:90px;height:20px;background:linear-gradient(to right,#797979,#d4d4d4,#797979);border-radius:12px;box-shadow:0 2px 5px rgba(0,0,0,.4);}
 .header{background:var(--navy);padding:20px 30px 18px;color:#fff;display:flex;justify-content:space-between;align-items:center;}
@@ -258,6 +258,9 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
 
 /* ── Certidões ── */
 .cert-panel{background:var(--cream);padding:0 30px 24px;}
+.tab-content .filter-bar{background:var(--cream);border-bottom:1px solid var(--border);padding:9px 30px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.tab-content .tasks-area{background:var(--cream);padding:0 30px 30px;}
+.tab-content .template-bar,.tab-content .action-bar,.tab-content .input-area,.tab-content .recorr-panel,.tab-content .archive-panel{display:block;}
 .cert-panel-head{display:flex;justify-content:space-between;align-items:center;padding:14px 0 10px;border-bottom:1.5px solid var(--border);margin-bottom:14px;flex-wrap:wrap;gap:8px;}
 .cert-panel-title{font-size:10.5px;text-transform:uppercase;letter-spacing:1.3px;color:var(--muted);}
 .cert-panel-actions{display:flex;gap:7px;align-items:center;flex-wrap:wrap;}
