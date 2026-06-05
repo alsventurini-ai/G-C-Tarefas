@@ -257,7 +257,7 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
 }
 
 /* ── Certidões ── */
-.cert-panel{background:var(--cream);border-top:2px solid #b03a2e;padding:0 30px 24px;}
+.cert-panel{background:var(--cream);padding:0 30px 24px;}
 .cert-panel-head{display:flex;justify-content:space-between;align-items:center;padding:14px 0 10px;border-bottom:1.5px solid var(--border);margin-bottom:14px;flex-wrap:wrap;gap:8px;}
 .cert-panel-title{font-size:10.5px;text-transform:uppercase;letter-spacing:1.3px;color:var(--muted);}
 .cert-panel-actions{display:flex;gap:7px;align-items:center;flex-wrap:wrap;}
@@ -304,6 +304,7 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
 .tab-content.active{display:block;}
 
 .cert-empty{text-align:center;color:var(--muted);font-size:13px;padding:20px 0;font-style:italic;opacity:.7;}
+.tab-tarefas-hide .filter-bar,.tab-tarefas-hide .tasks-area{display:none!important;}
 
 /* Modal certidão */
 .cert-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:10000;animation:toastIn .2s ease;}
@@ -443,7 +444,7 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
   <!-- Aba Licitações -->
   </div>
   <div id="tab-licitacoes" class="tab-content">
-  <div class="cert-panel" style="border-top-color:#8e44ad;">
+  <div class="cert-panel">
     <div class="cert-panel-head">
       <span class="cert-panel-title">🏛 Licitações</span>
       <div class="cert-panel-actions">
@@ -509,7 +510,7 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
     </div>
     <div id="list-d"></div>
   </div>
-  </div>
+
   <div class="footer" id="footer-el">Dados salvos automaticamente</div>
 </div>
 
@@ -2020,6 +2021,8 @@ function mudarAba(aba){
     document.getElementById('tab-'+a).classList.toggle('active', a===aba);
     document.getElementById('tab-btn-'+a).classList.toggle('active', a===aba);
   });
+  var clip=document.querySelector('.clipboard');
+  clip.classList.toggle('tab-tarefas-hide', aba!=='tarefas');
   if(aba==='certidoes') certRender();
   if(aba==='licitacoes') renderLicitacoes();
 }
