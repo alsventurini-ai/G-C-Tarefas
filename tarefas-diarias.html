@@ -273,7 +273,7 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
 .cert-stat-num.green{color:var(--green);}
 .cert-stat-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;}
 .cert-alert-bar{background:#fff8ec;border:1px solid #e8b84b;border-radius:3px;padding:9px 14px;font-size:12.5px;color:#7a5a00;margin-bottom:12px;line-height:1.5;}
-.cert-card{background:var(--white);border:1px solid var(--border);border-radius:3px;padding:12px 15px;margin-bottom:9px;border-left:3px solid var(--border);}
+.cert-card{background:var(--white);border:1px solid var(--border);border-radius:3px;padding:12px 15px;margin-bottom:9px;border-left:3px solid var(--border);}.tasks-area .cert-card{margin-left:0;margin-right:0;}
 .cert-card.expired{border-left-color:var(--red);}
 .cert-card.warning{border-left-color:var(--amber);}
 .cert-card.ok{border-left-color:var(--green);}
@@ -478,38 +478,30 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
   <!-- Aba Licitações -->
   </div>
   <div id="tab-licitacoes" class="tab-content">
-  <div class="tab-inner">
-  <div class="tab-inner-head">
-      <span class="cert-panel-title">🏛 Licitações</span>
-      <div class="cert-panel-actions">
-        <button class="btn" style="border-color:#8e44ad;color:#8e44ad;font-weight:600;" onclick="abrirModalLicitacao()">+ Nova Licitação</button>
-      </div>
-    </div>
-    <div id="lic-stats-row" style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;"></div>
-  <div id="lic-lista"></div>
+  <div class="action-bar" style="justify-content:space-between;">
+    <span style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.3px;color:var(--muted);font-weight:600;">🏛 Licitações</span>
+    <button class="btn" style="border-color:#8e44ad;color:#8e44ad;font-weight:600;" onclick="abrirModalLicitacao()">+ Nova Licitação</button>
   </div>
+  <div id="lic-stats-row" style="display:flex;gap:10px;margin:0 30px 14px;flex-wrap:wrap;"></div>
+  <div class="tasks-area" id="lic-lista"></div>
   </div>
 
   <!-- Aba Certidões -->
   <div id="tab-certidoes" class="tab-content">
-  <div class="tab-inner">
-  <div class="tab-inner-head">
-      <span class="cert-panel-title">📜 Certidões &amp; Documentos</span>
-      <div class="cert-panel-actions">
-        <button class="btn" style="font-size:12px;padding:5px 11px;border-color:var(--green);color:var(--green);" onclick="certExportCSV()">📥 Exportar CSV</button>
-      </div>
-    </div>
-    <div id="cert-stats-row" class="cert-stats-row">
-      <div class="cert-stat"><div class="cert-stat-num" id="cs-total">0</div><div class="cert-stat-lbl">Total</div></div>
-      <div class="cert-stat"><div class="cert-stat-num red" id="cs-exp">0</div><div class="cert-stat-lbl">Vencidas</div></div>
-      <div class="cert-stat"><div class="cert-stat-num amber" id="cs-warn">0</div><div class="cert-stat-lbl">≤25 dias</div></div>
-      <div class="cert-stat"><div class="cert-stat-num green" id="cs-ok">0</div><div class="cert-stat-lbl">Em dia</div></div>
-    </div>
-    <div style="margin-bottom:12px;">
-      <button class="btn" style="border-color:#b03a2e;color:#b03a2e;font-weight:600;" onclick="certNovaManual()">+ Nova Certidão</button>
-    </div>
-  <div id="cert-list"></div>
+  <div class="action-bar" style="justify-content:space-between;">
+    <span style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.3px;color:var(--muted);font-weight:600;">📜 Certidões &amp; Documentos</span>
+    <button class="btn" style="font-size:12px;padding:5px 11px;border-color:var(--green);color:var(--green);" onclick="certExportCSV()">📥 Exportar CSV</button>
   </div>
+  <div id="cert-stats-row" class="cert-stats-row" style="display:flex;gap:10px;margin:0 30px 14px;flex-wrap:wrap;">
+    <div class="cert-stat"><div class="cert-stat-num" id="cs-total">0</div><div class="cert-stat-lbl">Total</div></div>
+    <div class="cert-stat"><div class="cert-stat-num red" id="cs-exp">0</div><div class="cert-stat-lbl">Vencidas</div></div>
+    <div class="cert-stat"><div class="cert-stat-num amber" id="cs-warn">0</div><div class="cert-stat-lbl">≤25 dias</div></div>
+    <div class="cert-stat"><div class="cert-stat-num green" id="cs-ok">0</div><div class="cert-stat-lbl">Em dia</div></div>
+  </div>
+  <div class="action-bar">
+    <button class="btn" style="border-color:#b03a2e;color:#b03a2e;font-weight:600;" onclick="certNovaManual()">+ Nova Certidão</button>
+  </div>
+  <div class="tasks-area" id="cert-list"></div>
   </div>
 
   <div class="footer" id="footer-el">Dados salvos automaticamente</div>
