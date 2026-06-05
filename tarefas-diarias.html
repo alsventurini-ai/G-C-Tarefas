@@ -393,7 +393,11 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
   </div>
 
   <div class="action-bar">
-    <button class="btn" style="border-color:#8e44ad;color:#8e44ad;" onclick="abrirModalLicitacao()">🏛 Licitação</button>
+    <div style="display:inline-flex;align-items:center;gap:4px;background:#f5f0fa;border:1.5px solid #8e44ad;border-radius:3px;padding:3px 6px;">
+      <button class="btn" style="border-color:#8e44ad;color:#8e44ad;background:transparent;font-weight:600;" onclick="abrirModalLicitacao()">🏛 Licitação</button>
+      <span style="color:#c9a8e8;font-size:14px;">|</span>
+      <button class="btn" style="border-color:#b03a2e;color:#b03a2e;background:transparent;font-weight:600;" onclick="toggleCertPanel()">📜 Certidões <span id="cnt-cert-warn" style="display:none;background:#b03a2e;color:#fff;border-radius:8px;padding:1px 6px;font-size:11px;margin-left:2px;">!</span></button>
+    </div>
     <button class="btn btn-print" onclick="doPrint()">🖨 Relatório</button>
     <button class="btn btn-pq" onclick="doRelatorioPQ()">👤 Por Para Quem</button>
     <button class="btn btn-backup" onclick="fazerBackupManual()">💾 Backup</button>
@@ -403,7 +407,6 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
     <button class="btn btn-resumo" onclick="mostrarResumo()">📊 Resumo</button>
     <button class="btn" onclick="clearDone()">✕ Concluídas</button>
     <button class="btn btn-danger" onclick="clearAll()">🗑 Limpar tudo</button>
-    <button class="btn" style="border-color:#b03a2e;color:#b03a2e;" onclick="toggleCertPanel()">📜 Certidões <span id="cnt-cert-warn" style="display:none;background:#b03a2e;color:#fff;border-radius:8px;padding:1px 6px;font-size:11px;margin-left:2px;">!</span></button>
   </div>
 
   <div id="recorr-panel" class="recorr-panel" style="display:none;">
@@ -420,6 +423,33 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
       <button class="btn" style="font-size:12px;padding:4px 10px;" onclick="toggleArchivePanel()">Fechar ×</button>
     </div>
     <div id="archive-list"></div>
+  </div>
+
+  <div id="cert-panel" class="cert-panel" style="display:none;">
+    <div class="cert-panel-head">
+      <span class="cert-panel-title">📜 Certidões &amp; Documentos</span>
+      <div class="cert-panel-actions">
+        <button class="btn" style="font-size:12px;padding:5px 11px;border-color:var(--green);color:var(--green);" onclick="certExportCSV()">📥 Exportar CSV</button>
+        <button class="btn" style="font-size:12px;padding:5px 11px;" onclick="toggleCertPanel()">Fechar ×</button>
+      </div>
+    </div>
+    <div id="cert-stats-row" class="cert-stats-row" style="display:none;">
+      <div class="cert-stat"><div class="cert-stat-num" id="cs-total">0</div><div class="cert-stat-lbl">Total</div></div>
+      <div class="cert-stat"><div class="cert-stat-num red" id="cs-exp">0</div><div class="cert-stat-lbl">Vencidas</div></div>
+      <div class="cert-stat"><div class="cert-stat-num amber" id="cs-warn">0</div><div class="cert-stat-lbl">≤25 dias</div></div>
+      <div class="cert-stat"><div class="cert-stat-num green" id="cs-ok">0</div><div class="cert-stat-lbl">Em dia</div></div>
+    </div>
+    <div id="cert-alert-bar" class="cert-alert-bar" style="display:none;"></div>
+    <div class="cert-upload-zone" onclick="document.getElementById('cert-file-input').click()">
+      <input type="file" id="cert-file-input" accept=".pdf" multiple style="display:none;" onchange="certHandleFiles(this.files)">
+      <p>📁 Clique para enviar PDFs de certidões</p>
+      <p class="small">A IA lê o documento e extrai as datas de emissão e vencimento automaticamente</p>
+    </div>
+    <div id="cert-processing" class="cert-processing hidden">
+      <span class="spin">⏳</span>
+      <span id="cert-proc-msg">Analisando certidão com IA…</span>
+    </div>
+    <div id="cert-list"></div>
   </div>
 
   <div class="filter-bar">
@@ -599,33 +629,6 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
 </div>
 
 <!-- Painel Certidões -->
-<div id="cert-panel" class="cert-panel" style="display:none;">
-  <div class="cert-panel-head">
-    <span class="cert-panel-title">📜 Certidões &amp; Documentos</span>
-    <div class="cert-panel-actions">
-      <button class="btn" style="font-size:12px;padding:5px 11px;border-color:var(--green);color:var(--green);" onclick="certExportCSV()">📥 Exportar CSV</button>
-      <button class="btn" style="font-size:12px;padding:5px 11px;" onclick="toggleCertPanel()">Fechar ×</button>
-    </div>
-  </div>
-  <div id="cert-stats-row" class="cert-stats-row" style="display:none;">
-    <div class="cert-stat"><div class="cert-stat-num" id="cs-total">0</div><div class="cert-stat-lbl">Total</div></div>
-    <div class="cert-stat"><div class="cert-stat-num red" id="cs-exp">0</div><div class="cert-stat-lbl">Vencidas</div></div>
-    <div class="cert-stat"><div class="cert-stat-num amber" id="cs-warn">0</div><div class="cert-stat-lbl">≤25 dias</div></div>
-    <div class="cert-stat"><div class="cert-stat-num green" id="cs-ok">0</div><div class="cert-stat-lbl">Em dia</div></div>
-  </div>
-  <div id="cert-alert-bar" class="cert-alert-bar" style="display:none;"></div>
-  <div class="cert-upload-zone" onclick="document.getElementById('cert-file-input').click()">
-    <input type="file" id="cert-file-input" accept=".pdf" multiple style="display:none;" onchange="certHandleFiles(this.files)">
-    <p>📁 Clique para enviar PDFs de certidões</p>
-    <p class="small">A IA lê o documento e extrai as datas de emissão e vencimento automaticamente</p>
-  </div>
-  <div id="cert-processing" class="cert-processing hidden">
-    <span class="spin">⏳</span>
-    <span id="cert-proc-msg">Analisando certidão com IA…</span>
-  </div>
-  <div id="cert-list"></div>
-</div>
-
 <!-- Modal edição certidão -->
 <div id="cert-edit-modal" class="cert-modal-overlay" style="display:none;">
   <div class="cert-modal-box">
@@ -640,6 +643,17 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
         <div class="modal-field"><label>Data de vencimento</label><input type="date" id="ce-venc" class="modal-input"></div>
       </div>
       <div class="modal-row"><div class="modal-field"><label>Município / órgão emissor</label><input type="text" id="ce-municipio" class="modal-input" placeholder="ex: Receita Federal, CEF, CRO-SP…"></div></div>
+      <div class="modal-row"><div class="modal-field"><label>Tipo de renovação</label>
+        <select id="ce-tipo" class="modal-select">
+          <option value="validade">Validade fixa — alerta 5 dias úteis antes do vencimento</option>
+          <option value="mensal">Mensal — alerta 5 dias úteis antes de completar 30 dias</option>
+          <option value="licitacao">Por licitação — alerta mensal (renovar antes de cada pregão)</option>
+          <option value="permanente">Permanente — sem alerta</option>
+        </select>
+      </div></div>
+      <div style="background:#fff8ec;border:1px solid #e8b84b;border-radius:3px;padding:9px 12px;font-size:12px;color:#7a5a00;margin-top:4px;">
+        ⏰ Alertas disparados às <strong>08h00 e 16h00</strong> quando a data de alerta chegar
+      </div>
     </div>
     <div class="modal-foot">
       <button class="btn-modal-cancel" onclick="certCloseModal()">Cancelar</button>
@@ -1577,18 +1591,38 @@ function criarLicitacao(){
 }
 document.getElementById('lic-modal').addEventListener('click',function(e){if(e.target===this)fecharModalLicitacao();});
 
+
 // ── Certidões ──
-var CERT_KEY='gc_certidoes_v1';
+var CERT_KEY='gc_certidoes_v2';
 var certidoes=[];
 var _certEditIdx=-1;
+var _certAlertFiredKey='gc_cert_alert_fired';
+var _certAlertFired={};
 
 function certLoad(){
+  // Migra dados da versão anterior se existirem
+  var dadosAntigos=localStorage.getItem('gc_certidoes_v1');
+  if(dadosAntigos&&!localStorage.getItem(CERT_KEY)){
+    try{
+      var antigos=JSON.parse(dadosAntigos);
+      antigos=antigos.map(function(c){
+        if(!c.tipo) c.tipo='mensal';
+        return c;
+      });
+      localStorage.setItem(CERT_KEY,JSON.stringify(antigos));
+    }catch(e){}
+  }
   try{certidoes=JSON.parse(localStorage.getItem(CERT_KEY)||'[]');}catch(e){certidoes=[];}
+  try{_certAlertFired=JSON.parse(localStorage.getItem(_certAlertFiredKey)||'{}');}catch(e){_certAlertFired={};}
   certRender();
+  certVerificarAlertas();
 }
 function certSave(){
   localStorage.setItem(CERT_KEY,JSON.stringify(certidoes));
   certAtualizarBadge();
+}
+function certSaveAlertFired(){
+  localStorage.setItem(_certAlertFiredKey,JSON.stringify(_certAlertFired));
 }
 function toggleCertPanel(){
   var p=document.getElementById('cert-panel');
@@ -1615,11 +1649,12 @@ function certProcessFile(file){
       vencimento:result.vencimento||null,
       municipio:result.municipio||result.orgao||'',
       arquivo:file.name,
+      tipo:'mensal',
       adicionado:new Date().toISOString()
     });
     certSave();certRender();
   }).catch(function(){
-    certidoes.push({id:Date.now()+Math.random(),nome:file.name.replace('.pdf',''),emissao:null,vencimento:null,municipio:'',arquivo:file.name,adicionado:new Date().toISOString()});
+    certidoes.push({id:Date.now()+Math.random(),nome:file.name.replace('.pdf',''),emissao:null,vencimento:null,municipio:'',arquivo:file.name,tipo:'mensal',adicionado:new Date().toISOString()});
     certSave();certRender();
     mostrarToast('⚠️ Não foi possível extrair datas de "'+file.name+'". Edite manualmente.',false);
   }).finally(function(){
@@ -1653,13 +1688,49 @@ function certExtractAI(b64,filename){
     return JSON.parse(clean);
   });
 }
+
+// ── Lógica de datas e alertas ──
+function certDiasUteis(dataIso, n){
+  // Retorna a data n dias úteis ANTES de dataIso
+  var d=new Date(dataIso+'T00:00:00');
+  var restantes=n;
+  while(restantes>0){
+    d.setDate(d.getDate()-1);
+    var dow=d.getDay();
+    if(dow!==0&&dow!==6) restantes--;
+  }
+  return d.toISOString().slice(0,10);
+}
+function certProximaRenovacao(c){
+  // Retorna a data em que o alerta deve disparar
+  if(c.tipo==='permanente') return null;
+  if(c.tipo==='mensal'||c.tipo==='licitacao'){
+    // Alerta 5 dias úteis antes de completar 30 dias da emissão
+    if(!c.emissao) return null;
+    var renovacao=new Date(c.emissao+'T00:00:00');
+    renovacao.setDate(renovacao.getDate()+30);
+    var renovacaoStr=renovacao.toISOString().slice(0,10);
+    return certDiasUteis(renovacaoStr,5);
+  }
+  if(c.tipo==='validade'){
+    if(!c.vencimento) return null;
+    return certDiasUteis(c.vencimento,5);
+  }
+  return null;
+}
 function certGetStatus(c){
-  if(!c.vencimento) return 'na';
+  if(c.tipo==='permanente') return 'permanente';
   var today=new Date();today.setHours(0,0,0,0);
-  var venc=new Date(c.vencimento+'T00:00:00');
-  var diff=Math.floor((venc-today)/(86400000));
-  if(diff<0) return 'expired';
-  if(diff<=25) return 'warning';
+  var todayStr=today.toISOString().slice(0,10);
+  // Vencimento real
+  if(c.vencimento){
+    var venc=new Date(c.vencimento+'T00:00:00');
+    var diff=Math.floor((venc-today)/86400000);
+    if(diff<0) return 'expired';
+  }
+  // Data de alerta
+  var alertaData=certProximaRenovacao(c);
+  if(alertaData&&alertaData<=todayStr) return 'warning';
   return 'ok';
 }
 function certDaysLeft(c){
@@ -1667,11 +1738,46 @@ function certDaysLeft(c){
   var today=new Date();today.setHours(0,0,0,0);
   return Math.floor((new Date(c.vencimento+'T00:00:00')-today)/86400000);
 }
+function certDaysToRenovacao(c){
+  var alerta=certProximaRenovacao(c);
+  if(!alerta) return null;
+  var today=new Date();today.setHours(0,0,0,0);
+  return Math.floor((new Date(alerta+'T00:00:00')-today)/86400000);
+}
 function certFmtDate(d){
   if(!d) return '—';
   var p=d.split('-');return p[2]+'/'+p[1]+'/'+p[0];
 }
 function certEsc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ── Verificação de alertas às 08h e 16h ──
+function certVerificarAlertas(){
+  if(Notification.permission!=='granted') return;
+  var agora=new Date();
+  var hora=agora.getHours();
+  var minuto=agora.getMinutes();
+  var todayStr=agora.toISOString().slice(0,10);
+  // Só dispara nas janelas 08:00-08:05 e 16:00-16:05
+  var naJanela=(hora===8&&minuto<=5)||(hora===16&&minuto<=5);
+  if(!naJanela) return;
+  var turno=hora===8?'manha':'tarde';
+  certidoes.forEach(function(c){
+    if(c.tipo==='permanente') return;
+    var st=certGetStatus(c);
+    if(st!=='warning'&&st!=='expired') return;
+    var key=c.id+'_'+todayStr+'_'+turno;
+    if(_certAlertFired[key]) return;
+    _certAlertFired[key]=true;
+    certSaveAlertFired();
+    var msg='';
+    if(st==='expired') msg='VENCIDA: '+c.nome+(c.municipio?' ('+c.municipio+')':'');
+    else msg='Renovar em breve: '+c.nome+(c.municipio?' ('+c.municipio+')':'');
+    new Notification('📜 Certidão — G&C',{body:msg,requireInteraction:true});
+    mostrarToast('📜 '+msg,false);
+  });
+}
+setInterval(certVerificarAlertas,60000);
+
 function certAtualizarBadge(){
   var badge=document.getElementById('cnt-cert-warn');
   var alertas=certidoes.filter(function(c){var s=certGetStatus(c);return s==='expired'||s==='warning';});
@@ -1685,11 +1791,17 @@ function certRender(){
   if(certidoes.length===0){
     list.innerHTML='<div class="cert-empty">Nenhuma certidão cadastrada. Envie PDFs acima.</div>';
     statsRow.style.display='none';alertBar.style.display='none';
-    return;
+    certAtualizarBadge();return;
   }
   statsRow.style.display='';
-  var exp=0,warn=0,ok=0;
-  certidoes.forEach(function(c){var s=certGetStatus(c);if(s==='expired')exp++;else if(s==='warning')warn++;else if(s==='ok')ok++;});
+  var exp=0,warn=0,ok=0,perm=0;
+  certidoes.forEach(function(c){
+    var s=certGetStatus(c);
+    if(s==='expired')exp++;
+    else if(s==='warning')warn++;
+    else if(s==='permanente')perm++;
+    else ok++;
+  });
   document.getElementById('cs-total').textContent=certidoes.length;
   document.getElementById('cs-exp').textContent=exp;
   document.getElementById('cs-warn').textContent=warn;
@@ -1699,18 +1811,42 @@ function certRender(){
     alertBar.style.display='';
     alertBar.innerHTML='⚠️ <strong>Atenção:</strong> '+alertas.map(function(c){
       var d=certDaysLeft(c);
-      return certEsc(c.nome)+(d<0?' — vencida há '+Math.abs(d)+'d':' — vence em '+d+'d');
+      var alerta=certProximaRenovacao(c);
+      var today=new Date().toISOString().slice(0,10);
+      if(d!==null&&d<0) return certEsc(c.nome)+' — <strong>VENCIDA há '+Math.abs(d)+'d</strong>';
+      if(alerta&&alerta<=today) return certEsc(c.nome)+' — renovar (alerta 5 dias úteis)';
+      return certEsc(c.nome);
     }).join(' &nbsp;|&nbsp; ');
   } else {alertBar.style.display='none';}
+
+  var TIPO_LABEL={permanente:'Permanente',mensal:'Mensal',licitacao:'Por licitação',validade:'Validade fixa'};
   var sorted=certidoes.slice().sort(function(a,b){
-    var o={expired:0,warning:1,na:2,ok:3};return o[certGetStatus(a)]-o[certGetStatus(b)];
+    var o={expired:0,warning:1,ok:2,permanente:3};
+    return (o[certGetStatus(a)]||2)-(o[certGetStatus(b)]||2);
   });
   list.innerHTML=sorted.map(function(c){
-    var st=certGetStatus(c),days=certDaysLeft(c);
-    var badgeClass='na',badgeTxt='Sem data';
-    if(st==='expired'){badgeClass='expired';badgeTxt='Vencida há '+Math.abs(days)+'d';}
-    else if(st==='warning'){badgeClass='warning';badgeTxt='Vence em '+days+'d';}
-    else if(st==='ok'){badgeClass='ok';badgeTxt=days+'d restantes';}
+    var st=certGetStatus(c);
+    var days=certDaysLeft(c);
+    var dRen=certDaysToRenovacao(c);
+    var alerta=certProximaRenovacao(c);
+    var today=new Date().toISOString().slice(0,10);
+    var badgeClass='na',badgeTxt='—';
+    if(st==='permanente'){badgeClass='ok';badgeTxt='Permanente';}
+    else if(st==='expired'){badgeClass='expired';badgeTxt='Vencida há '+Math.abs(days)+'d';}
+    else if(st==='warning'){
+      if(days!==null&&days>=0) badgeTxt='Vence em '+days+'d';
+      else if(alerta) badgeTxt='Renovar (alerta ativo)';
+      badgeClass='warning';
+    } else {
+      if(days!==null) badgeTxt=days+'d p/ vencer';
+      else if(dRen!==null) badgeTxt='Alerta em '+dRen+'d';
+      else badgeTxt='Em dia';
+      badgeClass='ok';
+    }
+    var renovLine='';
+    if(c.tipo!=='permanente'&&alerta){
+      renovLine='<div class="cert-file-name">⏰ Alerta: '+certFmtDate(alerta)+' (5 dias úteis antes)</div>';
+    }
     var realIdx=certidoes.findIndex(function(x){return x.id===c.id;});
     return '<div class="cert-card '+st+'">'+
       '<div class="cert-card-top">'+
@@ -1720,8 +1856,10 @@ function certRender(){
       '<div class="cert-dates">'+
       '<span class="cert-date">Emissão: <b>'+certFmtDate(c.emissao)+'</b></span>'+
       '<span class="cert-date">Vencimento: <b>'+certFmtDate(c.vencimento)+'</b></span>'+
+      '<span class="cert-date">Tipo: <b>'+(TIPO_LABEL[c.tipo]||'—')+'</b></span>'+
       '</div>'+
-      '<div class="cert-file-name">📄 '+certEsc(c.arquivo)+'</div>'+
+      renovLine+
+      '<div class="cert-file-name">📄 '+certEsc(c.arquivo||'')+'</div>'+
       '<div class="cert-card-actions">'+
       '<button class="btn" style="font-size:12px;padding:4px 10px;" onclick="certOpenEdit('+realIdx+')">✏️ Editar</button>'+
       '<button class="btn" style="font-size:12px;padding:4px 10px;border-color:#c0392b;color:#c0392b;" onclick="certRemove('+realIdx+')">🗑 Remover</button>'+
@@ -1739,6 +1877,7 @@ function certOpenEdit(idx){
   document.getElementById('ce-emissao').value=c.emissao||'';
   document.getElementById('ce-venc').value=c.vencimento||'';
   document.getElementById('ce-municipio').value=c.municipio||'';
+  document.getElementById('ce-tipo').value=c.tipo||'mensal';
   document.getElementById('cert-edit-modal').style.display='flex';
 }
 function certCloseModal(){document.getElementById('cert-edit-modal').style.display='none';}
@@ -1748,15 +1887,17 @@ function certSaveEdit(){
   certidoes[_certEditIdx].emissao=document.getElementById('ce-emissao').value||null;
   certidoes[_certEditIdx].vencimento=document.getElementById('ce-venc').value||null;
   certidoes[_certEditIdx].municipio=document.getElementById('ce-municipio').value;
+  certidoes[_certEditIdx].tipo=document.getElementById('ce-tipo').value;
   certSave();certRender();certCloseModal();
 }
 function certExportCSV(){
   if(certidoes.length===0){alert('Nenhuma certidão para exportar.');return;}
-  var rows=[['Nome','Município/Órgão','Emissão','Vencimento','Status','Dias restantes','Arquivo']];
+  var rows=[['Nome','Município/Órgão','Emissão','Vencimento','Tipo','Alerta em','Status','Arquivo']];
   certidoes.forEach(function(c){
-    var st=certGetStatus(c),d=certDaysLeft(c);
-    var stTxt={expired:'Vencida',warning:'A vencer',ok:'Em dia',na:'Sem data'}[st];
-    rows.push([c.nome,c.municipio||'',certFmtDate(c.emissao),certFmtDate(c.vencimento),stTxt,d!==null?d:'',c.arquivo]);
+    var st=certGetStatus(c);
+    var stTxt={expired:'Vencida',warning:'Alerta ativo',ok:'Em dia',permanente:'Permanente',na:'Sem data'}[st]||st;
+    var alerta=certProximaRenovacao(c);
+    rows.push([c.nome,c.municipio||'',certFmtDate(c.emissao),certFmtDate(c.vencimento),c.tipo||'',certFmtDate(alerta),stTxt,c.arquivo||'']);
   });
   var csv=rows.map(function(r){return r.map(function(v){return'"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
   var a=document.createElement('a');
