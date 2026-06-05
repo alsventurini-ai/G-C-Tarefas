@@ -447,23 +447,20 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
   <!-- Aba Licitações -->
   </div>
   <div id="tab-licitacoes" class="tab-content">
-  <div class="cert-panel">
-    <div class="cert-panel-head">
+  <div class="cert-panel-head" style="display:flex;justify-content:space-between;align-items:center;padding:14px 30px 10px;border-bottom:1.5px solid var(--border);margin-bottom:14px;flex-wrap:wrap;gap:8px;background:var(--cream2);">
       <span class="cert-panel-title">🏛 Licitações</span>
       <div class="cert-panel-actions">
         <button class="btn" style="border-color:#8e44ad;color:#8e44ad;font-weight:600;" onclick="abrirModalLicitacao()">+ Nova Licitação</button>
       </div>
     </div>
     <div id="lic-stats-row" style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;"></div>
-    <div id="lic-lista"></div>
-  </div>
+  <div id="lic-lista" style="background:var(--cream);padding:0 30px 24px;"></div>
   </div>
 
   <!-- Aba Certidões -->
   </div>
   <div id="tab-certidoes" class="tab-content">
-  <div class="cert-panel">
-    <div class="cert-panel-head">
+  <div class="cert-panel-head" style="display:flex;justify-content:space-between;align-items:center;padding:14px 30px 10px;border-bottom:1.5px solid var(--border);margin-bottom:14px;flex-wrap:wrap;gap:8px;background:var(--cream2);">
       <span class="cert-panel-title">📜 Certidões &amp; Documentos</span>
       <div class="cert-panel-actions">
         <button class="btn" style="font-size:12px;padding:5px 11px;border-color:var(--green);color:var(--green);" onclick="certExportCSV()">📥 Exportar CSV</button>
@@ -478,8 +475,7 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
     <div style="margin-bottom:12px;">
       <button class="btn" style="border-color:#b03a2e;color:#b03a2e;font-weight:600;" onclick="certNovaManual()">+ Nova Certidão</button>
     </div>
-    <div id="cert-list"></div>
-  </div>
+  <div id="cert-list" style="background:var(--cream);padding:0 30px 24px;"></div>
   </div>
 
   <div class="filter-bar">
