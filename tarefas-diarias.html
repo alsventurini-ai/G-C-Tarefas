@@ -258,9 +258,6 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
 
 /* ── Certidões ── */
 .cert-panel{background:var(--cream);padding:0 30px 24px;}
-.tab-content .filter-bar{background:var(--cream);border-bottom:1px solid var(--border);padding:9px 30px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-.tab-content .tasks-area{background:var(--cream);padding:0 30px 30px;}
-.tab-content .template-bar,.tab-content .action-bar,.tab-content .input-area,.tab-content .recorr-panel,.tab-content .archive-panel{display:block;}
 .cert-panel-head{display:flex;justify-content:space-between;align-items:center;padding:14px 0 10px;border-bottom:1.5px solid var(--border);margin-bottom:14px;flex-wrap:wrap;gap:8px;}
 .cert-panel-title{font-size:10.5px;text-transform:uppercase;letter-spacing:1.3px;color:var(--muted);}
 .cert-panel-actions{display:flex;gap:7px;align-items:center;flex-wrap:wrap;}
@@ -303,6 +300,8 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
 .tab-btn:hover{color:rgba(255,255,255,.9);}
 .tab-btn.active{color:#fff;border-bottom-color:#e8b84b;font-weight:600;}
 .tab-badge{background:#b03a2e;color:#fff;border-radius:8px;padding:1px 6px;font-size:11px;}
+.tab-inner{padding:0 30px 24px;background:var(--cream);}
+.tab-inner-head{display:flex;justify-content:space-between;align-items:center;padding:14px 0 10px;border-bottom:1.5px solid var(--border);margin-bottom:14px;flex-wrap:wrap;gap:8px;}
 .tab-content{display:none;}
 .tab-content.active{display:block;}
 
@@ -444,40 +443,6 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
     <div id="archive-list"></div>
   </div>
 
-  <!-- Aba Licitações -->
-  </div>
-  <div id="tab-licitacoes" class="tab-content">
-  <div class="cert-panel-head" style="display:flex;justify-content:space-between;align-items:center;padding:14px 30px 10px;border-bottom:1.5px solid var(--border);margin-bottom:14px;flex-wrap:wrap;gap:8px;background:var(--cream2);">
-      <span class="cert-panel-title">🏛 Licitações</span>
-      <div class="cert-panel-actions">
-        <button class="btn" style="border-color:#8e44ad;color:#8e44ad;font-weight:600;" onclick="abrirModalLicitacao()">+ Nova Licitação</button>
-      </div>
-    </div>
-    <div id="lic-stats-row" style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;"></div>
-  <div id="lic-lista" style="background:var(--cream);padding:0 30px 24px;"></div>
-  </div>
-
-  <!-- Aba Certidões -->
-  </div>
-  <div id="tab-certidoes" class="tab-content">
-  <div class="cert-panel-head" style="display:flex;justify-content:space-between;align-items:center;padding:14px 30px 10px;border-bottom:1.5px solid var(--border);margin-bottom:14px;flex-wrap:wrap;gap:8px;background:var(--cream2);">
-      <span class="cert-panel-title">📜 Certidões &amp; Documentos</span>
-      <div class="cert-panel-actions">
-        <button class="btn" style="font-size:12px;padding:5px 11px;border-color:var(--green);color:var(--green);" onclick="certExportCSV()">📥 Exportar CSV</button>
-      </div>
-    </div>
-    <div id="cert-stats-row" class="cert-stats-row" style="display:none;">
-      <div class="cert-stat"><div class="cert-stat-num" id="cs-total">0</div><div class="cert-stat-lbl">Total</div></div>
-      <div class="cert-stat"><div class="cert-stat-num red" id="cs-exp">0</div><div class="cert-stat-lbl">Vencidas</div></div>
-      <div class="cert-stat"><div class="cert-stat-num amber" id="cs-warn">0</div><div class="cert-stat-lbl">≤25 dias</div></div>
-      <div class="cert-stat"><div class="cert-stat-num green" id="cs-ok">0</div><div class="cert-stat-lbl">Em dia</div></div>
-    </div>
-    <div style="margin-bottom:12px;">
-      <button class="btn" style="border-color:#b03a2e;color:#b03a2e;font-weight:600;" onclick="certNovaManual()">+ Nova Certidão</button>
-    </div>
-  <div id="cert-list" style="background:var(--cream);padding:0 30px 24px;"></div>
-  </div>
-
   <div class="filter-bar">
     <label>🔍</label>
     <input type="text" id="search-input" placeholder="Buscar tarefa…" oninput="render()">
@@ -508,6 +473,43 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
       <span class="section-count green" id="cnt-d">0</span>
     </div>
     <div id="list-d"></div>
+  </div>
+
+  <!-- Aba Licitações -->
+  </div>
+  <div id="tab-licitacoes" class="tab-content">
+  <div class="tab-inner">
+  <div class="tab-inner-head">
+      <span class="cert-panel-title">🏛 Licitações</span>
+      <div class="cert-panel-actions">
+        <button class="btn" style="border-color:#8e44ad;color:#8e44ad;font-weight:600;" onclick="abrirModalLicitacao()">+ Nova Licitação</button>
+      </div>
+    </div>
+    <div id="lic-stats-row" style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;"></div>
+  <div id="lic-lista"></div>
+  </div>
+  </div>
+
+  <!-- Aba Certidões -->
+  <div id="tab-certidoes" class="tab-content">
+  <div class="tab-inner">
+  <div class="tab-inner-head">
+      <span class="cert-panel-title">📜 Certidões &amp; Documentos</span>
+      <div class="cert-panel-actions">
+        <button class="btn" style="font-size:12px;padding:5px 11px;border-color:var(--green);color:var(--green);" onclick="certExportCSV()">📥 Exportar CSV</button>
+      </div>
+    </div>
+    <div id="cert-stats-row" class="cert-stats-row">
+      <div class="cert-stat"><div class="cert-stat-num" id="cs-total">0</div><div class="cert-stat-lbl">Total</div></div>
+      <div class="cert-stat"><div class="cert-stat-num red" id="cs-exp">0</div><div class="cert-stat-lbl">Vencidas</div></div>
+      <div class="cert-stat"><div class="cert-stat-num amber" id="cs-warn">0</div><div class="cert-stat-lbl">≤25 dias</div></div>
+      <div class="cert-stat"><div class="cert-stat-num green" id="cs-ok">0</div><div class="cert-stat-lbl">Em dia</div></div>
+    </div>
+    <div style="margin-bottom:12px;">
+      <button class="btn" style="border-color:#b03a2e;color:#b03a2e;font-weight:600;" onclick="certNovaManual()">+ Nova Certidão</button>
+    </div>
+  <div id="cert-list"></div>
+  </div>
   </div>
 
   <div class="footer" id="footer-el">Dados salvos automaticamente</div>
