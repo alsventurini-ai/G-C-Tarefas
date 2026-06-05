@@ -294,6 +294,15 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
 .cert-processing.hidden{display:none;}
 .spin{display:inline-block;animation:spin 1s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
+/* ── Abas ── */
+.tab-bar{display:flex;background:var(--navy2);padding:0 30px;}
+.tab-btn{background:none;border:none;color:rgba(255,255,255,.6);padding:10px 20px;font-size:13.5px;font-family:'Segoe UI',Tahoma,sans-serif;cursor:pointer;border-bottom:3px solid transparent;transition:all .15s;display:flex;align-items:center;gap:6px;}
+.tab-btn:hover{color:rgba(255,255,255,.9);}
+.tab-btn.active{color:#fff;border-bottom-color:#e8b84b;font-weight:600;}
+.tab-badge{background:#b03a2e;color:#fff;border-radius:8px;padding:1px 6px;font-size:11px;}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+
 .cert-empty{text-align:center;color:var(--muted);font-size:13px;padding:20px 0;font-style:italic;opacity:.7;}
 
 /* Modal certidão */
@@ -329,6 +338,15 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
     <strong id="sync-txt">Conectando…</strong>
     <span id="backup-last-info" style="margin-left:auto;"></span>
   </div>
+
+  <!-- Abas -->
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tab-btn-tarefas" onclick="mudarAba('tarefas')">📋 Tarefas</button>
+    <button class="tab-btn" id="tab-btn-certidoes" onclick="mudarAba('certidoes')">📜 Certidões <span class="tab-badge" id="tab-cert-badge" style="display:none;">!</span></button>
+  </div>
+
+  <!-- Aba Tarefas -->
+  <div id="tab-tarefas" class="tab-content active">
 
   <!-- Templates -->
   <div class="template-bar" id="template-bar">
@@ -395,8 +413,6 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
   <div class="action-bar">
     <div style="display:inline-flex;align-items:center;gap:4px;background:#f5f0fa;border:1.5px solid #8e44ad;border-radius:3px;padding:3px 6px;">
       <button class="btn" style="border-color:#8e44ad;color:#8e44ad;background:transparent;font-weight:600;" onclick="abrirModalLicitacao()">🏛 Licitação</button>
-      <span style="color:#c9a8e8;font-size:14px;">|</span>
-      <button class="btn" style="border-color:#b03a2e;color:#b03a2e;background:transparent;font-weight:600;" onclick="toggleCertPanel()">📜 Certidões <span id="cnt-cert-warn" style="display:none;background:#b03a2e;color:#fff;border-radius:8px;padding:1px 6px;font-size:11px;margin-left:2px;">!</span></button>
     </div>
     <button class="btn btn-print" onclick="doPrint()">🖨 Relatório</button>
     <button class="btn btn-pq" onclick="doRelatorioPQ()">👤 Por Para Quem</button>
@@ -425,12 +441,14 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
     <div id="archive-list"></div>
   </div>
 
-  <div id="cert-panel" class="cert-panel" style="display:none;">
+  <!-- Aba Certidões -->
+  </div>
+  <div id="tab-certidoes" class="tab-content">
+  <div class="cert-panel">
     <div class="cert-panel-head">
       <span class="cert-panel-title">📜 Certidões &amp; Documentos</span>
       <div class="cert-panel-actions">
         <button class="btn" style="font-size:12px;padding:5px 11px;border-color:var(--green);color:var(--green);" onclick="certExportCSV()">📥 Exportar CSV</button>
-        <button class="btn" style="font-size:12px;padding:5px 11px;" onclick="toggleCertPanel()">Fechar ×</button>
       </div>
     </div>
     <div id="cert-stats-row" class="cert-stats-row" style="display:none;">
@@ -439,17 +457,11 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
       <div class="cert-stat"><div class="cert-stat-num amber" id="cs-warn">0</div><div class="cert-stat-lbl">≤25 dias</div></div>
       <div class="cert-stat"><div class="cert-stat-num green" id="cs-ok">0</div><div class="cert-stat-lbl">Em dia</div></div>
     </div>
-    <div id="cert-alert-bar" class="cert-alert-bar" style="display:none;"></div>
-    <div class="cert-upload-zone" onclick="document.getElementById('cert-file-input').click()">
-      <input type="file" id="cert-file-input" accept=".pdf" multiple style="display:none;" onchange="certHandleFiles(this.files)">
-      <p>📁 Clique para enviar PDFs de certidões</p>
-      <p class="small">A IA lê o documento e extrai as datas de emissão e vencimento automaticamente</p>
-    </div>
-    <div id="cert-processing" class="cert-processing hidden">
-      <span class="spin">⏳</span>
-      <span id="cert-proc-msg">Analisando certidão com IA…</span>
+    <div style="margin-bottom:12px;">
+      <button class="btn" style="border-color:#b03a2e;color:#b03a2e;font-weight:600;" onclick="certNovaManual()">+ Nova Certidão</button>
     </div>
     <div id="cert-list"></div>
+  </div>
   </div>
 
   <div class="filter-bar">
@@ -482,6 +494,7 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
       <span class="section-count green" id="cnt-d">0</span>
     </div>
     <div id="list-d"></div>
+  </div>
   </div>
   <div class="footer" id="footer-el">Dados salvos automaticamente</div>
 </div>
@@ -1599,18 +1612,58 @@ var _certEditIdx=-1;
 var _certAlertFiredKey='gc_cert_alert_fired';
 var _certAlertFired={};
 
+var CERT_DADOS_INICIAIS=[
+  // ── Jurídica / Societária ──
+  {id:1,nome:'Contrato Social',emissao:null,vencimento:null,municipio:'JUCESP',arquivo:'Contrato Social.pdf',tipo:'permanente',adicionado:'2026-06-05'},
+  {id:2,nome:'CPF/RG',emissao:null,vencimento:null,municipio:'SSP / Receita Federal',arquivo:'CPF RG.pdf',tipo:'permanente',adicionado:'2026-06-05'},
+  {id:3,nome:'JUCESP I',emissao:'2026-05-22',vencimento:null,municipio:'JUCESP',arquivo:'JUCESP I.pdf',tipo:'permanente',adicionado:'2026-06-05'},
+  {id:4,nome:'JUCESP II',emissao:'2026-05-22',vencimento:null,municipio:'JUCESP',arquivo:'JUCESP II.pdf',tipo:'permanente',adicionado:'2026-06-05'},
+  {id:5,nome:'JUCESP III',emissao:'2026-05-22',vencimento:null,municipio:'JUCESP',arquivo:'JUCESP III.pdf',tipo:'permanente',adicionado:'2026-06-05'},
+  {id:6,nome:'Opção Simples',emissao:'2026-05-22',vencimento:null,municipio:'Receita Federal',arquivo:'Opcao Simples.pdf',tipo:'licitacao',adicionado:'2026-06-05'},
+  // ── Fiscal Federal ──
+  {id:7,nome:'Cartão CNPJ',emissao:'2026-05-22',vencimento:null,municipio:'Receita Federal',arquivo:'Cartao CNPJ.pdf',tipo:'licitacao',adicionado:'2026-06-05'},
+  {id:8,nome:'CND Federal',emissao:'2026-04-16',vencimento:'2026-10-13',municipio:'RFB / PGFN',arquivo:'CND Federal.pdf',tipo:'validade',adicionado:'2026-06-05'},
+  {id:9,nome:'FGTS',emissao:'2026-05-26',vencimento:'2026-06-24',municipio:'Caixa Econômica Federal',arquivo:'FGTS.pdf',tipo:'validade',adicionado:'2026-06-05'},
+  // ── Fiscal Estadual ──
+  {id:10,nome:'Cad Estadual I',emissao:'2026-05-09',vencimento:null,municipio:'SEFAZ-SP / CADESP',arquivo:'Cad Estadual I.pdf',tipo:'licitacao',adicionado:'2026-06-05'},
+  {id:11,nome:'CND Estadual I',emissao:'2026-05-30',vencimento:'2026-06-29',municipio:'PGE-SP — Dívida Ativa',arquivo:'CND Estadual I.pdf',tipo:'validade',adicionado:'2026-06-05'},
+  {id:12,nome:'CND Estadual II',emissao:'2026-05-30',vencimento:'2026-11-30',municipio:'SEFAZ-SP — Tributária',arquivo:'CND Estadual II.pdf',tipo:'validade',adicionado:'2026-06-05'},
+  // ── Fiscal Municipal ──
+  {id:13,nome:'Cad Municipal I',emissao:'2026-05-09',vencimento:null,municipio:'Prefeitura de Bariri',arquivo:'Cad Municipal I.pdf',tipo:'licitacao',adicionado:'2026-06-05'},
+  {id:14,nome:'CND Municipal I',emissao:'2026-05-22',vencimento:'2026-06-21',municipio:'Prefeitura de Bariri — Mobiliário',arquivo:'CND Municipal I.pdf',tipo:'validade',adicionado:'2026-06-05'},
+  {id:15,nome:'CND Municipal II',emissao:'2026-05-22',vencimento:'2026-06-21',municipio:'Prefeitura de Bariri — Imobiliário',arquivo:'CND Municipal II.pdf',tipo:'validade',adicionado:'2026-06-05'},
+  // ── Judicial / Trabalhista ──
+  {id:16,nome:'CNDT',emissao:'2026-05-22',vencimento:'2026-11-18',municipio:'TST — Trabalhista',arquivo:'CNDT.pdf',tipo:'validade',adicionado:'2026-06-05'},
+  {id:17,nome:'Falencia I',emissao:'2026-05-22',vencimento:'2026-08-19',municipio:'TJSP — SAJ SGC',arquivo:'Falencia I.pdf',tipo:'validade',adicionado:'2026-06-05'},
+  {id:18,nome:'Falencia II',emissao:'2026-05-22',vencimento:'2026-08-19',municipio:'TJSP — eproc',arquivo:'Falencia II.pdf',tipo:'validade',adicionado:'2026-06-05'},
+  {id:19,nome:'Falencia III',emissao:'2026-05-22',vencimento:'2026-08-19',municipio:'TJSP — Criminal',arquivo:'Falencia III.pdf',tipo:'validade',adicionado:'2026-06-05'},
+  // ── TCE / Alvará ──
+  {id:20,nome:'TCE',emissao:'2026-05-22',vencimento:null,municipio:'TCE-SP',arquivo:'TCE.pdf',tipo:'licitacao',adicionado:'2026-06-05'},
+  {id:21,nome:'Alvará I',emissao:'2025-08-27',vencimento:'2026-08-27',municipio:'JUCESP / Prefeitura Bariri',arquivo:'Alvara I.pdf',tipo:'validade',adicionado:'2026-06-05'},
+  {id:22,nome:'Alvará II',emissao:'2025-10-08',vencimento:'2026-10-28',municipio:'Vigilância Sanitária Bariri',arquivo:'Alvara II.pdf',tipo:'validade',adicionado:'2026-06-05'},
+  {id:23,nome:'CNES',emissao:'2026-05-22',vencimento:null,municipio:'CNES / Ministério da Saúde',arquivo:'CNES.pdf',tipo:'licitacao',adicionado:'2026-06-05'},
+  // ── CROs ──
+  {id:24,nome:'CRO Laboratorio',emissao:'2026-05-14',vencimento:'2027-03-31',municipio:'CRO-SP — Empresa 001197',arquivo:'CRO Laboratorio.pdf',tipo:'validade',adicionado:'2026-06-05'},
+  {id:25,nome:'CRO Dentista Protesista',emissao:'2026-05-16',vencimento:'2027-03-31',municipio:'CRO-SP — Lilian 8894',arquivo:'CRO Dentista Protesista.pdf',tipo:'validade',adicionado:'2026-06-05'},
+  {id:26,nome:'CRO Dentista',emissao:'2026-05-11',vencimento:'2027-03-31',municipio:'CRO-SP — Amanda 125470',arquivo:'CRO Dentista.pdf',tipo:'validade',adicionado:'2026-06-05'},
+  {id:27,nome:'CRO Protetica',emissao:'2026-05-14',vencimento:'2027-03-31',municipio:'CRO-SP — Amanda especialização',arquivo:'CRO Protetica.pdf',tipo:'validade',adicionado:'2026-06-05'},
+  // ── Gerenciamento ──
+  {id:28,nome:'Gerenciamento e outros',emissao:'2025-08-04',vencimento:'2026-08-04',municipio:'Medeiros Assessoria — LTCAT/PCMSO',arquivo:'Gerenciamento e outros.pdf',tipo:'validade',adicionado:'2026-06-05'}
+];
+
 function certLoad(){
   // Migra dados da versão anterior se existirem
   var dadosAntigos=localStorage.getItem('gc_certidoes_v1');
   if(dadosAntigos&&!localStorage.getItem(CERT_KEY)){
     try{
       var antigos=JSON.parse(dadosAntigos);
-      antigos=antigos.map(function(c){
-        if(!c.tipo) c.tipo='mensal';
-        return c;
-      });
+      antigos=antigos.map(function(c){if(!c.tipo)c.tipo='mensal';return c;});
       localStorage.setItem(CERT_KEY,JSON.stringify(antigos));
     }catch(e){}
+  }
+  // Se ainda vazio, carrega dados iniciais
+  if(!localStorage.getItem(CERT_KEY)){
+    localStorage.setItem(CERT_KEY,JSON.stringify(CERT_DADOS_INICIAIS));
   }
   try{certidoes=JSON.parse(localStorage.getItem(CERT_KEY)||'[]');}catch(e){certidoes=[];}
   try{_certAlertFired=JSON.parse(localStorage.getItem(_certAlertFiredKey)||'{}');}catch(e){_certAlertFired={};}
@@ -1751,6 +1804,12 @@ function certFmtDate(d){
 function certEsc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 // ── Verificação de alertas às 08h e 16h ──
+function certPrimeiroDiaUtilDoMes(ano, mes){
+  // Retorna a data do primeiro dia útil do mês (seg-sex)
+  var d=new Date(ano, mes, 1);
+  while(d.getDay()===0||d.getDay()===6) d.setDate(d.getDate()+1);
+  return d.toISOString().slice(0,10);
+}
 function certVerificarAlertas(){
   if(Notification.permission!=='granted') return;
   var agora=new Date();
@@ -1778,8 +1837,34 @@ function certVerificarAlertas(){
 }
 setInterval(certVerificarAlertas,60000);
 
+function certPrimeiroDiaUtil(){
+  var hoje=new Date();
+  var ano=hoje.getFullYear(),mes=hoje.getMonth();
+  var d=new Date(ano,mes,1);
+  while(d.getDay()===0||d.getDay()===6) d.setDate(d.getDate()+1);
+  return d.toISOString().slice(0,10);
+}
+function certVerificarAlertaMensal(){
+  if(Notification.permission!=='granted') return;
+  var agora=new Date();
+  var hora=agora.getHours(),minuto=agora.getMinutes();
+  var naJanela=(hora===8&&minuto<=5)||(hora===16&&minuto<=5);
+  if(!naJanela) return;
+  var hoje=agora.toISOString().slice(0,10);
+  if(hoje!==certPrimeiroDiaUtil()) return;
+  var turno=hora===8?'manha':'tarde';
+  var key='cert_mensal_'+hoje+'_'+turno;
+  if(_certAlertFired[key]) return;
+  _certAlertFired[key]=true;
+  certSaveAlertFired();
+  new Notification('📜 Certidões — G&C',{body:'Primeiro dia útil do mês — verificar e renovar certidões.',requireInteraction:true});
+  mostrarToast('📜 Primeiro dia útil do mês — verificar e renovar certidões.',false);
+}
+setInterval(certVerificarAlertaMensal,60000);
+
 function certAtualizarBadge(){
-  var badge=document.getElementById('cnt-cert-warn');
+  var badge=document.getElementById('tab-cert-badge');
+  if(!badge) return;
   var alertas=certidoes.filter(function(c){var s=certGetStatus(c);return s==='expired'||s==='warning';});
   if(alertas.length>0){badge.textContent=alertas.length;badge.style.display='inline';}
   else{badge.style.display='none';}
@@ -1787,7 +1872,6 @@ function certAtualizarBadge(){
 function certRender(){
   var list=document.getElementById('cert-list');
   var statsRow=document.getElementById('cert-stats-row');
-  var alertBar=document.getElementById('cert-alert-bar');
   if(certidoes.length===0){
     list.innerHTML='<div class="cert-empty">Nenhuma certidão cadastrada. Envie PDFs acima.</div>';
     statsRow.style.display='none';alertBar.style.display='none';
@@ -1806,18 +1890,7 @@ function certRender(){
   document.getElementById('cs-exp').textContent=exp;
   document.getElementById('cs-warn').textContent=warn;
   document.getElementById('cs-ok').textContent=ok;
-  var alertas=certidoes.filter(function(c){var s=certGetStatus(c);return s==='expired'||s==='warning';});
-  if(alertas.length>0){
-    alertBar.style.display='';
-    alertBar.innerHTML='⚠️ <strong>Atenção:</strong> '+alertas.map(function(c){
-      var d=certDaysLeft(c);
-      var alerta=certProximaRenovacao(c);
-      var today=new Date().toISOString().slice(0,10);
-      if(d!==null&&d<0) return certEsc(c.nome)+' — <strong>VENCIDA há '+Math.abs(d)+'d</strong>';
-      if(alerta&&alerta<=today) return certEsc(c.nome)+' — renovar (alerta 5 dias úteis)';
-      return certEsc(c.nome);
-    }).join(' &nbsp;|&nbsp; ');
-  } else {alertBar.style.display='none';}
+
 
   var TIPO_LABEL={permanente:'Permanente',mensal:'Mensal',licitacao:'Por licitação',validade:'Validade fixa'};
   var sorted=certidoes.slice().sort(function(a,b){
@@ -1870,6 +1943,15 @@ function certRender(){
 function certRemove(idx){
   if(confirm('Remover esta certidão?')){certidoes.splice(idx,1);certSave();certRender();}
 }
+function certNovaManual(){
+  _certEditIdx=-1;
+  document.getElementById('ce-nome').value='';
+  document.getElementById('ce-emissao').value='';
+  document.getElementById('ce-venc').value='';
+  document.getElementById('ce-municipio').value='';
+  document.getElementById('ce-tipo').value='validade';
+  document.getElementById('cert-edit-modal').style.display='flex';
+}
 function certOpenEdit(idx){
   _certEditIdx=idx;
   var c=certidoes[idx];
@@ -1882,12 +1964,26 @@ function certOpenEdit(idx){
 }
 function certCloseModal(){document.getElementById('cert-edit-modal').style.display='none';}
 function certSaveEdit(){
-  if(_certEditIdx<0) return;
-  certidoes[_certEditIdx].nome=document.getElementById('ce-nome').value;
-  certidoes[_certEditIdx].emissao=document.getElementById('ce-emissao').value||null;
-  certidoes[_certEditIdx].vencimento=document.getElementById('ce-venc').value||null;
-  certidoes[_certEditIdx].municipio=document.getElementById('ce-municipio').value;
-  certidoes[_certEditIdx].tipo=document.getElementById('ce-tipo').value;
+  var nome=document.getElementById('ce-nome').value.trim();
+  if(!nome){alert('Informe o nome da certidão.');return;}
+  if(_certEditIdx<0){
+    certidoes.push({
+      id:Date.now()+Math.random(),
+      nome:nome,
+      emissao:document.getElementById('ce-emissao').value||null,
+      vencimento:document.getElementById('ce-venc').value||null,
+      municipio:document.getElementById('ce-municipio').value,
+      arquivo:'',
+      tipo:document.getElementById('ce-tipo').value,
+      adicionado:new Date().toISOString()
+    });
+  } else {
+    certidoes[_certEditIdx].nome=nome;
+    certidoes[_certEditIdx].emissao=document.getElementById('ce-emissao').value||null;
+    certidoes[_certEditIdx].vencimento=document.getElementById('ce-venc').value||null;
+    certidoes[_certEditIdx].municipio=document.getElementById('ce-municipio').value;
+    certidoes[_certEditIdx].tipo=document.getElementById('ce-tipo').value;
+  }
   certSave();certRender();certCloseModal();
 }
 function certExportCSV(){
@@ -1904,6 +2000,13 @@ function certExportCSV(){
   a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
   a.download='certidoes_gc_'+new Date().toISOString().slice(0,10)+'.csv';
   a.click();
+}
+function mudarAba(aba){
+  document.getElementById('tab-tarefas').classList.toggle('active', aba==='tarefas');
+  document.getElementById('tab-certidoes').classList.toggle('active', aba==='certidoes');
+  document.getElementById('tab-btn-tarefas').classList.toggle('active', aba==='tarefas');
+  document.getElementById('tab-btn-certidoes').classList.toggle('active', aba==='certidoes');
+  if(aba==='certidoes') certRender();
 }
 certLoad();
 </script>
