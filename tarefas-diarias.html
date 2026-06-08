@@ -2047,8 +2047,7 @@ function certImportarCSV(input){
   if(!file){return;}
   var reader=new FileReader();
   reader.onload=function(e){
-    var lines=e.target.result.split('
-');
+    var lines=e.target.result.split('\n');
     var atualizados=0;
     lines.slice(1).forEach(function(line){
       if(!line.trim()) return;
