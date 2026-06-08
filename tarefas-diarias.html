@@ -339,7 +339,7 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
     <span>☁️ Firebase:</span>
     <strong id="sync-txt">Conectando…</strong>
     <span id="backup-last-info"></span>
-    <button onclick="carregarDoFirebase()" style="margin-left:auto;background:#2c5364;border:1px solid #4a8fa8;color:#8ecae6;border-radius:3px;padding:3px 10px;font-size:12px;cursor:pointer;">🔄 Reconectar</button>
+    <button onclick="carregarDoFirebase(true)" style="margin-left:auto;background:#2c5364;border:1px solid #4a8fa8;color:#8ecae6;border-radius:3px;padding:3px 10px;font-size:12px;cursor:pointer;">🔄 Reconectar</button>
   </div>
 
   <!-- Abas -->
@@ -894,16 +894,17 @@ function mostrarStatusSync(ok){
   var el=document.getElementById('sync-txt');
   if(el)el.textContent=ok?'Sincronizado ✅':'Sem sincronização ⚠️';
 }
-function carregarDoFirebase(){
+var _fbForceLoad=false;
+function carregarDoFirebase(force){
   if(!window._fbLoad)return;
-  // Verifica localStorage diretamente para evitar race condition
   var localRaw=localStorage.getItem(KEY);
   var localTasks=localRaw?JSON.parse(localRaw):[];
   window._fbLoad().then(function(data){
     if(!data){mostrarStatusSync(false);return;}
     var fbTasks=data.tasks||[];
-    if(localTasks.length===0&&fbTasks.length>0){
-      // Local vazio — carrega do Firebase (Android/novo dispositivo)
+    // Carrega do Firebase se: local vazio OU force=true (botão Reconectar)
+    if((localTasks.length===0||force||_fbForceLoad)&&fbTasks.length>0){
+      _fbForceLoad=false;
       tasks=fbTasks;recorrencias=data.recorrencias||[];
       archived=data.archived||[];templates=data.templates||[];
       if(data.certidoes) localStorage.setItem('gc_certidoes_v2',data.certidoes);
@@ -912,8 +913,8 @@ function carregarDoFirebase(){
       localStorage.setItem(ARCH_KEY,JSON.stringify(archived));
       localStorage.setItem(TPL_KEY,JSON.stringify(templates));
       processarRecorrencias();render();renderRecorrencias();renderTemplates();
-    } else if(localTasks.length>0){
-      // Local tem dados — salva no Firebase
+      certLoad();
+    } else if(localTasks.length>0&&!force){
       if(window._fbSave) window._fbSave(tasks,recorrencias,archived,templates);
     }
     mostrarStatusSync(true);
