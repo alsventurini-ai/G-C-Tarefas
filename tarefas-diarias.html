@@ -419,6 +419,7 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
     <button class="btn btn-print" onclick="doPrint()">🖨 Relatório</button>
     <button class="btn btn-pq" onclick="doRelatorioPQ()">👤 Por Para Quem</button>
     <button class="btn btn-backup" onclick="fazerBackupManual()">💾 Backup</button>
+    <button class="btn" style="border-color:#1a6b3a;color:#1a6b3a;font-weight:600;" onclick="backupGeral()">💾 Backup Geral</button>
     <label class="btn btn-restore">📂 Restaurar<input type="file" id="restore-input" accept=".json" style="display:none" onchange="restaurarBackup(this)"></label>
     <button class="btn btn-recorr" onclick="toggleRecorrPanel()">🔁 Repetições <span id="cnt-recorr" style="background:var(--green);color:#fff;border-radius:8px;padding:1px 6px;font-size:11px;margin-left:2px;">0</span></button>
     <button class="btn btn-archive" onclick="toggleArchivePanel()">🗂 Arquivo</button>
@@ -1403,6 +1404,23 @@ function limparFiltros(){
 
 // ── Backup ──
 function gerarConteudoBackup(){return JSON.stringify({versao:'gc_tarefas_v3',data:new Date().toLocaleString('pt-BR'),dia:todayStr,tarefas:tasks.filter(function(t){return!t._futuro;}),recorrencias:recorrencias,archived:archived,templates:templates},null,2);}
+function backupGeral(){
+  var dados={
+    versao:'gc_backup_geral_v1',
+    data:new Date().toISOString(),
+    tarefas:tasks,
+    recorrencias:recorrencias,
+    archived:archived,
+    templates:templates,
+    certidoes:certidoes
+  };
+  var blob=new Blob([JSON.stringify(dados,null,2)],{type:'application/json'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='gc_backup_geral_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+  mostrarToast('✅ Backup Geral salvo!',true);
+}
 function fazerBackupManual(){
   var blob=new Blob([gerarConteudoBackup()],{type:'application/json'});
   var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;
