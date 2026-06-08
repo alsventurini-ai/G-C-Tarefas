@@ -339,7 +339,7 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
     <span>☁️ Firebase:</span>
     <strong id="sync-txt">Conectando…</strong>
     <span id="backup-last-info"></span>
-    <button onclick="carregarDoFirebase(true)" style="margin-left:auto;background:#2c5364;border:1px solid #4a8fa8;color:#8ecae6;border-radius:3px;padding:3px 10px;font-size:12px;cursor:pointer;">🔄 Reconectar</button>
+    <button onclick="reconectarForcar()" style="margin-left:auto;background:#2c5364;border:1px solid #4a8fa8;color:#8ecae6;border-radius:3px;padding:3px 10px;font-size:12px;cursor:pointer;">🔄 Reconectar</button>
   </div>
 
   <!-- Abas -->
@@ -895,6 +895,16 @@ function mostrarStatusSync(ok){
   if(el)el.textContent=ok?'Sincronizado ✅':'Sem sincronização ⚠️';
 }
 var _fbForceLoad=false;
+function reconectarForcar(){
+  var el=document.getElementById('sync-txt');
+  if(el) el.textContent='Buscando…';
+  if(!window._fbLoad){
+    if(el) el.textContent='Firebase não carregou ⚠️';
+    mostrarToast('Firebase não inicializou. Recarregue a página.',false);
+    return;
+  }
+  carregarDoFirebase(true);
+}
 function carregarDoFirebase(force){
   if(!window._fbLoad)return;
   var localRaw=localStorage.getItem(KEY);
@@ -1762,6 +1772,7 @@ function certProcessFile(file){
   }).catch(function(){
     certidoes.push({id:Date.now()+Math.random(),nome:file.name.replace(/\.pdf$/i,''),emissao:null,vencimento:null,municipio:'',arquivo:file.name,tipo:'mensal',adicionado:new Date().toISOString()});
     certSave();certRender();
+    if(window._fbSave) window._fbSave(tasks,recorrencias,archived,templates);
     mostrarToast('⚠️ Não foi possível extrair datas de "'+file.name+'". Edite manualmente.',false);
   }).finally(function(){
     proc.classList.add('hidden');
@@ -2049,6 +2060,8 @@ function certSaveEdit(){
     certidoes[_certEditIdx].tipo=document.getElementById('ce-tipo').value;
   }
   certSave();certRender();certCloseModal();
+  // Sincroniza certidões no Firebase automaticamente
+  if(window._fbSave) window._fbSave(tasks,recorrencias,archived,templates);
 }
 function certBaixarModelo(){
   var rows=[['ID','Nome','Municipio/Orgao','Tipo','Emissao Atual','Vencimento Atual','NOVA Emissao','NOVO Vencimento']];
