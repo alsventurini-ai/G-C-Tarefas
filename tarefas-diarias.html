@@ -919,7 +919,7 @@ function load(){
   var lastDate=localStorage.getItem(DATE_KEY)||'';
   if(lastDate&&lastDate!==todayStr&&tasks.length>0){mostrarModalNovoDia(lastDate);}
   else{localStorage.setItem(DATE_KEY,todayStr);}
-
+  processarRecorrencias();render();renderRecorrencias();renderTemplates();atualizarStatusNotif();verificarAlertas();
 }
 function mostrarModalNovoDia(lastDate){
   var fmt=fmtDate(lastDate);
