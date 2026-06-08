@@ -914,6 +914,7 @@ function carregarDoFirebase(force){
       localStorage.setItem(TPL_KEY,JSON.stringify(templates));
       processarRecorrencias();render();renderRecorrencias();renderTemplates();
       certLoad();
+      mudarAba('tarefas');
     } else if(localTasks.length>0&&!force){
       if(window._fbSave) window._fbSave(tasks,recorrencias,archived,templates);
     }
