@@ -691,12 +691,23 @@ const app=initializeApp(cfg);
 const db=getFirestore(app);
 const REF=doc(db,"gc-tarefas","dados");
 async function fbSave(t,r,a,tp){
-  try{await setDoc(REF,{tasks:JSON.stringify(t),recorrencias:JSON.stringify(r),archived:JSON.stringify(a||[]),templates:JSON.stringify(tp||[]),updatedAt:new Date().toISOString()});}
+  try{
+    var cert=localStorage.getItem('gc_certidoes_v2')||'[]';
+    await setDoc(REF,{tasks:JSON.stringify(t),recorrencias:JSON.stringify(r),archived:JSON.stringify(a||[]),templates:JSON.stringify(tp||[]),certidoes:cert,updatedAt:new Date().toISOString()});
+  }
   catch(e){console.warn("Firebase save:",e);}
 }
 async function fbLoad(){
-  try{var s=await getDoc(REF);if(s.exists()){var d=s.data();return{tasks:d.tasks?JSON.parse(d.tasks):[],recorrencias:d.recorrencias?JSON.parse(d.recorrencias):[],archived:d.archived?JSON.parse(d.archived):[],templates:d.templates?JSON.parse(d.templates):[]};}}
-  catch(e){console.warn("Firebase load:",e);}return null;
+  try{
+    var s=await getDoc(REF);
+    if(s.exists()){
+      var d=s.data();
+      if(d.certidoes){localStorage.setItem('gc_certidoes_v2',d.certidoes);}
+      return{tasks:d.tasks?JSON.parse(d.tasks):[],recorrencias:d.recorrencias?JSON.parse(d.recorrencias):[],archived:d.archived?JSON.parse(d.archived):[],templates:d.templates?JSON.parse(d.templates):[]};
+    }
+  }
+  catch(e){console.warn("Firebase load:",e);}
+  return null;
 }
 window._fbSave=fbSave;window._fbLoad=fbLoad;window._fbReady=true;
 document.dispatchEvent(new Event('firebase-ready'));
@@ -878,8 +889,8 @@ function mostrarStatusSync(ok){
 function carregarDoFirebase(){
   if(!window._fbLoad)return;
   window._fbLoad().then(function(data){
-    if(!data||!data.tasks||data.tasks.length===0){mostrarStatusSync(true);return;}
-    tasks=data.tasks;recorrencias=data.recorrencias||[];
+    if(!data){mostrarStatusSync(true);return;}
+    tasks=data.tasks||[];recorrencias=data.recorrencias||[];
     archived=data.archived||[];templates=data.templates||[];
     localStorage.setItem(KEY,JSON.stringify(tasks));
     localStorage.setItem(RECORR_KEY,JSON.stringify(recorrencias));
