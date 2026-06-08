@@ -893,8 +893,8 @@ function carregarDoFirebase(){
     if(!data){mostrarStatusSync(false);return;}
     var fbTasks=data.tasks||[];
     var localTasks=tasks||[];
-    // Só sobrescreve se Firebase tiver dados E mais tarefas que local
-    if(fbTasks.length>0&&fbTasks.length>=localTasks.length){
+    if(localTasks.length===0&&fbTasks.length>0){
+      // Local vazio (Android/novo dispositivo) — carrega do Firebase
       tasks=fbTasks;
       recorrencias=data.recorrencias||[];
       archived=data.archived||[];
@@ -905,7 +905,7 @@ function carregarDoFirebase(){
       localStorage.setItem(TPL_KEY,JSON.stringify(templates));
       processarRecorrencias();render();renderRecorrencias();renderTemplates();
     } else if(localTasks.length>0){
-      // Local tem mais dados — salva local no Firebase
+      // Local tem dados — salva no Firebase para sincronizar
       if(window._fbSave) window._fbSave(tasks,recorrencias,archived,templates);
     }
     mostrarStatusSync(true);
