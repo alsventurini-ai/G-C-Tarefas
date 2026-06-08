@@ -890,14 +890,24 @@ function mostrarStatusSync(ok){
 function carregarDoFirebase(){
   if(!window._fbLoad)return;
   window._fbLoad().then(function(data){
-    if(!data){mostrarStatusSync(true);return;}
-    tasks=data.tasks||[];recorrencias=data.recorrencias||[];
-    archived=data.archived||[];templates=data.templates||[];
-    localStorage.setItem(KEY,JSON.stringify(tasks));
-    localStorage.setItem(RECORR_KEY,JSON.stringify(recorrencias));
-    localStorage.setItem(ARCH_KEY,JSON.stringify(archived));
-    localStorage.setItem(TPL_KEY,JSON.stringify(templates));
-    processarRecorrencias();render();renderRecorrencias();renderTemplates();
+    if(!data){mostrarStatusSync(false);return;}
+    var fbTasks=data.tasks||[];
+    var localTasks=tasks||[];
+    // Só sobrescreve se Firebase tiver dados E mais tarefas que local
+    if(fbTasks.length>0&&fbTasks.length>=localTasks.length){
+      tasks=fbTasks;
+      recorrencias=data.recorrencias||[];
+      archived=data.archived||[];
+      templates=data.templates||[];
+      localStorage.setItem(KEY,JSON.stringify(tasks));
+      localStorage.setItem(RECORR_KEY,JSON.stringify(recorrencias));
+      localStorage.setItem(ARCH_KEY,JSON.stringify(archived));
+      localStorage.setItem(TPL_KEY,JSON.stringify(templates));
+      processarRecorrencias();render();renderRecorrencias();renderTemplates();
+    } else if(localTasks.length>0){
+      // Local tem mais dados — salva local no Firebase
+      if(window._fbSave) window._fbSave(tasks,recorrencias,archived,templates);
+    }
     mostrarStatusSync(true);
   }).catch(function(){mostrarStatusSync(false);});
 }
