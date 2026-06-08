@@ -2048,9 +2048,11 @@ function certImportarCSV(input){
   reader.onload=function(e){
     var lines=e.target.result.split('\n');
     var atualizados=0;
+    // Detecta separador (vírgula ou ponto e vírgula)
+    var sep=lines[0]&&lines[0].indexOf(';')>=0?';':',';
     lines.slice(1).forEach(function(line){
       if(!line.trim()) return;
-      var cols=line.split(',').map(function(c){return c.replace(/^"|"$/g,'').replace(/""/g,'"').trim();});
+      var cols=line.split(sep).map(function(c){return c.replace(/^"|"$/g,'').replace(/""/g,'"').trim();});
       var id=cols[0],novaEmissao=cols[6],novoVenc=cols[7];
       if(!id||(!novaEmissao&&!novoVenc)) return;
       // Converte dd/mm/aaaa para yyyy-mm-dd
