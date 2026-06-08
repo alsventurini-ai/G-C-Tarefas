@@ -490,6 +490,8 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
   <div class="action-bar" style="justify-content:space-between;">
     <span style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.3px;color:var(--muted);font-weight:600;">📜 Certidões &amp; Documentos</span>
     <button class="btn" style="font-size:12px;padding:5px 11px;border-color:var(--green);color:var(--green);" onclick="certExportCSV()">📥 Exportar CSV</button>
+      <button class="btn" style="font-size:12px;padding:5px 11px;border-color:#1a6b8a;color:#1a6b8a;" onclick="certBaixarModelo()">📋 Baixar Modelo</button>
+      <label class="btn" style="font-size:12px;padding:5px 11px;border-color:#6c3483;color:#6c3483;cursor:pointer;">📤 Importar CSV<input type="file" accept=".csv" style="display:none;" onchange="certImportarCSV(this)"></label>
   </div>
   <div id="cert-stats-row" class="cert-stats-row" style="display:flex;gap:10px;margin:0 30px 14px;flex-wrap:wrap;">
     <div class="cert-stat"><div class="cert-stat-num" id="cs-total">0</div><div class="cert-stat-lbl">Total</div></div>
@@ -2026,6 +2028,51 @@ function certSaveEdit(){
     certidoes[_certEditIdx].tipo=document.getElementById('ce-tipo').value;
   }
   certSave();certRender();certCloseModal();
+}
+function certBaixarModelo(){
+  var rows=[['ID','Nome','Municipio/Orgao','Tipo','Emissao Atual','Vencimento Atual','NOVA Emissao','NOVO Vencimento']];
+  certidoes.forEach(function(c){
+    rows.push([c.id,c.nome,c.municipio||'',c.tipo||'',certFmtDate(c.emissao),certFmtDate(c.vencimento),'','']);
+  });
+  var csv=rows.map(function(r){return r.map(function(v){return'"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('
+');
+  var a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,﻿'+encodeURIComponent(csv);
+  a.download='certidoes_modelo_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+function certImportarCSV(input){
+  var file=input.files[0];
+  if(!file){return;}
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var lines=e.target.result.split('
+');
+    var atualizados=0;
+    lines.slice(1).forEach(function(line){
+      if(!line.trim()) return;
+      var cols=line.split(',').map(function(c){return c.replace(/^"|"$/g,'').replace(/""/g,'"').trim();});
+      var id=cols[0],novaEmissao=cols[6],novoVenc=cols[7];
+      if(!id||(!novaEmissao&&!novoVenc)) return;
+      // Converte dd/mm/aaaa para yyyy-mm-dd
+      function conv(d){
+        if(!d||d==='—') return null;
+        var p=d.split('/');
+        if(p.length===3) return p[2]+'-'+p[1]+'-'+p[0];
+        return d;
+      }
+      var idx=certidoes.findIndex(function(c){return String(c.id)===String(id);});
+      if(idx>=0){
+        if(novaEmissao) certidoes[idx].emissao=conv(novaEmissao);
+        if(novoVenc) certidoes[idx].vencimento=conv(novoVenc);
+        atualizados++;
+      }
+    });
+    certSave();certRender();
+    mostrarToast('✅ '+atualizados+' certidão(ões) atualizada(s)!',true);
+    input.value='';
+  };
+  reader.readAsText(file,'UTF-8');
 }
 function certExportCSV(){
   if(certidoes.length===0){alert('Nenhuma certidão para exportar.');return;}
