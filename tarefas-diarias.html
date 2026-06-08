@@ -888,11 +888,14 @@ function mostrarStatusSync(ok){
 }
 function carregarDoFirebase(){
   if(!window._fbLoad)return;
+  // Verifica localStorage diretamente para evitar race condition
+  var localRaw=localStorage.getItem(KEY);
+  var localTasks=localRaw?JSON.parse(localRaw):[];
   window._fbLoad().then(function(data){
     if(!data){mostrarStatusSync(false);return;}
     var fbTasks=data.tasks||[];
-    // Só carrega do Firebase se local estiver vazio (novo dispositivo/Android)
-    if(tasks.length===0&&fbTasks.length>0){
+    if(localTasks.length===0&&fbTasks.length>0){
+      // Local vazio — carrega do Firebase (Android/novo dispositivo)
       tasks=fbTasks;recorrencias=data.recorrencias||[];
       archived=data.archived||[];templates=data.templates||[];
       if(data.certidoes) localStorage.setItem('gc_certidoes_v2',data.certidoes);
@@ -901,8 +904,8 @@ function carregarDoFirebase(){
       localStorage.setItem(ARCH_KEY,JSON.stringify(archived));
       localStorage.setItem(TPL_KEY,JSON.stringify(templates));
       processarRecorrencias();render();renderRecorrencias();renderTemplates();
-    } else if(tasks.length>0){
-      // Local tem dados — salva no Firebase para manter sincronizado
+    } else if(localTasks.length>0){
+      // Local tem dados — salva no Firebase
       if(window._fbSave) window._fbSave(tasks,recorrencias,archived,templates);
     }
     mostrarStatusSync(true);
@@ -2097,16 +2100,14 @@ certLoad();
 document.getElementById('task-input').addEventListener('keydown',function(e){if(e.key==='Enter')addTask();});
 load();
 if('Notification' in window&&Notification.permission==='default'){setTimeout(function(){pedirPermissao();},1500);}
-// Firebase retry after load() so localStorage is populated first
-document.addEventListener('firebase-ready', function(){ setTimeout(carregarDoFirebase, 500); });
-var _fbRetryCount=0;
-var _fbRetry=setInterval(function(){
-  _fbRetryCount++;
-  var txt=document.getElementById('sync-txt');
-  if(txt&&txt.textContent.indexOf('Sincronizado')>=0){clearInterval(_fbRetry);return;}
-  if(window._fbLoad){carregarDoFirebase();}
-  if(_fbRetryCount>=15){clearInterval(_fbRetry);}
-},2000);
+// Firebase: carrega automaticamente apenas se localStorage vazio
+setTimeout(function(){
+  if(tasks.length===0&&window._fbLoad){
+    carregarDoFirebase();
+  } else {
+    mostrarStatusSync(true);
+  }
+},3000);
 </script>
 </body>
 </html>
