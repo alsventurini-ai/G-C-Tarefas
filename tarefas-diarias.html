@@ -908,10 +908,22 @@ function load(){
   var lastDate=localStorage.getItem(DATE_KEY)||'';
   if(lastDate&&lastDate!==todayStr&&tasks.length>0){mostrarModalNovoDia(lastDate);}
   else{localStorage.setItem(DATE_KEY,todayStr);}
+  document.addEventListener('firebase-ready', carregarDoFirebase);
   setTimeout(function(){
     if(window._fbLoad){carregarDoFirebase();}
-    else{document.addEventListener('firebase-ready',carregarDoFirebase);}
-  },3000);
+  },2000);
+  setTimeout(function(){
+    var txt=document.getElementById('sync-txt');
+    if(txt&&txt.textContent.indexOf('Sincronizado')===-1){
+      if(window._fbLoad){carregarDoFirebase();}
+    }
+  },5000);
+  setTimeout(function(){
+    var txt=document.getElementById('sync-txt');
+    if(txt&&txt.textContent.indexOf('Sincronizado')===-1){
+      if(window._fbLoad){carregarDoFirebase();}
+    }
+  },10000);
 }
 function mostrarModalNovoDia(lastDate){
   var fmt=fmtDate(lastDate);
