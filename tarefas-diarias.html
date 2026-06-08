@@ -2053,19 +2053,24 @@ function certImportarCSV(input){
     lines.slice(1).forEach(function(line){
       if(!line.trim()) return;
       var cols=line.split(sep).map(function(c){return c.replace(/^"|"$/g,'').replace(/""/g,'"').trim();});
-      var id=cols[0],novaEmissao=cols[6],novoVenc=cols[7];
-      if(!id||(!novaEmissao&&!novoVenc)) return;
+      var nome=cols[1],novaEmissao=cols[6],novoVenc=cols[7];
+      if(!nome||(!novaEmissao&&!novoVenc)) return;
       // Converte dd/mm/aaaa para yyyy-mm-dd
       function conv(d){
-        if(!d||d==='—') return null;
+        if(!d||d==='—'||d==='-') return null;
+        d=d.trim();
         var p=d.split('/');
         if(p.length===3) return p[2]+'-'+p[1]+'-'+p[0];
-        return d;
+        return d||null;
       }
-      var idx=certidoes.findIndex(function(c){return String(c.id)===String(id);});
+      var eNew=conv(novaEmissao),vNew=conv(novoVenc);
+      if(!eNew&&!vNew) return;
+      var idx=certidoes.findIndex(function(c){
+        return c.nome&&c.nome.toLowerCase()===nome.toLowerCase();
+      });
       if(idx>=0){
-        if(novaEmissao) certidoes[idx].emissao=conv(novaEmissao);
-        if(novoVenc) certidoes[idx].vencimento=conv(novoVenc);
+        if(eNew) certidoes[idx].emissao=eNew;
+        if(vNew) certidoes[idx].vencimento=vNew;
         atualizados++;
       }
     });
