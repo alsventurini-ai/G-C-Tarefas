@@ -682,25 +682,25 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
   </div>
 </div>
 
-<!-- Firebase -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+<!-- Firebase compat (works on all browsers/Android) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
 const cfg={apiKey:"AIzaSyB5XSJfgy7TNpfzdFuNCiTtSwTNBZZ6pzg",authDomain:"gc-lab-171c5.firebaseapp.com",projectId:"gc-lab-171c5",storageBucket:"gc-lab-171c5.firebasestorage.app",messagingSenderId:"653904508130",appId:"1:653904508130:web:9f40c0c82ae184703e9abb"};
-const app=initializeApp(cfg);
-const db=getFirestore(app);
-const REF=doc(db,"gc-tarefas","dados");
+firebase.initializeApp(cfg);
+const db=firebase.firestore();
+const REF=db.collection("gc-tarefas").doc("dados");
 async function fbSave(t,r,a,tp){
   try{
     var cert=localStorage.getItem('gc_certidoes_v2')||'[]';
-    await setDoc(REF,{tasks:JSON.stringify(t),recorrencias:JSON.stringify(r),archived:JSON.stringify(a||[]),templates:JSON.stringify(tp||[]),certidoes:cert,updatedAt:new Date().toISOString()});
+    await REF.set({tasks:JSON.stringify(t),recorrencias:JSON.stringify(r),archived:JSON.stringify(a||[]),templates:JSON.stringify(tp||[]),certidoes:cert,updatedAt:new Date().toISOString()});
   }
   catch(e){console.warn("Firebase save:",e);}
 }
 async function fbLoad(){
   try{
-    var s=await getDoc(REF);
-    if(s.exists()){
+    var s=await REF.get();
+    if(s.exists){
       var d=s.data();
       if(d.certidoes){localStorage.setItem('gc_certidoes_v2',d.certidoes);}
       return{tasks:d.tasks?JSON.parse(d.tasks):[],recorrencias:d.recorrencias?JSON.parse(d.recorrencias):[],archived:d.archived?JSON.parse(d.archived):[],templates:d.templates?JSON.parse(d.templates):[]};
