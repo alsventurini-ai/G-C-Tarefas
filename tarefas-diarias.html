@@ -909,21 +909,14 @@ function load(){
   if(lastDate&&lastDate!==todayStr&&tasks.length>0){mostrarModalNovoDia(lastDate);}
   else{localStorage.setItem(DATE_KEY,todayStr);}
   document.addEventListener('firebase-ready', carregarDoFirebase);
-  setTimeout(function(){
+  var _fbRetry=setInterval(function(){
+    var txt=document.getElementById('sync-txt');
+    if(txt&&txt.textContent.indexOf('Sincronizado')>=0){
+      clearInterval(_fbRetry);return;
+    }
     if(window._fbLoad){carregarDoFirebase();}
-  },2000);
-  setTimeout(function(){
-    var txt=document.getElementById('sync-txt');
-    if(txt&&txt.textContent.indexOf('Sincronizado')===-1){
-      if(window._fbLoad){carregarDoFirebase();}
-    }
-  },5000);
-  setTimeout(function(){
-    var txt=document.getElementById('sync-txt');
-    if(txt&&txt.textContent.indexOf('Sincronizado')===-1){
-      if(window._fbLoad){carregarDoFirebase();}
-    }
-  },10000);
+  },3000);
+  setTimeout(function(){clearInterval(_fbRetry);},60000);
 }
 function mostrarModalNovoDia(lastDate){
   var fmt=fmtDate(lastDate);
