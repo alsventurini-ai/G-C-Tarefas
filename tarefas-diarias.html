@@ -911,7 +911,7 @@ function load(){
   setTimeout(function(){
     if(window._fbLoad){carregarDoFirebase();}
     else{document.addEventListener('firebase-ready',carregarDoFirebase);}
-  },1200);
+  },3000);
 }
 function mostrarModalNovoDia(lastDate){
   var fmt=fmtDate(lastDate);
