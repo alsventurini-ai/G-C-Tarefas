@@ -909,15 +909,22 @@ function load(){
   var lastDate=localStorage.getItem(DATE_KEY)||'';
   if(lastDate&&lastDate!==todayStr&&tasks.length>0){mostrarModalNovoDia(lastDate);}
   else{localStorage.setItem(DATE_KEY,todayStr);}
-  document.addEventListener('firebase-ready', carregarDoFirebase);
+  document.addEventListener('firebase-ready', function(){
+    carregarDoFirebase();
+  });
+  // Retry every 2 seconds for up to 30 seconds
+  var _fbRetryCount=0;
   var _fbRetry=setInterval(function(){
+    _fbRetryCount++;
     var txt=document.getElementById('sync-txt');
     if(txt&&txt.textContent.indexOf('Sincronizado')>=0){
       clearInterval(_fbRetry);return;
     }
-    if(window._fbLoad){carregarDoFirebase();}
-  },3000);
-  setTimeout(function(){clearInterval(_fbRetry);},60000);
+    if(window._fbLoad){
+      carregarDoFirebase();
+    }
+    if(_fbRetryCount>=15){clearInterval(_fbRetry);}
+  },2000);
 }
 function mostrarModalNovoDia(lastDate){
   var fmt=fmtDate(lastDate);
