@@ -2186,13 +2186,17 @@ certLoad();
 document.getElementById('task-input').addEventListener('keydown',function(e){if(e.key==='Enter')addTask();});
 load();
 if('Notification' in window&&Notification.permission==='default'){setTimeout(function(){pedirPermissao();},1500);}
-// Firebase: carrega automaticamente apenas se localStorage vazio
-setTimeout(function(){
-  if(tasks.length===0&&window._fbLoad){
-    carregarDoFirebase();
-  } else {
-    mostrarStatusSync(true);
+// Firebase: tenta conectar imediatamente e a cada 3s por 30s
+document.addEventListener('firebase-ready', function(){ carregarDoFirebase(); });
+var _fbTry=0;
+var _fbInterval=setInterval(function(){
+  _fbTry++;
+  var synced=document.getElementById('sync-txt');
+  if(synced&&synced.textContent.indexOf('Sincronizado')>=0){
+    clearInterval(_fbInterval);return;
   }
+  if(window._fbLoad) carregarDoFirebase();
+  if(_fbTry>=10) clearInterval(_fbInterval);
 },3000);
 </script>
 </body>
