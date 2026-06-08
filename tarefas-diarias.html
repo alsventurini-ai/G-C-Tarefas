@@ -338,8 +338,7 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
   <div class="backup-bar">
     <span>☁️ Firebase:</span>
     <strong id="sync-txt">Conectando…</strong>
-    <span id="backup-last-info"></span>
-    <button onclick="carregarDoFirebase()" style="margin-left:auto;background:#2c5364;border:1px solid #4a8fa8;color:#8ecae6;border-radius:3px;padding:3px 10px;font-size:12px;cursor:pointer;">🔄 Reconectar</button>
+    <span id="backup-last-info" style="margin-left:auto;"></span>
   </div>
 
   <!-- Abas -->
@@ -685,8 +684,8 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
 
 <!-- Firebase -->
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 const cfg={apiKey:"AIzaSyB5XSJfgy7TNpfzdFuNCiTtSwTNBZZ6pzg",authDomain:"gc-lab-171c5.firebaseapp.com",projectId:"gc-lab-171c5",storageBucket:"gc-lab-171c5.firebasestorage.app",messagingSenderId:"653904508130",appId:"1:653904508130:web:9f40c0c82ae184703e9abb"};
 const app=initializeApp(cfg);
 const db=getFirestore(app);
@@ -703,8 +702,8 @@ async function fbLoad(){
     var s=await getDoc(REF);
     if(s.exists()){
       var d=s.data();
-      if(d.certidoes){localStorage.setItem('gc_certidoes_v2',d.certidoes);}
-      return{tasks:d.tasks?JSON.parse(d.tasks):[],recorrencias:d.recorrencias?JSON.parse(d.recorrencias):[],archived:d.archived?JSON.parse(d.archived):[],templates:d.templates?JSON.parse(d.templates):[]};
+      if(d.certidoes) localStorage.setItem('gc_certidoes_v2',d.certidoes);
+      return{tasks:d.tasks?JSON.parse(d.tasks):[],recorrencias:d.recorrencias?JSON.parse(d.recorrencias):[],archived:d.archived?JSON.parse(d.archived):[],templates:d.templates?JSON.parse(d.templates):[],certidoes:d.certidoes||null};
     }
   }
   catch(e){console.warn("Firebase load:",e);}
@@ -892,20 +891,18 @@ function carregarDoFirebase(){
   window._fbLoad().then(function(data){
     if(!data){mostrarStatusSync(false);return;}
     var fbTasks=data.tasks||[];
-    var localTasks=tasks||[];
-    if(localTasks.length===0&&fbTasks.length>0){
-      // Local vazio (Android/novo dispositivo) — carrega do Firebase
-      tasks=fbTasks;
-      recorrencias=data.recorrencias||[];
-      archived=data.archived||[];
-      templates=data.templates||[];
+    // Só carrega do Firebase se local estiver vazio (novo dispositivo/Android)
+    if(tasks.length===0&&fbTasks.length>0){
+      tasks=fbTasks;recorrencias=data.recorrencias||[];
+      archived=data.archived||[];templates=data.templates||[];
+      if(data.certidoes) localStorage.setItem('gc_certidoes_v2',data.certidoes);
       localStorage.setItem(KEY,JSON.stringify(tasks));
       localStorage.setItem(RECORR_KEY,JSON.stringify(recorrencias));
       localStorage.setItem(ARCH_KEY,JSON.stringify(archived));
       localStorage.setItem(TPL_KEY,JSON.stringify(templates));
       processarRecorrencias();render();renderRecorrencias();renderTemplates();
-    } else if(localTasks.length>0){
-      // Local tem dados — salva no Firebase para sincronizar
+    } else if(tasks.length>0){
+      // Local tem dados — salva no Firebase para manter sincronizado
       if(window._fbSave) window._fbSave(tasks,recorrencias,archived,templates);
     }
     mostrarStatusSync(true);
@@ -2100,8 +2097,8 @@ certLoad();
 document.getElementById('task-input').addEventListener('keydown',function(e){if(e.key==='Enter')addTask();});
 load();
 if('Notification' in window&&Notification.permission==='default'){setTimeout(function(){pedirPermissao();},1500);}
-// Firebase retry AFTER load() so localStorage is already populated
-document.addEventListener('firebase-ready', function(){ carregarDoFirebase(); });
+// Firebase retry after load() so localStorage is populated first
+document.addEventListener('firebase-ready', function(){ setTimeout(carregarDoFirebase, 500); });
 var _fbRetryCount=0;
 var _fbRetry=setInterval(function(){
   _fbRetryCount++;
