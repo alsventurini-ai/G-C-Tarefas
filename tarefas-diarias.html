@@ -310,6 +310,46 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
 /* Modal certidão */
 .cert-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:10000;animation:toastIn .2s ease;}
 .cert-modal-box{background:var(--cream);border-radius:4px;width:100%;max-width:460px;box-shadow:0 12px 48px rgba(0,0,0,.4);overflow:hidden;}
+
+/* ── Badge piscando certidões urgentes ── */
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+.tab-badge.urgent{animation:blink 1s infinite;}
+
+/* ── Filtro status certidões ── */
+.cert-filter-bar{display:flex;gap:7px;padding:8px 30px;background:var(--cream2);border-bottom:1px solid var(--border);flex-wrap:wrap;align-items:center;}
+.cert-filter-btn{background:var(--white);border:1px solid var(--border);color:var(--muted);padding:5px 13px;font-size:12px;border-radius:12px;cursor:pointer;font-family:'Segoe UI',Tahoma,sans-serif;transition:all .15s;}
+.cert-filter-btn:hover{border-color:var(--navy);color:var(--navy);}
+.cert-filter-btn.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+.cert-filter-btn.active.exp{background:var(--red);border-color:var(--red);}
+.cert-filter-btn.active.warn{background:var(--amber);border-color:var(--amber);}
+.cert-filter-btn.active.ok{background:var(--green);border-color:var(--green);}
+
+/* ── Dias faltam — aba Licitações ── */
+.lic-days-badge{display:inline-flex;align-items:center;font-size:11px;font-weight:700;border-radius:10px;padding:2px 9px;margin-left:6px;white-space:nowrap;}
+.lic-days-badge.urgente{background:#fde8e8;color:var(--red);border:1px solid #f5c6c6;}
+.lic-days-badge.proximo{background:#fff8e1;color:#c78a1a;border:1px solid #ffe082;}
+.lic-days-badge.ok{background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9;}
+.lic-days-badge.hoje{background:#b03a2e;color:#fff;border:1px solid #b03a2e;}
+
+/* ── Indicador link na tarefa ── */
+.task-link-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#2980b9;margin-left:5px;vertical-align:middle;cursor:pointer;flex-shrink:0;}
+.task-link-dot:hover{background:#1a6b9a;}
+
+/* ── Swipe mobile ── */
+.task-item{transition:transform .18s ease,opacity .18s ease;}
+.swipe-hint{position:absolute;right:0;top:0;bottom:0;display:flex;align-items:center;padding:0 14px;border-radius:0 2px 2px 0;pointer-events:none;opacity:0;transition:opacity .18s;font-size:13px;font-weight:700;color:#fff;}
+.swipe-hint.left{right:auto;left:0;}
+
+/* ── Sync timer ── */
+#sync-timer{font-size:11px;color:rgba(255,255,255,.55);margin-left:4px;}
+
+/* ── Obs rápida ao concluir ── */
+.obs-concluir-wrap{position:fixed;bottom:0;left:0;right:0;background:var(--navy);color:#fff;padding:16px 20px;z-index:9998;display:flex;gap:10px;align-items:center;flex-wrap:wrap;box-shadow:0 -4px 20px rgba(0,0,0,.3);animation:toastIn .25s ease;}
+.obs-concluir-txt{font-size:13px;opacity:.85;flex:1;min-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.obs-concluir-input{flex:2;min-width:180px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;padding:8px 12px;border-radius:3px;font-size:14px;font-family:'Segoe UI',Tahoma,sans-serif;outline:none;}
+.obs-concluir-input::placeholder{color:rgba(255,255,255,.45);}
+.obs-concluir-btn{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;padding:8px 14px;border-radius:3px;font-size:13px;cursor:pointer;font-family:'Segoe UI',Tahoma,sans-serif;white-space:nowrap;}
+.obs-concluir-btn:hover{background:rgba(255,255,255,.32);}
 </style>
 </head>
 <body>
@@ -337,7 +377,7 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
   <div class="progress-wrap"><div class="progress-bar" id="pbar" style="width:0%"></div></div>
   <div class="backup-bar">
     <span>☁️ Firebase:</span>
-    <strong id="sync-txt">Conectando…</strong>
+    <strong id="sync-txt">Conectando…</strong><span id="sync-timer"></span>
     <span id="backup-last-info"></span>
     <button onclick="reconectarForcar()" style="margin-left:auto;background:#2c5364;border:1px solid #4a8fa8;color:#8ecae6;border-radius:3px;padding:3px 10px;font-size:12px;cursor:pointer;">🔄 Reconectar</button>
   </div>
@@ -460,6 +500,14 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
     <select id="filter-tag" class="filter-select" onchange="render()">
       <option value="">🏷 Todas tags</option>
     </select>
+    <select id="filter-sort" class="filter-select" onchange="render()" title="Ordenar pendentes">
+      <option value="data_asc">📅 Data: mais próxima</option>
+      <option value="data_desc">📅 Data: mais distante</option>
+      <option value="hora_asc">⏰ Horário: mais cedo</option>
+      <option value="prioridade">🔴 Prioridade</option>
+      <option value="adicao_desc">🆕 Mais recente</option>
+      <option value="adicao_asc">🕓 Mais antigo</option>
+    </select>
     <button class="btn-clear-filter" onclick="limparFiltros()" title="Limpar filtros">×</button>
   </div>
 
@@ -507,6 +555,13 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
   <div class="filter-bar" style="background:var(--cream2);border-bottom:1px solid var(--border);padding:8px 30px;">
     <label>🔍</label>
     <input type="text" id="cert-search" placeholder="Buscar certidão…" oninput="certRender()" style="flex:1;border:1px solid var(--border);background:var(--white);padding:7px 10px;font-size:13px;border-radius:2px;font-family:'Segoe UI',Tahoma,sans-serif;color:var(--ink);outline:none;">
+  </div>
+  <div class="cert-filter-bar" id="cert-filter-bar">
+    <button class="cert-filter-btn active" id="cfb-all" onclick="certFiltrarStatus('all')">Todas</button>
+    <button class="cert-filter-btn exp" id="cfb-expired" onclick="certFiltrarStatus('expired')">🔴 Vencidas</button>
+    <button class="cert-filter-btn warn" id="cfb-warning" onclick="certFiltrarStatus('warning')">🟡 Em alerta</button>
+    <button class="cert-filter-btn ok" id="cfb-ok" onclick="certFiltrarStatus('ok')">🟢 Em dia</button>
+    <button class="cert-filter-btn" id="cfb-permanente" onclick="certFiltrarStatus('permanente')">⚪ Permanentes</button>
   </div>
   <div id="cert-list" style="display:block!important;padding:0 30px 24px;background:var(--cream);"></div>
   </div>
@@ -693,28 +748,60 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
 <!-- Firebase -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 const cfg={apiKey:"AIzaSyB5XSJfgy7TNpfzdFuNCiTtSwTNBZZ6pzg",authDomain:"gc-lab-171c5.firebaseapp.com",projectId:"gc-lab-171c5",storageBucket:"gc-lab-171c5.firebasestorage.app",messagingSenderId:"653904508130",appId:"1:653904508130:web:9f40c0c82ae184703e9abb"};
 const app=initializeApp(cfg);
 const db=getFirestore(app);
 const REF=doc(db,"gc-tarefas","dados");
+var _fbLastSaveTs=0; // timestamp do último save local, para ignorar echo do onSnapshot
 async function fbSave(t,r,a,tp){
   try{
     var cert=localStorage.getItem('gc_certidoes_v2')||'[]';
+    _fbLastSaveTs=Date.now();
     await setDoc(REF,{tasks:JSON.stringify(t),recorrencias:JSON.stringify(r),archived:JSON.stringify(a||[]),templates:JSON.stringify(tp||[]),certidoes:cert,updatedAt:new Date().toISOString()});
   }
   catch(e){console.warn("Firebase save:",e);}
 }
-async function fbLoad(){
+// onSnapshot: escuta mudanças em tempo real (sem precisar clicar em Reconectar)
+onSnapshot(REF, function(snap){
+  if(!snap.exists()) return;
+  // Ignora o eco do próprio save por 3 segundos
+  if(Date.now()-_fbLastSaveTs < 3000) return;
+  var d=snap.data();
   try{
-    var s=await getDoc(REF);
-    if(s.exists()){
-      var d=s.data();
-      if(d.certidoes) localStorage.setItem('gc_certidoes_v2',d.certidoes);
-      return{tasks:d.tasks?JSON.parse(d.tasks):[],recorrencias:d.recorrencias?JSON.parse(d.recorrencias):[],archived:d.archived?JSON.parse(d.archived):[],templates:d.templates?JSON.parse(d.templates):[],certidoes:d.certidoes||null};
+    var fbTasks=d.tasks?JSON.parse(d.tasks):[];
+    var fbRec=d.recorrencias?JSON.parse(d.recorrencias):[];
+    var fbArch=d.archived?JSON.parse(d.archived):[];
+    var fbTpl=d.templates?JSON.parse(d.templates):[];
+    if(d.certidoes) localStorage.setItem('gc_certidoes_v2',d.certidoes);
+    // Só atualiza se os dados do Firebase forem diferentes dos locais
+    var localRaw=localStorage.getItem('gc_tarefas_v3');
+    var localTasks=localRaw?JSON.parse(localRaw):[];
+    var fbStr=JSON.stringify(fbTasks);
+    var localStr=JSON.stringify(localTasks);
+    if(fbStr!==localStr && fbTasks.length>0){
+      window._tasksFromSnapshot=fbTasks;
+      window._recFromSnapshot=fbRec;
+      window._archFromSnapshot=fbArch;
+      window._tplFromSnapshot=fbTpl;
+      document.dispatchEvent(new Event('firebase-snapshot'));
     }
-  }
-  catch(e){console.warn("Firebase load:",e);}
+    var el=document.getElementById('sync-txt');
+    if(el) el.textContent='Sincronizado ✅';
+  }catch(e){console.warn("onSnapshot parse:",e);}
+}, function(err){
+  console.warn("onSnapshot error:",err);
+  var el=document.getElementById('sync-txt');
+  if(el) el.textContent='Sem sincronização ⚠️';
+});
+async function fbLoad(){
+  // Mantido para compatibilidade com botão Reconectar
+  try{
+    var localRaw=localStorage.getItem('gc_tarefas_v3');
+    var localTasks=localRaw?JSON.parse(localRaw):[];
+    // onSnapshot já cuida do load automático; aqui só retorna local
+    return{tasks:localTasks,recorrencias:[],archived:[],templates:[],certidoes:null};
+  }catch(e){}
   return null;
 }
 window._fbSave=fbSave;window._fbLoad=fbLoad;window._fbReady=true;
@@ -893,44 +980,56 @@ function saveTemplates(){
 function mostrarStatusSync(ok){
   var el=document.getElementById('sync-txt');
   if(el)el.textContent=ok?'Sincronizado ✅':'Sem sincronização ⚠️';
+  if(ok) _syncLastAt=Date.now();
 }
-var _fbForceLoad=false;
+// Timer de sincronização — atualiza a cada 30s
+var _syncLastAt=0;
+setInterval(function(){
+  var el=document.getElementById('sync-timer');
+  if(!el||!_syncLastAt) return;
+  var diff=Math.round((Date.now()-_syncLastAt)/1000);
+  if(diff<10) el.textContent='';
+  else if(diff<60) el.textContent=' (há '+diff+'s)';
+  else el.textContent=' (há '+Math.floor(diff/60)+'min)';
+},10000);
 function reconectarForcar(){
   var el=document.getElementById('sync-txt');
   if(el) el.textContent='Buscando…';
-  if(!window._fbLoad){
-    if(el) el.textContent='Firebase não carregou ⚠️';
-    mostrarToast('Firebase não inicializou. Recarregue a página.',false);
-    return;
-  }
   carregarDoFirebase(true);
 }
 function carregarDoFirebase(force){
-  if(!window._fbLoad)return;
-  var localRaw=localStorage.getItem(KEY);
-  var localTasks=localRaw?JSON.parse(localRaw):[];
-  window._fbLoad().then(function(data){
-    if(!data){mostrarStatusSync(false);return;}
-    var fbTasks=data.tasks||[];
-    // Carrega do Firebase se: local vazio OU force=true (botão Reconectar)
-    if((localTasks.length===0||force||_fbForceLoad)&&fbTasks.length>0){
-      _fbForceLoad=false;
-      tasks=fbTasks;recorrencias=data.recorrencias||[];
-      archived=data.archived||[];templates=data.templates||[];
-      if(data.certidoes) localStorage.setItem('gc_certidoes_v2',data.certidoes);
-      localStorage.setItem(KEY,JSON.stringify(tasks));
-      localStorage.setItem(RECORR_KEY,JSON.stringify(recorrencias));
-      localStorage.setItem(ARCH_KEY,JSON.stringify(archived));
-      localStorage.setItem(TPL_KEY,JSON.stringify(templates));
+  // Se force=true (botão Reconectar), busca onSnapshot ou usa local
+  if(force){
+    var localRaw=localStorage.getItem(KEY);
+    var localTasks=localRaw?JSON.parse(localRaw):[];
+    if(localTasks.length>0){
+      tasks=localTasks;
       processarRecorrencias();render();renderRecorrencias();renderTemplates();
-      certLoad();
-      mudarAba('tarefas');
-    } else if(localTasks.length>0&&!force){
-      if(window._fbSave) window._fbSave(tasks,recorrencias,archived,templates);
+      mostrarStatusSync(true);
+    } else {
+      var el=document.getElementById('sync-txt');
+      if(el) el.textContent='Aguardando dados…';
     }
-    mostrarStatusSync(true);
-  }).catch(function(){mostrarStatusSync(false);});
+    return;
+  }
 }
+// Listener para mudanças vindas do Firebase (outro dispositivo)
+document.addEventListener('firebase-snapshot', function(){
+  var fbTasks=window._tasksFromSnapshot||[];
+  var fbRec=window._recFromSnapshot||[];
+  var fbArch=window._archFromSnapshot||[];
+  var fbTpl=window._tplFromSnapshot||[];
+  if(fbTasks.length===0) return;
+  tasks=fbTasks;recorrencias=fbRec;archived=fbArch;templates=fbTpl;
+  localStorage.setItem(KEY,JSON.stringify(tasks));
+  localStorage.setItem(RECORR_KEY,JSON.stringify(recorrencias));
+  localStorage.setItem(ARCH_KEY,JSON.stringify(archived));
+  localStorage.setItem(TPL_KEY,JSON.stringify(templates));
+  processarRecorrencias();render();renderRecorrencias();renderTemplates();
+  certLoad();
+  mostrarStatusSync(true);
+  mostrarToast('☁️ Sincronizado com outro dispositivo!',false);
+});
 function load(){
   var raw=localStorage.getItem(KEY);tasks=raw?JSON.parse(raw):[];
   var rawR=localStorage.getItem(RECORR_KEY);recorrencias=rawR?JSON.parse(rawR):[];
@@ -1278,7 +1377,33 @@ function addTask(){
 }
 function toggle(id){
   var t=tasks.find(function(x){return x.id===id;});if(!t)return;
-  t.done=!t.done;t.doneAt=t.done?timeNow():'';save();render();
+  var eraFeito=t.done;
+  t.done=!t.done;t.doneAt=t.done?timeNow():'';
+  save();render();
+  // Ao concluir (não ao reabrir): oferecer obs rápida
+  if(!eraFeito && t.done){
+    pedirObsConcluir(t);
+  }
+}
+function pedirObsConcluir(task){
+  var old=document.querySelector('.obs-concluir-wrap');if(old)old.remove();
+  var wrap=document.createElement('div');wrap.className='obs-concluir-wrap';
+  var lbl=document.createElement('span');lbl.className='obs-concluir-txt';lbl.textContent='✔ '+task.text;
+  var inp=document.createElement('input');inp.className='obs-concluir-input';inp.type='text';inp.placeholder='Observação rápida… (Enter para salvar)';inp.value=task.obs||'';
+  var btnSalvar=document.createElement('button');btnSalvar.className='obs-concluir-btn';btnSalvar.textContent='💾 Salvar';
+  var btnPular=document.createElement('button');btnPular.className='obs-concluir-btn';btnPular.style.opacity='.6';btnPular.textContent='Pular';
+  function salvar(){
+    var v=inp.value.trim();
+    if(v){var t2=tasks.find(function(x){return x.id===task.id;});if(t2){t2.obs=v;save();render();}}
+    wrap.remove();
+  }
+  function pular(){wrap.remove();}
+  btnSalvar.onclick=salvar;btnPular.onclick=pular;
+  inp.addEventListener('keydown',function(e){if(e.key==='Enter')salvar();if(e.key==='Escape')pular();});
+  wrap.appendChild(lbl);wrap.appendChild(inp);wrap.appendChild(btnSalvar);wrap.appendChild(btnPular);
+  document.body.appendChild(wrap);
+  setTimeout(function(){inp.focus();},80);
+  setTimeout(function(){if(wrap.parentNode)wrap.remove();},15000);
 }
 function del(id){
   var t=tasks.find(function(x){return x.id===id;});if(!t)return;
@@ -1411,6 +1536,7 @@ function limparFiltros(){
   document.getElementById('filter-pq').value='';
   document.getElementById('filter-priority').value='';
   document.getElementById('filter-tag').value='';
+  var fs=document.getElementById('filter-sort');if(fs)fs.value='data_asc';
   render();
 }
 
@@ -1526,13 +1652,47 @@ function clearDone(){if(!confirm('Arquivar todas as tarefas concluídas?'))retur
 function clearAll(){if(!confirm('Limpar TODAS as tarefas?\nEsta ação não pode ser desfeita.'))return;tasks=tasks.filter(function(t){return t._futuro;});save();render();}
 
 // ── Render ──
-function sortTasks(lista){
+function sortTasks(lista, forConcluidas){
+  var sortSel=document.getElementById('filter-sort');
+  var modo=sortSel?sortSel.value:'data_asc';
+  // Concluídas sempre por data/hora decrescente (mais recente primeiro)
+  if(forConcluidas){
+    return lista.slice().sort(function(a,b){
+      var da=a.taskDate||'0000-00-00',db=b.taskDate||'0000-00-00';
+      if(da!==db) return da>db?-1:1;
+      return b.id-a.id;
+    });
+  }
+  var PRIO={alta:0,media:1,baixa:2,'':3,undefined:3};
   return lista.slice().sort(function(a,b){
+    // Fixadas sempre no topo
     var pa=a.pinned?0:1,pb=b.pinned?0:1;if(pa!==pb)return pa-pb;
-    var da=a.taskDate||'9999-99-99',db=b.taskDate||'9999-99-99';
-    if(da!==db)return da<db?-1:1;
-    var ha=a.schedule||'99:99',hb=b.schedule||'99:99';
-    if(ha!==hb)return ha<hb?-1:1;
+    if(modo==='data_asc'){
+      var da=a.taskDate||'9999-99-99',db=b.taskDate||'9999-99-99';
+      if(da!==db)return da<db?-1:1;
+      var ha=a.schedule||'99:99',hb=b.schedule||'99:99';
+      return ha<hb?-1:(ha>hb?1:a.id-b.id);
+    }
+    if(modo==='data_desc'){
+      var da=a.taskDate||'0000-00-00',db=b.taskDate||'0000-00-00';
+      if(da!==db)return da>db?-1:1;
+      var ha=a.schedule||'00:00',hb=b.schedule||'00:00';
+      return ha>hb?-1:(ha<hb?1:b.id-a.id);
+    }
+    if(modo==='hora_asc'){
+      var ha=a.schedule||'99:99',hb=b.schedule||'99:99';
+      if(ha!==hb)return ha<hb?-1:1;
+      var da=a.taskDate||'9999-99-99',db=b.taskDate||'9999-99-99';
+      return da<db?-1:(da>db?1:a.id-b.id);
+    }
+    if(modo==='prioridade'){
+      var pa2=PRIO[a.priority],pb2=PRIO[b.priority];
+      if(pa2!==pb2)return pa2-pb2;
+      var da=a.taskDate||'9999-99-99',db=b.taskDate||'9999-99-99';
+      return da<db?-1:(da>db?1:a.id-b.id);
+    }
+    if(modo==='adicao_desc') return b.id-a.id;
+    if(modo==='adicao_asc') return a.id-b.id;
     return a.id-b.id;
   });
 }
@@ -1567,6 +1727,8 @@ function makeEl(t){
   if(t.link){var lk=document.createElement('a');lk.href=t.link;lk.target='_blank';lk.rel='noopener';lk.style.cssText='display:inline-flex;align-items:center;gap:4px;font-size:12px;color:#2980b9;margin-top:4px;word-break:break-all;';lk.textContent='🔗 '+t.link;body.appendChild(lk);}
   var tm=document.createElement('div');tm.className='task-time';
   tm.textContent=t.done&&t.doneAt?'✓ '+t.doneAt:(t.addedAt?t.addedAt:'');
+  // Indicador de link — ponto azul visível sem precisar rolar
+  if(t.link){var ldot=document.createElement('span');ldot.className='task-link-dot';ldot.title='🔗 Abrir link';ldot.onclick=function(e){e.stopPropagation();window.open(t.link,'_blank');};tm.appendChild(ldot);}
   var acts=document.createElement('div');acts.className='task-actions';
   var be=document.createElement('button');be.className='btn-icon';be.textContent='✏️';be.title='Editar';be.onclick=(function(id){return function(){abrirModalEdicao(id);};})(t.id);
   var bo=document.createElement('button');bo.className='btn-icon';bo.textContent='📝';bo.title='Observação';
@@ -1579,6 +1741,22 @@ function makeEl(t){
   bd.onclick=(function(id){return function(){del(id);};})(t.id);
   acts.appendChild(be);acts.appendChild(bo);acts.appendChild(bpin);acts.appendChild(ba);acts.appendChild(bd);
   div.appendChild(chk);div.appendChild(body);div.appendChild(tm);div.appendChild(acts);
+  // ── Swipe mobile (touch) ──
+  if(!t._futuro){
+    var _tx0=0,_swipeLocked=false;
+    div.addEventListener('touchstart',function(e){_tx0=e.touches[0].clientX;_swipeLocked=false;},{ passive:true });
+    div.addEventListener('touchmove',function(e){
+      var dx=e.touches[0].clientX-_tx0;
+      if(Math.abs(dx)>8){div.style.transform='translateX('+Math.min(80,Math.max(-80,dx))+'px)';div.style.opacity=1-Math.abs(dx)/200;}
+    },{ passive:true });
+    div.addEventListener('touchend',function(e){
+      var dx=e.changedTouches[0].clientX-_tx0;
+      div.style.transform='';div.style.opacity='';
+      if(_swipeLocked) return;
+      if(dx>60&&!t.done){_swipeLocked=true;toggle(t.id);}           // swipe direita → concluir
+      else if(dx<-60&&!t.done){_swipeLocked=true;arquivarTarefa(t.id);}// swipe esquerda → arquivar
+    });
+  }
   return div;
 }
 function abrirObsInline(id,task){
@@ -1598,8 +1776,8 @@ function abrirObsInline(id,task){
 }
 function render(){
   var todos=tasks;var visiveis=filtrarLista(todos);
-  var p=sortTasks(visiveis.filter(function(x){return!x.done;}));
-  var d=sortTasks(visiveis.filter(function(x){return x.done&&!x._futuro;}));
+  var p=sortTasks(visiveis.filter(function(x){return!x.done;}),false);
+  var d=sortTasks(visiveis.filter(function(x){return x.done&&!x._futuro;}),true);
   var lp=document.getElementById('list-p'),ld=document.getElementById('list-d');
   lp.innerHTML='';ld.innerHTML='';
   if(p.length===0){var e=document.createElement('div');e.className='empty';e.textContent=todos.length===0?'Nenhuma tarefa ainda.':'Nenhuma tarefa corresponde ao filtro.';lp.appendChild(e);}
@@ -1669,7 +1847,15 @@ document.getElementById('lic-modal').addEventListener('click',function(e){if(e.t
 
 
 // ── Certidões ──
-var CERT_KEY='gc_certidoes_v2';
+var _certFiltroStatus='all';
+function certFiltrarStatus(st){
+  _certFiltroStatus=st;
+  ['all','expired','warning','ok','permanente'].forEach(function(k){
+    var btn=document.getElementById('cfb-'+k);
+    if(btn) btn.classList.toggle('active', k===st);
+  });
+  certRender();
+}
 var certidoes=[];
 var _certEditIdx=-1;
 var _certAlertFiredKey='gc_cert_alert_fired';
@@ -1929,9 +2115,17 @@ setInterval(certVerificarAlertaMensal,60000);
 function certAtualizarBadge(){
   var badge=document.getElementById('tab-cert-badge');
   if(!badge) return;
+  var expiradas=certidoes.filter(function(c){return certGetStatus(c)==='expired';});
   var alertas=certidoes.filter(function(c){var s=certGetStatus(c);return s==='expired'||s==='warning';});
-  if(alertas.length>0){badge.textContent=alertas.length;badge.style.display='inline';}
-  else{badge.style.display='none';}
+  if(alertas.length>0){
+    badge.textContent=alertas.length;
+    badge.style.display='inline';
+    if(expiradas.length>0) badge.classList.add('urgent');
+    else badge.classList.remove('urgent');
+  } else {
+    badge.style.display='none';
+    badge.classList.remove('urgent');
+  }
 }
 function certRender(){
   var list=document.getElementById('cert-list');
@@ -1960,10 +2154,11 @@ function certRender(){
   // Filtro de busca
   var searchEl=document.getElementById('cert-search');
   var busca=searchEl?searchEl.value.toLowerCase().trim():'';
-  var certFiltradas=busca?certidoes.filter(function(c){
-    return (c.nome||'').toLowerCase().indexOf(busca)>=0||
-           (c.municipio||'').toLowerCase().indexOf(busca)>=0;
-  }):certidoes;
+  var certFiltradas=certidoes.filter(function(c){
+    if(busca && (c.nome||'').toLowerCase().indexOf(busca)<0 && (c.municipio||'').toLowerCase().indexOf(busca)<0) return false;
+    if(_certFiltroStatus!=='all' && certGetStatus(c)!==_certFiltroStatus) return false;
+    return true;
+  });
   if(busca&&certFiltradas.length===0){
     list.innerHTML='<div class="cert-empty">Nenhuma certidão encontrada para "'+certEsc(busca)+'".</div>';
     certAtualizarBadge();return;
@@ -2144,11 +2339,15 @@ function renderLicitacoes(){
   var lista=document.getElementById('lic-lista');
   var stats=document.getElementById('lic-stats-row');
   if(!lista) return;
-  // Filtra tarefas de licitação
+  // Filtra tarefas de licitação — baseado no TEXTO da tarefa
   var lics=tasks.filter(function(t){
-    return (t.paraQuem&&t.paraQuem.toLowerCase().indexOf('licitaç')>=0)||
-           (t.tags&&t.tags.some(function(g){return g.toLowerCase().indexOf('licitaç')>=0||g.toLowerCase().indexOf('licitac')>=0;}))||
-           (t.text&&(t.text.indexOf('Disputa')===0||t.text.indexOf('Impugnação')===0||t.text.indexOf('Análise de Edital')===0||t.text.indexOf('🏛')===0||t.text.indexOf('⚠️ Impugnação')===0||t.text.indexOf('📋 Análise')===0));
+    if(!t.text) return false;
+    var tx=t.text.toLowerCase();
+    // Criadas pelo botão "+ Nova Licitação" (prefixos automáticos)
+    if(t.text.indexOf('🏛 Disputa')===0||t.text.indexOf('⚠️ Impugnação')===0||t.text.indexOf('📋 Análise de Edital')===0) return true;
+    // Criadas manualmente contendo a palavra "licitação" ou "licitacao"
+    if(tx.indexOf('licitaç')>=0||tx.indexOf('licitac')>=0) return true;
+    return false;
   });
   // Atualiza badge
   var badge=document.getElementById('tab-lic-badge');
@@ -2184,9 +2383,24 @@ function renderLicitacoes(){
       var statusTxt=t.done?'✔ Concluída':'⏳ Pendente';
       var dataStr=t.taskDate?(' — <b>'+fmtDate(t.taskDate)+'</b>'):'';
       var horaStr=t.schedule?(' às '+t.schedule):'';
+      // Badge dias faltam
+      var diasBadge='';
+      if(!t.done&&t.taskDate){
+        var hoje=new Date();hoje.setHours(0,0,0,0);
+        var alvo=new Date(t.taskDate+'T00:00:00');
+        var diff=Math.round((alvo-hoje)/86400000);
+        var cls='ok';
+        var dtxt='';
+        if(diff<0){cls='urgente';dtxt='Atrasada '+Math.abs(diff)+'d';}
+        else if(diff===0){cls='hoje';dtxt='HOJE';}
+        else if(diff<=3){cls='urgente';dtxt='Em '+diff+'d';}
+        else if(diff<=7){cls='proximo';dtxt='Em '+diff+'d';}
+        else{cls='ok';dtxt='Em '+diff+'d';}
+        diasBadge='<span class="lic-days-badge '+cls+'">'+dtxt+'</span>';
+      }
       html+='<div class="cert-card" style="border-left-color:'+statusCor+';">'+
         '<div class="cert-card-top">'+
-        '<span class="cert-card-name">'+t.text+'</span>'+
+        '<span class="cert-card-name">'+t.text+diasBadge+'</span>'+
         '<span class="cert-badge" style="background:'+(t.done?'#e8f5e9':'#fff8e1')+';color:'+(t.done?'#2e7d32':'#c78a1a')+';border:1px solid '+(t.done?'#c8e6c9':'#ffe082')+';">'+statusTxt+'</span>'+
         '</div>'+
         '<div class="cert-dates"><span class="cert-date">Data:'+dataStr+horaStr+'</span>'+(t.paraQuem?'<span class="cert-date">Para: <b>'+t.paraQuem+'</b></span>':'')+'</div>'+
@@ -2201,18 +2415,12 @@ certLoad();
 document.getElementById('task-input').addEventListener('keydown',function(e){if(e.key==='Enter')addTask();});
 load();
 if('Notification' in window&&Notification.permission==='default'){setTimeout(function(){pedirPermissao();},1500);}
-// Firebase: tenta conectar imediatamente e a cada 3s por 30s
-document.addEventListener('firebase-ready', function(){ carregarDoFirebase(); });
-var _fbTry=0;
-var _fbInterval=setInterval(function(){
-  _fbTry++;
-  var synced=document.getElementById('sync-txt');
-  if(synced&&synced.textContent.indexOf('Sincronizado')>=0){
-    clearInterval(_fbInterval);return;
-  }
-  if(window._fbLoad) carregarDoFirebase();
-  if(_fbTry>=10) clearInterval(_fbInterval);
-},3000);
+// Firebase onSnapshot já está ativo e sincroniza automaticamente.
+// O status inicial fica "Conectando…" até o primeiro snapshot chegar.
+document.addEventListener('firebase-ready', function(){
+  var el=document.getElementById('sync-txt');
+  if(el) el.textContent='Conectado ✅';
+});
 </script>
 </body>
 </html>
