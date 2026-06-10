@@ -1398,9 +1398,12 @@ function pedirObsConcluir(task){
     wrap.remove();
   }
   function pular(){wrap.remove();}
+  var btnDesfazer=document.createElement('button');btnDesfazer.className='obs-concluir-btn';btnDesfazer.style.cssText='background:rgba(176,58,46,.4);border-color:rgba(255,255,255,.3);';btnDesfazer.textContent='↩ Desfazer';
+  function desfazer(){var t2=tasks.find(function(x){return x.id===task.id;});if(t2){t2.done=false;t2.doneAt='';save();render();}wrap.remove();}
+  btnDesfazer.onclick=desfazer;
   btnSalvar.onclick=salvar;btnPular.onclick=pular;
   inp.addEventListener('keydown',function(e){if(e.key==='Enter')salvar();if(e.key==='Escape')pular();});
-  wrap.appendChild(lbl);wrap.appendChild(inp);wrap.appendChild(btnSalvar);wrap.appendChild(btnPular);
+  wrap.appendChild(lbl);wrap.appendChild(inp);wrap.appendChild(btnSalvar);wrap.appendChild(btnDesfazer);wrap.appendChild(btnPular);
   document.body.appendChild(wrap);
   setTimeout(function(){inp.focus();},80);
   setTimeout(function(){if(wrap.parentNode)wrap.remove();},15000);
