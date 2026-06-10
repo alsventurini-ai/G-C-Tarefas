@@ -350,6 +350,48 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
 .obs-concluir-input::placeholder{color:rgba(255,255,255,.45);}
 .obs-concluir-btn{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;padding:8px 14px;border-radius:3px;font-size:13px;cursor:pointer;font-family:'Segoe UI',Tahoma,sans-serif;white-space:nowrap;}
 .obs-concluir-btn:hover{background:rgba(255,255,255,.32);}
+
+/* ── Nota do dia ── */
+.nota-dia-wrap{background:var(--cream2);border-bottom:1px solid var(--border);padding:10px 30px;}
+.nota-dia-label{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;gap:8px;}
+.nota-dia-textarea{width:100%;border:1px solid var(--border);background:var(--white);padding:9px 12px;font-size:13.5px;border-radius:2px;font-family:'Segoe UI',Tahoma,sans-serif;color:var(--ink);outline:none;resize:vertical;min-height:52px;max-height:200px;line-height:1.5;}
+.nota-dia-textarea:focus{border-color:var(--amber);box-shadow:0 0 0 2px rgba(199,138,26,.12);}
+.nota-dia-saved{font-size:11px;color:var(--green);opacity:0;transition:opacity .4s;}
+.nota-dia-saved.show{opacity:1;}
+
+/* ── Busca global ── */
+.busca-global-wrap{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:10500;display:flex;align-items:flex-start;justify-content:center;padding-top:60px;animation:toastIn .18s ease;}
+.busca-global-box{background:var(--cream);border-radius:4px;width:100%;max-width:620px;box-shadow:0 12px 48px rgba(0,0,0,.4);overflow:hidden;max-height:80vh;display:flex;flex-direction:column;}
+.busca-global-inp-wrap{display:flex;align-items:center;gap:0;border-bottom:2px solid var(--navy);background:var(--white);}
+.busca-global-icon{padding:0 14px;font-size:18px;color:var(--muted);}
+.busca-global-inp{flex:1;border:none;outline:none;padding:14px 0;font-size:16px;font-family:'Segoe UI',Tahoma,sans-serif;color:var(--ink);background:transparent;}
+.busca-global-close{background:none;border:none;font-size:22px;color:var(--muted);padding:0 14px;cursor:pointer;}
+.busca-global-results{overflow-y:auto;flex:1;}
+.busca-global-section{padding:8px 16px 4px;font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:600;background:var(--cream2);border-bottom:1px solid var(--border);}
+.busca-global-item{padding:10px 16px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;align-items:flex-start;gap:10px;}
+.busca-global-item:hover{background:var(--cream2);}
+.busca-global-item-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+.busca-global-item-body{flex:1;min-width:0;}
+.busca-global-item-title{font-size:14px;color:var(--ink);font-weight:500;}
+.busca-global-item-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+.busca-global-empty{text-align:center;padding:32px;color:var(--muted);font-style:italic;font-size:14px;}
+mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
+
+/* ── Histórico ── */
+.hist-filter-bar{display:flex;gap:8px;padding:10px 30px;background:var(--cream2);border-bottom:1px solid var(--border);flex-wrap:wrap;align-items:center;}
+.hist-period-btn{background:var(--white);border:1px solid var(--border);color:var(--muted);padding:5px 14px;font-size:12px;border-radius:12px;cursor:pointer;font-family:'Segoe UI',Tahoma,sans-serif;}
+.hist-period-btn.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+.hist-day-group{margin-bottom:18px;}
+.hist-day-head{font-size:10.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:600;padding:10px 0 7px;border-bottom:1.5px solid var(--border);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+.hist-day-count{background:var(--green);color:#fff;border-radius:8px;padding:1px 8px;font-size:11px;text-transform:none;letter-spacing:0;}
+.hist-item{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px dashed var(--border);}
+.hist-item-done{font-size:13px;color:var(--green);flex-shrink:0;margin-top:2px;}
+.hist-item-body{flex:1;min-width:0;}
+.hist-item-text{font-size:13.5px;color:var(--muted);text-decoration:line-through;}
+.hist-item-meta{font-size:11px;color:#bbb;margin-top:2px;}
+.hist-empty{text-align:center;color:var(--muted);font-size:13px;padding:28px;font-style:italic;opacity:.7;}
+.hist-nota{background:#fffde7;border:1px solid #ffe082;border-radius:3px;padding:9px 13px;margin-bottom:10px;font-size:13px;color:#5a4a00;font-style:italic;line-height:1.5;}
+.hist-nota-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#c78a1a;font-weight:600;margin-bottom:4px;}
 </style>
 </head>
 <body>
@@ -387,10 +429,18 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
     <button class="tab-btn active" id="tab-btn-tarefas" onclick="mudarAba('tarefas')">📋 Tarefas</button>
     <button class="tab-btn" id="tab-btn-licitacoes" onclick="mudarAba('licitacoes')">🏛 Licitações <span class="tab-badge" id="tab-lic-badge" style="display:none;">0</span></button>
     <button class="tab-btn" id="tab-btn-certidoes" onclick="mudarAba('certidoes')">📜 Certidões <span class="tab-badge" id="tab-cert-badge" style="display:none;">!</span></button>
+    <button class="tab-btn" id="tab-btn-historico" onclick="mudarAba('historico')">📅 Histórico</button>
+    <button class="tab-btn" id="tab-btn-busca" onclick="abrirBuscaGlobal()" style="margin-left:auto;">🔍</button>
   </div>
 
   <!-- Aba Tarefas -->
   <div id="tab-tarefas" class="tab-content active">
+
+  <!-- Nota do dia -->
+  <div class="nota-dia-wrap">
+    <div class="nota-dia-label">📝 Nota do dia <span class="nota-dia-saved" id="nota-dia-saved">Salvo ✓</span></div>
+    <textarea class="nota-dia-textarea" id="nota-dia-input" placeholder="Anotações livres do dia — contexto, decisões, recados…" oninput="salvarNotaDia()"></textarea>
+  </div>
 
   <!-- Templates -->
   <div class="template-bar" id="template-bar">
@@ -539,9 +589,11 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
   <div id="tab-certidoes" class="tab-content">
   <div class="action-bar" style="justify-content:space-between;">
     <span style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.3px;color:var(--muted);font-weight:600;">📜 Certidões &amp; Documentos</span>
+    <button class="btn" style="font-size:12px;padding:5px 11px;border-color:var(--amber);color:var(--amber);" onclick="certRelatorioVencimentos('semana')">📋 Rel. Semanal</button>
+    <button class="btn" style="font-size:12px;padding:5px 11px;border-color:var(--navy2);color:var(--navy2);" onclick="certRelatorioVencimentos('mes')">📋 Rel. Mensal</button>
     <button class="btn" style="font-size:12px;padding:5px 11px;border-color:var(--green);color:var(--green);" onclick="certExportCSV()">📥 Exportar CSV</button>
-      <button class="btn" style="font-size:12px;padding:5px 11px;border-color:#1a6b8a;color:#1a6b8a;" onclick="certBaixarModelo()">📋 Baixar Modelo</button>
-      <label class="btn" style="font-size:12px;padding:5px 11px;border-color:#6c3483;color:#6c3483;cursor:pointer;">📤 Importar CSV<input type="file" accept=".csv" style="display:none;" onchange="certImportarCSV(this)"></label>
+    <button class="btn" style="font-size:12px;padding:5px 11px;border-color:#1a6b8a;color:#1a6b8a;" onclick="certBaixarModelo()">📋 Baixar Modelo</button>
+    <label class="btn" style="font-size:12px;padding:5px 11px;border-color:#6c3483;color:#6c3483;cursor:pointer;">📤 Importar CSV<input type="file" accept=".csv" style="display:none;" onchange="certImportarCSV(this)"></label>
   </div>
   <div id="cert-stats-row" class="cert-stats-row" style="display:flex;gap:10px;margin:0 30px 14px;flex-wrap:wrap;">
     <div class="cert-stat"><div class="cert-stat-num" id="cs-total">0</div><div class="cert-stat-lbl">Total</div></div>
@@ -566,7 +618,40 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
   <div id="cert-list" style="display:block!important;padding:0 30px 24px;background:var(--cream);"></div>
   </div>
 
+  <!-- Aba Histórico -->
+  <div id="tab-historico" class="tab-content">
+  <div class="action-bar" style="justify-content:space-between;flex-wrap:wrap;gap:8px;">
+    <span style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.3px;color:var(--muted);font-weight:600;">📅 Histórico</span>
+    <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;">
+      <input type="date" id="hist-de" class="input-field" style="width:140px;" onchange="renderHistorico()">
+      <span style="font-size:12px;color:var(--muted);">até</span>
+      <input type="date" id="hist-ate" class="input-field" style="width:140px;" onchange="renderHistorico()">
+      <button class="btn" style="font-size:12px;padding:5px 11px;" onclick="histPeriodo(7)">7d</button>
+      <button class="btn" style="font-size:12px;padding:5px 11px;" onclick="histPeriodo(30)">30d</button>
+      <button class="btn" style="font-size:12px;padding:5px 11px;" onclick="histPeriodo(90)">90d</button>
+    </div>
+  </div>
+  <div style="padding:8px 30px;background:var(--cream2);border-bottom:1px solid var(--border);">
+    <input type="text" id="hist-busca" placeholder="🔍 Filtrar por texto ou Para quem…" oninput="renderHistorico()" style="width:100%;border:1px solid var(--border);background:var(--white);padding:7px 10px;font-size:13px;border-radius:2px;font-family:'Segoe UI',Tahoma,sans-serif;color:var(--ink);outline:none;">
+  </div>
+  <div id="hist-lista" style="padding:0 30px 24px;background:var(--cream);min-height:100px;"></div>
+  </div>
+
   <div class="footer" id="footer-el">Dados salvos automaticamente</div>
+</div>
+
+<!-- Modal Busca Global -->
+<div id="busca-global-modal" class="busca-global-wrap" style="display:none;" onclick="fecharBuscaGlobal(event)">
+  <div class="busca-global-box" onclick="event.stopPropagation()">
+    <div class="busca-global-inp-wrap">
+      <span class="busca-global-icon">🔍</span>
+      <input type="text" class="busca-global-inp" id="busca-global-inp" placeholder="Buscar em tarefas, licitações e certidões…" oninput="executarBuscaGlobal()">
+      <button class="busca-global-close" onclick="fecharBuscaGlobal()">×</button>
+    </div>
+    <div class="busca-global-results" id="busca-global-results">
+      <div class="busca-global-empty">Digite para buscar…</div>
+    </div>
+  </div>
 </div>
 
 <!-- Modal edição -->
@@ -2328,15 +2413,17 @@ function certExportCSV(){
   a.click();
 }
 function mudarAba(aba){
-  ['tarefas','licitacoes','certidoes'].forEach(function(a){
+  ['tarefas','licitacoes','certidoes','historico'].forEach(function(a){
     document.getElementById('tab-'+a).classList.toggle('active', a===aba);
-    document.getElementById('tab-btn-'+a).classList.toggle('active', a===aba);
+    var btn=document.getElementById('tab-btn-'+a);
+    if(btn) btn.classList.toggle('active', a===aba);
   });
   var isTarefas=aba==='tarefas';
   document.querySelector('.filter-bar').style.display=isTarefas?'':'none';
   document.querySelector('.tasks-area').style.display=isTarefas?'':'none';
   if(aba==='certidoes') certRender();
   if(aba==='licitacoes') renderLicitacoes();
+  if(aba==='historico'){histPeriodo(7);} // padrão: últimos 7 dias
 }
 
 function renderLicitacoes(){
@@ -2415,12 +2502,262 @@ function renderLicitacoes(){
   });
   lista.innerHTML=html;
 }
+// ── Nota do dia ──
+var NOTA_KEY='gc_notas_dia';
+var _notaTimer=null;
+function notaLoad(){
+  var raw=localStorage.getItem(NOTA_KEY);
+  var notas=raw?JSON.parse(raw):{};
+  var inp=document.getElementById('nota-dia-input');
+  if(inp) inp.value=notas[todayStr]||'';
+}
+function salvarNotaDia(){
+  if(_notaTimer) clearTimeout(_notaTimer);
+  _notaTimer=setTimeout(function(){
+    var inp=document.getElementById('nota-dia-input');
+    if(!inp) return;
+    var raw=localStorage.getItem(NOTA_KEY);
+    var notas=raw?JSON.parse(raw):{};
+    var val=inp.value;
+    if(val) notas[todayStr]=val;
+    else delete notas[todayStr];
+    localStorage.setItem(NOTA_KEY,JSON.stringify(notas));
+    if(window._fbSave) window._fbSave(tasks,recorrencias,archived,templates);
+    var saved=document.getElementById('nota-dia-saved');
+    if(saved){saved.classList.add('show');setTimeout(function(){saved.classList.remove('show');},2000);}
+  },600);
+}
+function notaGetDia(dateStr){
+  var raw=localStorage.getItem(NOTA_KEY);
+  var notas=raw?JSON.parse(raw):{};
+  return notas[dateStr]||'';
+}
+
+// ── Histórico ──
+function histPeriodo(dias){
+  var ate=new Date();
+  var de=new Date();de.setDate(de.getDate()-dias+1);
+  document.getElementById('hist-ate').value=ate.toISOString().slice(0,10);
+  document.getElementById('hist-de').value=de.toISOString().slice(0,10);
+  renderHistorico();
+}
+function renderHistorico(){
+  var lista=document.getElementById('hist-lista');if(!lista)return;
+  var de=document.getElementById('hist-de').value;
+  var ate=document.getElementById('hist-ate').value;
+  var busca=(document.getElementById('hist-busca').value||'').toLowerCase().trim();
+  var todas=tasks.filter(function(t){return t.done&&!t._futuro;})
+    .concat(archived.filter(function(t){return!t._futuro;}));
+  if(de||ate){
+    todas=todas.filter(function(t){
+      var d=t.taskDate||(t.archivedAt&&t.archivedAt.slice(0,10))||'';
+      if(!d) return false;
+      if(de&&d<de) return false;
+      if(ate&&d>ate) return false;
+      return true;
+    });
+  }
+  if(busca){
+    todas=todas.filter(function(t){
+      return (t.text||'').toLowerCase().indexOf(busca)>=0||
+             (t.paraQuem||'').toLowerCase().indexOf(busca)>=0||
+             (t.obs||'').toLowerCase().indexOf(busca)>=0;
+    });
+  }
+  if(todas.length===0){lista.innerHTML='<div class="hist-empty">Nenhuma tarefa encontrada no período.</div>';return;}
+  var grupos={};
+  todas.forEach(function(t){
+    var d=t.taskDate||(t.archivedAt&&t.archivedAt.slice(0,10))||'?';
+    if(!grupos[d])grupos[d]=[];
+    grupos[d].push(t);
+  });
+  var datas=Object.keys(grupos).sort().reverse();
+  var html='';
+  datas.forEach(function(d){
+    var arr=grupos[d];
+    var nota=notaGetDia(d);
+    var dataFmt=d!=='?'?fmtDate(d):'—';
+    var dow='';
+    if(d!=='?'){var dd=new Date(d+'T00:00:00');dow=DAYS[dd.getDay()]+', ';}
+    html+='<div class="hist-day-group">';
+    html+='<div class="hist-day-head"><span>'+dow+dataFmt+'</span><span class="hist-day-count">'+arr.length+' tarefa(s)</span></div>';
+    if(nota){html+='<div class="hist-nota"><div class="hist-nota-label">📝 Nota do dia</div>'+certEsc(nota).replace(/\n/g,'<br>')+'</div>';}
+    arr.forEach(function(t){
+      var pq=t.paraQuem?'<span style="background:var(--navy2);color:#fff;border-radius:2px;padding:1px 6px;font-size:10px;margin-right:4px;">'+certEsc(t.paraQuem)+'</span>':'';
+      var obs=t.obs?'<div style="font-size:11.5px;color:var(--purple);font-style:italic;margin-top:2px;">📝 '+certEsc(t.obs)+'</div>':'';
+      var hr=t.doneAt?' · ✓ '+t.doneAt:'';
+      html+='<div class="hist-item">'+
+        '<div class="hist-item-done">✔</div>'+
+        '<div class="hist-item-body">'+
+          '<div class="hist-item-text">'+pq+certEsc(t.text)+'</div>'+
+          '<div class="hist-item-meta">'+(t.schedule?'⏰ '+t.schedule+' ':'')+hr+'</div>'+obs+
+        '</div></div>';
+    });
+    html+='</div>';
+  });
+  lista.innerHTML=html;
+}
+
+// ── Busca Global ──
+function abrirBuscaGlobal(){
+  document.getElementById('busca-global-modal').style.display='flex';
+  setTimeout(function(){document.getElementById('busca-global-inp').focus();},80);
+}
+function fecharBuscaGlobal(e){
+  if(e&&e.target!==document.getElementById('busca-global-modal'))return;
+  document.getElementById('busca-global-modal').style.display='none';
+  document.getElementById('busca-global-inp').value='';
+  document.getElementById('busca-global-results').innerHTML='<div class="busca-global-empty">Digite para buscar…</div>';
+}
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'){
+    var m=document.getElementById('busca-global-modal');
+    if(m&&m.style.display!=='none'){fecharBuscaGlobal({target:m});return;}
+  }
+  if((e.ctrlKey||e.metaKey)&&e.key==='k'){e.preventDefault();abrirBuscaGlobal();}
+});
+function destacar(txt,q){
+  if(!q) return certEsc(txt);
+  var re=new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');
+  return certEsc(txt).replace(re,'<mark>$1</mark>');
+}
+function executarBuscaGlobal(){
+  var q=(document.getElementById('busca-global-inp').value||'').trim();
+  var res=document.getElementById('busca-global-results');
+  if(q.length<2){res.innerHTML='<div class="busca-global-empty">Digite ao menos 2 caracteres…</div>';return;}
+  var ql=q.toLowerCase();
+  var html='';
+  var rTarefas=tasks.filter(function(t){return!t._futuro&&((t.text||'').toLowerCase().indexOf(ql)>=0||(t.paraQuem||'').toLowerCase().indexOf(ql)>=0||(t.obs||'').toLowerCase().indexOf(ql)>=0);});
+  if(rTarefas.length){
+    html+='<div class="busca-global-section">📋 Tarefas ('+rTarefas.length+')</div>';
+    rTarefas.forEach(function(t){
+      html+='<div class="busca-global-item" onclick="document.getElementById(\'busca-global-modal\').style.display=\'none\';mudarAba(\'tarefas\');setTimeout(function(){var el=document.getElementById(\'task-\'+'+t.id+');if(el)el.scrollIntoView({behavior:\'smooth\',block:\'center\'});},200);">'+
+        '<div class="busca-global-item-icon">'+(t.done?'✔':'⏳')+'</div>'+
+        '<div class="busca-global-item-body">'+
+          '<div class="busca-global-item-title">'+destacar(t.text,q)+'</div>'+
+          '<div class="busca-global-item-sub">'+(t.paraQuem?'👤 '+certEsc(t.paraQuem)+' · ':'')+( t.taskDate?'📅 '+fmtDate(t.taskDate):'')+'</div>'+
+        '</div></div>';
+    });
+  }
+  var rArch=archived.filter(function(t){return(t.text||'').toLowerCase().indexOf(ql)>=0||(t.paraQuem||'').toLowerCase().indexOf(ql)>=0||(t.obs||'').toLowerCase().indexOf(ql)>=0;});
+  if(rArch.length){
+    html+='<div class="busca-global-section">🗂 Arquivadas ('+rArch.length+')</div>';
+    rArch.forEach(function(t){
+      html+='<div class="busca-global-item">'+
+        '<div class="busca-global-item-icon">🗂</div>'+
+        '<div class="busca-global-item-body">'+
+          '<div class="busca-global-item-title" style="text-decoration:line-through;color:var(--muted);">'+destacar(t.text,q)+'</div>'+
+          '<div class="busca-global-item-sub">'+(t.paraQuem?'👤 '+certEsc(t.paraQuem)+' · ':'')+( t.taskDate?'📅 '+fmtDate(t.taskDate):'')+'</div>'+
+        '</div></div>';
+    });
+  }
+  var rCert=certidoes.filter(function(c){return(c.nome||'').toLowerCase().indexOf(ql)>=0||(c.municipio||'').toLowerCase().indexOf(ql)>=0;});
+  if(rCert.length){
+    html+='<div class="busca-global-section">📜 Certidões ('+rCert.length+')</div>';
+    rCert.forEach(function(c){
+      var st=certGetStatus(c);
+      var stCor={expired:'var(--red)',warning:'var(--amber)',ok:'var(--green)',permanente:'var(--muted)'}[st]||'var(--muted)';
+      html+='<div class="busca-global-item" onclick="document.getElementById(\'busca-global-modal\').style.display=\'none\';mudarAba(\'certidoes\');">'+
+        '<div class="busca-global-item-icon">📜</div>'+
+        '<div class="busca-global-item-body">'+
+          '<div class="busca-global-item-title">'+destacar(c.nome||'',q)+'</div>'+
+          '<div class="busca-global-item-sub" style="color:'+stCor+';">'+(c.municipio||'')+(c.vencimento?' · vence '+certFmtDate(c.vencimento):'')+'</div>'+
+        '</div></div>';
+    });
+  }
+  var rawN=localStorage.getItem(NOTA_KEY);
+  var notas=rawN?JSON.parse(rawN):{};
+  var rNotas=Object.keys(notas).filter(function(d){return notas[d].toLowerCase().indexOf(ql)>=0;});
+  if(rNotas.length){
+    html+='<div class="busca-global-section">📝 Notas do dia ('+rNotas.length+')</div>';
+    rNotas.sort().reverse().forEach(function(d){
+      html+='<div class="busca-global-item" onclick="document.getElementById(\'busca-global-modal\').style.display=\'none\';mudarAba(\'historico\');">'+
+        '<div class="busca-global-item-icon">📝</div>'+
+        '<div class="busca-global-item-body">'+
+          '<div class="busca-global-item-title">'+fmtDate(d)+'</div>'+
+          '<div class="busca-global-item-sub" style="font-style:italic;">'+destacar(notas[d].substring(0,100),q)+(notas[d].length>100?'…':'')+'</div>'+
+        '</div></div>';
+    });
+  }
+  if(!html) html='<div class="busca-global-empty">Nenhum resultado para "'+certEsc(q)+'".</div>';
+  res.innerHTML=html;
+}
+
+// ── Relatório certidões (semanal/mensal) ──
+function certRelatorioVencimentos(periodo){
+  var hoje=new Date();hoje.setHours(0,0,0,0);
+  var limite=new Date(hoje);limite.setDate(limite.getDate()+(periodo==='semana'?7:30));
+  var limiteStr=limite.toISOString().slice(0,10);
+  var hojeStr=hoje.toISOString().slice(0,10);
+  var alertas=certidoes.filter(function(c){
+    if(c.tipo==='permanente') return false;
+    var st=certGetStatus(c);
+    if(st==='expired') return true;
+    if(c.vencimento&&c.vencimento>=hojeStr&&c.vencimento<=limiteStr) return true;
+    var al=certProximaRenovacao(c);
+    if(al&&al>=hojeStr&&al<=limiteStr) return true;
+    return false;
+  });
+  var titulo=periodo==='semana'?'Vencimentos desta semana':'Vencimentos dos próximos 30 dias';
+  var gerado=new Date().toLocaleDateString('pt-BR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  var rows=alertas.map(function(c){
+    var st=certGetStatus(c);
+    var stTxt={expired:'🔴 Vencida',warning:'🟡 Em alerta',ok:'🟢 Em dia'}[st]||st;
+    var stCor={expired:'#fde8e8',warning:'#fff8e1',ok:'#e8f5e9'}[st]||'#fff';
+    return'<tr style="background:'+stCor+';">'+
+      '<td style="padding:8px 12px;border-bottom:1px solid #e0dbd2;font-size:13px;font-weight:600;">'+esc(c.nome)+'</td>'+
+      '<td style="padding:8px 12px;border-bottom:1px solid #e0dbd2;font-size:12px;color:#555;">'+esc(c.municipio||'—')+'</td>'+
+      '<td style="padding:8px 12px;border-bottom:1px solid #e0dbd2;font-size:12px;">'+certFmtDate(c.vencimento)+'</td>'+
+      '<td style="padding:8px 12px;border-bottom:1px solid #e0dbd2;font-size:12px;">'+certFmtDate(certProximaRenovacao(c))+'</td>'+
+      '<td style="padding:8px 12px;border-bottom:1px solid #e0dbd2;font-size:12px;font-weight:700;">'+stTxt+'</td></tr>';
+  }).join('');
+  var html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>'+titulo+' — G&C</title>'+
+    '<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:"Segoe UI",Tahoma,sans-serif;background:#fff;padding:36px 44px;color:#1c1c1c;}@media print{.no-print{display:none!important;}}</style></head><body>'+
+    '<div style="border-bottom:3px solid #1a2744;padding-bottom:16px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:flex-end;">'+
+      '<div><div style="font-family:Georgia,serif;font-size:22px;color:#1a2744;">📜 '+titulo+'</div><div style="font-size:12px;color:#7a7672;margin-top:4px;">Galhardo &amp; Canales</div></div>'+
+      '<div style="text-align:right;font-size:11px;color:#aaa;">Gerado em '+esc(gerado)+'</div></div>'+
+    (alertas.length===0?'<p style="color:#7a7672;font-style:italic;padding:20px 0;">Nenhuma certidão com vencimento no período.</p>':
+      '<table style="width:100%;border-collapse:collapse;">'+
+      '<thead><tr style="background:#f2ede6;"><th style="text-align:left;padding:7px 12px;font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:#7a7672;">Certidão</th>'+
+      '<th style="text-align:left;padding:7px 12px;font-size:10px;text-transform:uppercase;color:#7a7672;">Órgão</th>'+
+      '<th style="text-align:left;padding:7px 12px;font-size:10px;text-transform:uppercase;color:#7a7672;">Vencimento</th>'+
+      '<th style="text-align:left;padding:7px 12px;font-size:10px;text-transform:uppercase;color:#7a7672;">Alerta em</th>'+
+      '<th style="text-align:left;padding:7px 12px;font-size:10px;text-transform:uppercase;color:#7a7672;">Status</th></tr></thead>'+
+      '<tbody>'+rows+'</tbody></table>')+
+    '<div class="no-print" style="margin-top:28px;text-align:center;">'+
+      '<button onclick="window.print()" style="background:#1a2744;color:#fff;border:none;padding:11px 28px;font-size:14px;border-radius:3px;cursor:pointer;">🖨 Imprimir / PDF</button>&nbsp;&nbsp;'+
+      '<button onclick="window.close()" style="background:none;border:1px solid #d5cfc5;color:#7a7672;padding:11px 18px;font-size:14px;border-radius:3px;cursor:pointer;">Fechar</button></div>'+
+    '</body></html>';
+  var w=window.open('','_blank','width=960,height=680,scrollbars=yes');
+  if(w){w.document.write(html);w.document.close();}
+}
+function certVerificarRelatorioAgendado(){
+  if(Notification.permission!=='granted') return;
+  var agora=new Date();
+  var hora=agora.getHours(),minuto=agora.getMinutes();
+  if(!(hora===8&&minuto<=5)) return;
+  var hojeStr=agora.toISOString().slice(0,10);
+  var dow=agora.getDay();
+  if(dow===1){
+    var k='cert_rel_semana_'+hojeStr;
+    if(!_certAlertFired[k]){_certAlertFired[k]=true;certSaveAlertFired();
+      mostrarToast('📜 Segunda-feira: clique em Relatório Semanal na aba Certidões.',false);}
+  }
+  if(hojeStr===certPrimeiroDiaUtil()){
+    var k2='cert_rel_mes_'+hojeStr;
+    if(!_certAlertFired[k2]){_certAlertFired[k2]=true;certSaveAlertFired();
+      mostrarToast('📜 Início do mês: clique em Relatório Mensal na aba Certidões.',false);}
+  }
+}
+setInterval(certVerificarRelatorioAgendado,60000);
+
 certLoad();
 document.getElementById('task-input').addEventListener('keydown',function(e){if(e.key==='Enter')addTask();});
 load();
+notaLoad();
 if('Notification' in window&&Notification.permission==='default'){setTimeout(function(){pedirPermissao();},1500);}
 // Firebase onSnapshot já está ativo e sincroniza automaticamente.
-// O status inicial fica "Conectando…" até o primeiro snapshot chegar.
 document.addEventListener('firebase-ready', function(){
   var el=document.getElementById('sync-txt');
   if(el) el.textContent='Conectado ✅';
