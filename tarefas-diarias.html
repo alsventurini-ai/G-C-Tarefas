@@ -1506,6 +1506,26 @@ function abrirModalEdicao(id){
   setTimeout(function(){document.getElementById('em-text').focus();},80);
 }
 function fecharModalEdicao(){document.getElementById('edit-modal').style.display='none';_editingId=null;}
+function duplicarTarefa(id){
+  var t=tasks.find(function(x){return x.id===id;});if(!t)return;
+  _editingId='__novo__';
+  document.getElementById('em-pq').value=t.paraQuem||'';
+  document.getElementById('em-text').value=t.text;
+  document.getElementById('em-date').value='';
+  document.getElementById('em-time').value=t.schedule||'';
+  document.getElementById('em-obs').value=t.obs||'';
+  document.getElementById('em-priority').value=t.priority||'';
+  document.getElementById('em-pin').value='';
+  document.getElementById('em-duracao').value=t.duracao||'';
+  document.getElementById('em-repeat').value='none';
+  document.getElementById('em-maxrep').value='';
+  _editIntradayTimes=[];
+  onEditRepeatChange();
+  renderIntradayList('em-intraday-list',_editIntradayTimes,null);
+  document.getElementById('edit-modal').dataset.mode='duplicar';
+  document.getElementById('edit-modal').style.display='flex';
+  setTimeout(function(){document.getElementById('em-date').focus();},80);
+}
 function onEditRepeatChange(){
   var v=document.getElementById('em-repeat').value;
   document.getElementById('em-intraday').style.display=(v==='intraday')?'block':'none';
@@ -1523,6 +1543,10 @@ function salvarModalEdicao(){
   var novoRepeat=document.getElementById('em-repeat').value;
   var novoMaxRep=parseInt(document.getElementById('em-maxrep').value)||0;
   var mode=document.getElementById('edit-modal').dataset.mode;
+  if(mode==='duplicar'){
+    var nova={id:Date.now(),text:novoText,paraQuem:novoPQ,obs:novoObs,priority:novoPriority,pinned:novoPin,duracao:novoDuracao,schedule:novoTime||'',taskDate:novaData||'',done:false,doneAt:'',alertFired:false,addedAt:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})};
+    tasks.unshift(nova);save();render();atualizarFiltros();fecharModalEdicao();return;
+  }
   if(mode==='recorr'){
     var r=recorrencias.find(function(x){return x.id===_editingId;});
     if(r){
@@ -1640,17 +1664,41 @@ function restaurarBackup(input){
 }
 
 // ── Relatórios ──
-function doPrint(){
-  var pend=tasks.filter(function(t){return!t.done&&!t._futuro;});
-  var conc=tasks.filter(function(t){return t.done&&!t._futuro;});
-  abrirJanelaImpressao(pend.concat(conc),'','','',false);
+function abrirFiltroRelatorio(agruparPQ){
+  var ov=document.createElement('div');ov.className='modal-overlay';ov.style.zIndex='20000';
+  ov.innerHTML='<div class="modal-box" style="max-width:320px;">'
+    +'<div class="modal-head"><span class="modal-head-title">🖨 '+(agruparPQ?'Por Para Quem':'Relatório')+'</span><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div>'
+    +'<div style="padding:18px 20px;">'
+    +'<p style="font-size:13px;color:#555;margin-bottom:14px;">Quais tarefas incluir?</p>'
+    +'<label style="display:flex;align-items:center;gap:8px;font-size:14px;margin-bottom:10px;cursor:pointer;"><input type="checkbox" id="rp-pend" checked style="width:16px;height:16px;"> ⏳ Pendentes</label>'
+    +'<label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer;"><input type="checkbox" id="rp-conc" checked style="width:16px;height:16px;"> ✓ Concluídas</label>'
+    +'</div>'
+    +'<div style="padding:0 20px 18px;display:flex;gap:8px;justify-content:flex-end;">'
+    +'<button class="btn-modal-cancel" onclick="this.closest(\'.modal-overlay\').remove()">Cancelar</button>'
+    +'<button class="btn-modal-ok" id="rp-ok">Gerar</button>'
+    +'</div></div>';
+  document.body.appendChild(ov);
+  document.getElementById('rp-ok').onclick=function(){
+    var incPend=document.getElementById('rp-pend').checked;
+    var incConc=document.getElementById('rp-conc').checked;
+    if(!incPend&&!incConc){mostrarToast('Selecione ao menos uma opção.',false);return;}
+    var lista=tasks.filter(function(t){
+      if(t._futuro)return false;
+      if(agruparPQ&&!t.paraQuem)return false;
+      if(!incPend&&!t.done)return false;
+      if(!incConc&&t.done)return false;
+      return true;
+    });
+    if(lista.length===0){mostrarToast('Nenhuma tarefa encontrada.',false);ov.remove();return;}
+    ov.remove();
+    abrirJanelaImpressao(lista,'','','',agruparPQ,incPend,incConc);
+  };
 }
-function doRelatorioPQ(){
-  var lista=tasks.filter(function(t){return t.paraQuem&&!t._futuro;});
-  if(lista.length===0){mostrarToast('Nenhuma tarefa com Para Quem preenchido.',false);return;}
-  abrirJanelaImpressao(lista,'','','',true);
-}
-function abrirJanelaImpressao(lista,de,ate,pq,agruparPQ){
+function doPrint(){abrirFiltroRelatorio(false);}
+function doRelatorioPQ(){abrirFiltroRelatorio(true);}
+function abrirJanelaImpressao(lista,de,ate,pq,agruparPQ,incPend,incConc){
+  if(incPend===undefined)incPend=true;
+  if(incConc===undefined)incConc=true;
   function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
   function rowHtml(t){
     var rs=t.done?'text-decoration:line-through;color:#aaa;':'';
@@ -1677,7 +1725,7 @@ function abrirJanelaImpressao(lista,de,ate,pq,agruparPQ){
   } else {
     var pend2=lista.filter(function(x){return!x.done;}),conc2=lista.filter(function(x){return x.done;});
     function secao(titulo,arr,cor){return'<h3 style="font-family:Georgia,serif;font-size:14px;color:'+cor+';margin:24px 0 8px;border-bottom:2px solid '+cor+';padding-bottom:5px;">'+titulo+' ('+arr.length+')</h3><table style="width:100%;border-collapse:collapse;">'+thRow()+'<tbody>'+(arr.length?arr.map(rowHtml).join(''):'<tr><td colspan="5" style="text-align:center;color:#999;font-style:italic;padding:14px;">Nenhuma tarefa</td></tr>')+'</tbody></table>';}
-    corpoHtml=secao('Pendentes',pend2,'#c78a1a')+secao('Concluídas',conc2,'#3a8c4a');
+    corpoHtml=(incPend?secao('Pendentes',pend2,'#c78a1a'):'')+(incConc?secao('Concluídas',conc2,'#3a8c4a'):'');
   }
   var html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Relatório — G&C</title><style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:"Segoe UI",Tahoma,sans-serif;background:#fff;padding:36px 44px;color:#1c1c1c;}@media print{.no-print{display:none!important;}body{padding:20px 26px;}}</style></head><body>'
     +'<div style="border-bottom:3px solid #1a2744;padding-bottom:16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-end;">'
@@ -1779,6 +1827,8 @@ function makeEl(t){
   tm.textContent=t.done&&t.doneAt?'✓ '+t.doneAt:(t.addedAt?t.addedAt:'');
   var acts=document.createElement('div');acts.className='task-actions';
   var be=document.createElement('button');be.className='btn-icon';be.textContent='✏️';be.title='Editar';be.onclick=(function(id){return function(){abrirModalEdicao(id);};})(t.id);
+  var bdup=document.createElement('button');bdup.className='btn-icon';bdup.textContent='⧉';bdup.title='Duplicar (nova data)';bdup.style.fontSize='15px';
+  bdup.onclick=(function(id){return function(){duplicarTarefa(id);};})(t.id);
   var bo=document.createElement('button');bo.className='btn-icon';bo.textContent='📝';bo.title='Observação';
   bo.onclick=(function(id,task){return function(){abrirObsInline(id,task);};})(t.id,t);
   var bpin=document.createElement('button');bpin.className='btn-icon';bpin.textContent=t.pinned?'📌':'📍';bpin.title=t.pinned?'Desafixar':'Fixar no topo';
@@ -1787,7 +1837,7 @@ function makeEl(t){
   ba.onclick=(function(id){return function(){arquivarTarefa(id);};})(t.id);
   var bd=document.createElement('button');bd.className='btn-icon del';bd.textContent='×';bd.title='Remover';bd.style.fontSize='20px';
   bd.onclick=(function(id){return function(){del(id);};})(t.id);
-  acts.appendChild(be);acts.appendChild(bo);acts.appendChild(bpin);acts.appendChild(ba);acts.appendChild(bd);
+  acts.appendChild(be);acts.appendChild(bdup);acts.appendChild(bo);acts.appendChild(bpin);acts.appendChild(ba);acts.appendChild(bd);
   div.appendChild(chk);div.appendChild(body);div.appendChild(tm);div.appendChild(acts);
   // ── Swipe mobile (touch) ──
   if(!t._futuro){
