@@ -472,6 +472,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
         <option value="none">Não repetir</option>
         <option value="daily">Diária</option>
         <option value="weekly">Semanal</option>
+        <option value="biweekly">Quinzenal</option>
         <option value="monthly">Mensal</option>
         <option value="intraday">No mesmo dia (vários horários)</option>
       </select>
@@ -548,6 +549,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
       <option value="adicao_desc">🆕 Mais recente</option>
       <option value="adicao_asc">🕓 Mais antigo</option>
     </select>
+    <input type="date" id="filter-date" class="filter-select" onchange="render()" title="Filtrar por dia" style="font-family:'Segoe UI',Tahoma,sans-serif;font-size:13px;">
     <button class="btn-clear-filter" onclick="limparFiltros()" title="Limpar filtros">×</button>
   </div>
 
@@ -701,6 +703,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
             <option value="none">Não repetir</option>
             <option value="daily">Diária</option>
             <option value="weekly">Semanal</option>
+            <option value="biweekly">Quinzenal</option>
             <option value="monthly">Mensal</option>
             <option value="intraday">No mesmo dia</option>
           </select>
@@ -878,7 +881,7 @@ var tasks=[],recorrencias=[],archived=[],templates=[];
 var KEY='gc_tarefas_v3',RECORR_KEY='gc_recorrencias',DATE_KEY='gc_last_date',ARCH_KEY='gc_archived',TPL_KEY='gc_templates';
 var DAYS=['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
 var MONTHS=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
-var REPEAT_LABELS={none:'Não repetir',daily:'🔁 Diária',weekly:'🔁 Semanal',monthly:'🔁 Mensal',intraday:'🔁 No dia'};
+var REPEAT_LABELS={none:'Não repetir',daily:'🔁 Diária',weekly:'🔁 Semanal',biweekly:'🔁 Quinzenal',monthly:'🔁 Mensal',intraday:'🔁 No dia'};
 var PRIORITY_LABELS={alta:'🔴 Alta',media:'🟢 Média',baixa:'🟡 Baixa'};
 var PRIORITY_CLASS={alta:'priority-alta',media:'priority-media',baixa:'priority-baixa'};
 var now=new Date(),todayStr=now.toISOString().slice(0,10);
@@ -1198,6 +1201,7 @@ function getProximasOcorrencias(r){
     var ok=false;
     if(r.repeat==='daily')ok=true;
     else if(r.repeat==='weekly'&&d.getDay()===r.dayOfWeek)ok=true;
+    else if(r.repeat==='biweekly'){var diffDias=Math.round((d-new Date(r.startDate||todayStr+'T00:00:00'))/(86400000));if(diffDias>=0&&diffDias%14===0)ok=true;}
     else if(r.repeat==='monthly'&&d.getDate()===r.dayOfMonth)ok=true;
     if(ok)datas.push(iso);
   }
@@ -1236,6 +1240,7 @@ function processarRecorrencias(){
     var dg=false;
     if(r.repeat==='daily')dg=true;
     else if(r.repeat==='weekly'&&r.dayOfWeek===dow)dg=true;
+    else if(r.repeat==='biweekly'){var sd=new Date((r.startDate||todayStr)+'T00:00:00');var diffB=Math.round((new Date(todayStr+'T00:00:00')-sd)/86400000);if(diffB>=0&&diffB%14===0)dg=true;}
     else if(r.repeat==='monthly'&&r.dayOfMonth===dom)dg=true;
     else if(r.repeat==='intraday')dg=true;
     if(!dg)return;
@@ -1283,6 +1288,7 @@ function renderRecorrencias(){
     if(r.paraQuem)mp.push('👤 '+r.paraQuem);
     if(r.schedule)mp.push('⏰ '+r.schedule);
     if(r.repeat==='weekly')mp.push('Toda '+DAYS[r.dayOfWeek]);
+    if(r.repeat==='biweekly')mp.push('A cada 14 dias');
     if(r.repeat==='monthly')mp.push('Todo dia '+r.dayOfMonth);
     if(r.lastGenerated)mp.push('Última: '+fmtDate(r.lastGenerated));
     meta.textContent=mp.join(' · ');
@@ -1390,6 +1396,7 @@ function mostrarResumo(){
 // ── CRUD ──
 document.getElementById('repeat-input').addEventListener('change',function(){
   var v=this.value,sec=document.getElementById('intraday-section'),mrw=document.getElementById('maxrep-wrap');
+  mrw.style.display=(v!=='none')?'flex':'none';
   sec.style.display=(v==='intraday')?'block':'none';
   document.getElementById('time-input').style.opacity=(v==='intraday')?'0.3':'1';
   mrw.style.display=(v!=='none')?'flex':'none';
@@ -1422,7 +1429,7 @@ function addTask(){
     var tid=Date.now();
     tasks.push({id:tid,text:txt,done:false,addedAt:timeNow(),doneAt:'',schedule:timeSel.value||'',taskDate:dateSel.value||'',alertFired:false,paraQuem:pq,obs:obsVal,priority:priority,duracao:duracao,pinned:false});
     if(repeat!=='none'){
-      var recorr2={id:tid,text:txt,paraQuem:pq,schedule:timeSel.value||'',repeat:repeat,active:true,maxRep:maxRep,repCount:1,dayOfWeek:now.getDay(),dayOfMonth:now.getDate(),lastGenerated:todayStr,priority:priority};
+      var recorr2={id:tid,text:txt,paraQuem:pq,schedule:timeSel.value||'',repeat:repeat,active:true,maxRep:maxRep,repCount:1,dayOfWeek:now.getDay(),dayOfMonth:now.getDate(),lastGenerated:todayStr,priority:priority,startDate:dateSel.value||todayStr};
       tasks[tasks.length-1].repeatId=tid;adicionarRecorrencia(recorr2);
     }
   }
@@ -1602,10 +1609,13 @@ function filtrarLista(lista){
   var s=(document.getElementById('search-input').value||'').toLowerCase().trim();
   var pq=document.getElementById('filter-pq').value;
   var pri=document.getElementById('filter-priority').value;
+  var fdEl=document.getElementById('filter-date');
+  var fd=fdEl?fdEl.value:'';
   return lista.filter(function(t){
     if(pq&&t.paraQuem!==pq)return false;
     if(pri&&t.priority!==pri)return false;
     if(s&&t.text.toLowerCase().indexOf(s)<0&&(t.paraQuem||'').toLowerCase().indexOf(s)<0)return false;
+    if(fd&&(t.taskDate||'')!==fd)return false;
     return true;
   });
 }
@@ -1614,6 +1624,7 @@ function limparFiltros(){
   document.getElementById('filter-pq').value='';
   document.getElementById('filter-priority').value='';
   var fs=document.getElementById('filter-sort');if(fs)fs.value='data_asc';
+  var fd=document.getElementById('filter-date');if(fd)fd.value='';
   render();
 }
 
@@ -2499,10 +2510,15 @@ function renderLicitacoes(){
         else{cls='ok';dtxt='Em '+diff+'d';}
         diasBadge='<span class="lic-days-badge '+cls+'">'+dtxt+'</span>';
       }
+      var tidLic=t.id;
       html+='<div class="cert-card" style="border-left-color:'+statusCor+';">'+
         '<div class="cert-card-top">'+
         '<span class="cert-card-name">'+t.text+diasBadge+'</span>'+
+        '<span style="display:flex;gap:4px;align-items:center;">'+
         '<span class="cert-badge" style="background:'+(t.done?'#e8f5e9':'#fff8e1')+';color:'+(t.done?'#2e7d32':'#c78a1a')+';border:1px solid '+(t.done?'#c8e6c9':'#ffe082')+';">'+statusTxt+'</span>'+
+        '<button onclick="abrirModalEdicao('+tidLic+')" style="background:none;border:1px solid #bbb;border-radius:3px;padding:2px 7px;font-size:12px;cursor:pointer;color:#555;" title="Editar">✏️</button>'+
+        '<button onclick="del('+tidLic+')" style="background:none;border:1px solid #e57373;border-radius:3px;padding:2px 7px;font-size:12px;cursor:pointer;color:#c0392b;" title="Excluir">×</button>'+
+        '</span>'+
         '</div>'+
         '<div class="cert-dates"><span class="cert-date">Data:'+dataStr+horaStr+'</span>'+(t.paraQuem?'<span class="cert-date">Para: <b>'+t.paraQuem+'</b></span>':'')+'</div>'+
         (t.obs?'<div class="cert-file-name" style="white-space:normal;font-style:italic;color:var(--muted);">'+t.obs.substring(0,120)+(t.obs.length>120?'…':'')+'</div>':'')+
