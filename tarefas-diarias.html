@@ -1632,7 +1632,7 @@ function filtrarLista(lista){
     if(pq&&t.paraQuem!==pq)return false;
     if(pri&&t.priority!==pri)return false;
     if(s&&t.text.toLowerCase().indexOf(s)<0&&(t.paraQuem||'').toLowerCase().indexOf(s)<0)return false;
-    if(fd&&(t.taskDate||'')!==fd)return false;
+    if(fd&&t.taskDate&&t.taskDate!==fd)return false;
     return true;
   });
 }
