@@ -570,16 +570,19 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <!-- Aba Licitações -->
   </div>
   <div id="tab-licitacoes" class="tab-content">
-  <div class="action-bar" style="justify-content:space-between;flex-wrap:wrap;gap:6px;">
+  <div class="action-bar" style="justify-content:space-between;">
     <span style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.3px;color:var(--muted);font-weight:600;">🏛 Licitações</span>
-    <select id="lic-sort" class="filter-select" onchange="renderLicitacoes()" style="font-size:12px;padding:4px 8px;">
-      <option value="municipio">A-Z Município</option>
+    <button class="btn" style="font-size:12px;padding:5px 11px;border-color:#8e44ad;color:#8e44ad;" onclick="imprimirLicitacoes()">🖨 Imprimir</button>
+  </div>
+  <div id="lic-stats-row" style="display:flex;gap:10px;margin:0 30px 10px;flex-wrap:wrap;"></div>
+  <div style="padding:0 30px 10px;display:flex;align-items:center;gap:8px;">
+    <span style="font-size:11px;color:var(--muted);white-space:nowrap;">Ordenar por:</span>
+    <select id="lic-sort" class="filter-select" onchange="renderLicitacoes()" style="font-size:13px;flex:1;">
+      <option value="municipio">🔤 A-Z Município</option>
       <option value="data">📅 Data mais próxima</option>
       <option value="status">⏳ Pendentes primeiro</option>
     </select>
-    <button class="btn" style="font-size:12px;padding:5px 11px;border-color:#8e44ad;color:#8e44ad;" onclick="imprimirLicitacoes()">🖨 Imprimir</button>
   </div>
-  <div id="lic-stats-row" style="display:flex;gap:10px;margin:0 30px 14px;flex-wrap:wrap;"></div>
   <div id="lic-lista" style="padding:0 30px 24px;background:var(--cream);"></div>
   </div>
 
