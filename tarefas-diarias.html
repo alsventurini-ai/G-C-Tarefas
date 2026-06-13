@@ -570,8 +570,13 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <!-- Aba Licitações -->
   </div>
   <div id="tab-licitacoes" class="tab-content">
-  <div class="action-bar" style="justify-content:space-between;">
+  <div class="action-bar" style="justify-content:space-between;flex-wrap:wrap;gap:6px;">
     <span style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.3px;color:var(--muted);font-weight:600;">🏛 Licitações</span>
+    <select id="lic-sort" class="filter-select" onchange="renderLicitacoes()" style="font-size:12px;padding:4px 8px;">
+      <option value="municipio">A-Z Município</option>
+      <option value="data">📅 Data mais próxima</option>
+      <option value="status">⏳ Pendentes primeiro</option>
+    </select>
     <button class="btn" style="font-size:12px;padding:5px 11px;border-color:#8e44ad;color:#8e44ad;" onclick="imprimirLicitacoes()">🖨 Imprimir</button>
   </div>
   <div id="lic-stats-row" style="display:flex;gap:10px;margin:0 30px 14px;flex-wrap:wrap;"></div>
@@ -2545,7 +2550,24 @@ function renderLicitacoes(){
   });
   var html='';
   var etapasData=licEtapasLoad();
-  Object.keys(grupos).sort().forEach(function(mun){
+  var licSort=(document.getElementById('lic-sort')||{}).value||'municipio';
+  var munKeys=Object.keys(grupos);
+  if(licSort==='municipio'){
+    munKeys.sort();
+  } else if(licSort==='data'){
+    munKeys.sort(function(a,b){
+      var dataA=grupos[a].map(function(t){return t.taskDate||'9999';}).sort()[0];
+      var dataB=grupos[b].map(function(t){return t.taskDate||'9999';}).sort()[0];
+      return dataA<dataB?-1:dataA>dataB?1:0;
+    });
+  } else if(licSort==='status'){
+    munKeys.sort(function(a,b){
+      var pendA=grupos[a].filter(function(t){return !t.done;}).length;
+      var pendB=grupos[b].filter(function(t){return !t.done;}).length;
+      return pendB-pendA;
+    });
+  }
+  munKeys.forEach(function(mun){
     var ts=grupos[mun];
     var munKey=mun.replace(/[^a-zA-Z0-9]/g,'_');
     var marcadas=etapasData[mun]||[];
