@@ -848,7 +848,8 @@ onSnapshot(REF, function(snap){
     var localTasks=localRaw?JSON.parse(localRaw):[];
     var fbStr=JSON.stringify(fbTasks);
     var localStr=JSON.stringify(localTasks);
-    if(fbStr!==localStr && fbTasks.length>0){
+    // Só sincroniza do Firebase se tiver mais dados que o local
+    if(fbStr!==localStr && fbTasks.length>0 && fbTasks.length>=localTasks.length){
       window._tasksFromSnapshot=fbTasks;
       window._recFromSnapshot=fbRec;
       window._archFromSnapshot=fbArch;
@@ -1031,6 +1032,7 @@ function toggleMic(){
 
 // ── Persistência ──
 function atualizarTitulo(){
+  if(typeof tasks==='undefined'||!tasks) return;
   var pend=tasks.filter(function(t){return !t.done&&!t._futuro;}).length;
   document.title=pend>0?'('+pend+') Tarefas — G&C':'Tarefas — G&C';
 }
