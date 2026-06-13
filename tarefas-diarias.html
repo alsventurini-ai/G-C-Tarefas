@@ -571,7 +571,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <div id="tab-licitacoes" class="tab-content">
   <div class="action-bar" style="justify-content:space-between;">
     <span style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.3px;color:var(--muted);font-weight:600;">🏛 Licitações</span>
-    <button class="btn" style="border-color:#8e44ad;color:#8e44ad;font-weight:600;" onclick="abrirModalLicitacao()">+ Nova Licitação</button>
+    <button class="btn" style="font-size:12px;padding:5px 11px;border-color:#8e44ad;color:#8e44ad;" onclick="imprimirLicitacoes()">🖨 Imprimir</button>
   </div>
   <div id="lic-stats-row" style="display:flex;gap:10px;margin:0 30px 14px;flex-wrap:wrap;"></div>
   <div id="lic-lista" style="padding:0 30px 24px;background:var(--cream);"></div>
@@ -1427,10 +1427,22 @@ function addTask(){
     document.getElementById('intraday-section').style.display='none';
   } else {
     var tid=Date.now();
-    tasks.push({id:tid,text:txt,done:false,addedAt:timeNow(),doneAt:'',schedule:timeSel.value||'',taskDate:dateSel.value||'',alertFired:false,paraQuem:pq,obs:obsVal,priority:priority,duracao:duracao,pinned:false});
+    var dataTask=dateSel.value||'';
+    var horaTask=timeSel.value||'';
+    tasks.push({id:tid,text:txt,done:false,addedAt:timeNow(),doneAt:'',schedule:horaTask,taskDate:dataTask,alertFired:false,paraQuem:pq,obs:obsVal,priority:priority,duracao:duracao,pinned:false});
     if(repeat!=='none'){
-      var recorr2={id:tid,text:txt,paraQuem:pq,schedule:timeSel.value||'',repeat:repeat,active:true,maxRep:maxRep,repCount:1,dayOfWeek:now.getDay(),dayOfMonth:now.getDate(),lastGenerated:todayStr,priority:priority,startDate:dateSel.value||todayStr};
+      var recorr2={id:tid,text:txt,paraQuem:pq,schedule:horaTask,repeat:repeat,active:true,maxRep:maxRep,repCount:1,dayOfWeek:now.getDay(),dayOfMonth:now.getDate(),lastGenerated:todayStr,priority:priority,startDate:dataTask||todayStr};
       tasks[tasks.length-1].repeatId=tid;adicionarRecorrencia(recorr2);
+    }
+    // Deteccao automatica: "Licitacao — Municipio" gera Impugnacao e Analise do Edital
+    var licMatch=txt.match(/^licitaç[aã]o\s*[-—]\s*(.+)$/i);
+    if(licMatch&&dataTask){
+      var munAuto=licMatch[1].trim();
+      var dataImpugAuto=somarDiasUteis(dataTask,4);
+      var dataAnaliseAuto=somarDiasCorridos(dataTask,8);
+      tasks.push({id:tid+1,text:'Impugnação — '+munAuto,done:false,addedAt:timeNow(),doneAt:'',schedule:horaTask,taskDate:dataImpugAuto,alertFired:false,paraQuem:pq||'Licitações',obs:'Prazo de impugnação — '+munAuto,priority:'alta',duracao:'',pinned:false});
+      tasks.push({id:tid+2,text:'Análise do Edital — '+munAuto,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataAnaliseAuto,alertFired:false,paraQuem:pq||'Licitações',obs:'Análise do edital — '+munAuto,priority:'alta',duracao:'',pinned:false});
+      mostrarToast('✅ 3 tarefas criadas para '+munAuto+'!',false);
     }
   }
   inp.value='';timeSel.value='';dateSel.value='';pqInp.value='';repeatSel.value='none';
@@ -1675,7 +1687,7 @@ function restaurarBackup(input){
 }
 
 // ── Relatórios ──
-function abrirFiltroRelatorio(agruparPQ){
+function abrirFiltroRelatorio(agruparPQ,listaFixa){
   var ov=document.createElement('div');ov.className='modal-overlay';ov.style.zIndex='20000';
   ov.innerHTML='<div class="modal-box" style="max-width:320px;">'
     +'<div class="modal-head"><span class="modal-head-title">🖨 '+(agruparPQ?'Por Para Quem':'Relatório')+'</span><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">×</button></div>'
@@ -1693,7 +1705,8 @@ function abrirFiltroRelatorio(agruparPQ){
     var incPend=document.getElementById('rp-pend').checked;
     var incConc=document.getElementById('rp-conc').checked;
     if(!incPend&&!incConc){mostrarToast('Selecione ao menos uma opção.',false);return;}
-    var lista=tasks.filter(function(t){
+    var base=listaFixa||tasks;
+    var lista=base.filter(function(t){
       if(t._futuro)return false;
       if(agruparPQ&&!t.paraQuem)return false;
       if(!incPend&&!t.done)return false;
@@ -2447,6 +2460,20 @@ function mudarAba(aba){
   if(aba==='historico'){histPeriodo(7);} // padrão: últimos 7 dias
 }
 
+function imprimirLicitacoes(){
+  var lics=tasks.filter(function(t){
+    if(!t.text||t._futuro)return false;
+    var tx=t.text.toLowerCase();
+    if(t.text.indexOf('🏛 Disputa')===0||t.text.indexOf('⚠️ Impugnação')===0||t.text.indexOf('📋 Análise de Edital')===0)return true;
+    if(/^licitaç[aã]o\s*[-—]/i.test(t.text))return true;
+    if(/^impugnaç[aã]o\s*[-—]/i.test(t.text))return true;
+    if(/^an[aá]lise do edital\s*[-—]/i.test(t.text))return true;
+    if(tx.indexOf('licitaç')>=0||tx.indexOf('licitac')>=0)return true;
+    return false;
+  });
+  if(lics.length===0){mostrarToast('Nenhuma tarefa de licitação.',false);return;}
+  abrirFiltroRelatorio(false,lics);
+}
 function renderLicitacoes(){
   var lista=document.getElementById('lic-lista');
   var stats=document.getElementById('lic-stats-row');
@@ -2457,6 +2484,10 @@ function renderLicitacoes(){
     var tx=t.text.toLowerCase();
     // Criadas pelo botão "+ Nova Licitação" (prefixos automáticos)
     if(t.text.indexOf('🏛 Disputa')===0||t.text.indexOf('⚠️ Impugnação')===0||t.text.indexOf('📋 Análise de Edital')===0) return true;
+    // Criadas pelo fluxo direto (texto livre)
+    if(/^licitaç[aã]o\s*[-—]/i.test(t.text)) return true;
+    if(/^impugnaç[aã]o\s*[-—]/i.test(t.text)) return true;
+    if(/^an[aá]lise do edital\s*[-—]/i.test(t.text)) return true;
     // Criadas manualmente contendo a palavra "licitação" ou "licitacao"
     if(tx.indexOf('licitaç')>=0||tx.indexOf('licitac')>=0) return true;
     return false;
