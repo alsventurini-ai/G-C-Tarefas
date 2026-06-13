@@ -550,8 +550,8 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
       <option value="adicao_asc">🕓 Mais antigo</option>
     </select>
     <input type="date" id="filter-date" class="filter-select" onchange="render()" title="Filtrar por dia" style="font-family:'Segoe UI',Tahoma,sans-serif;font-size:13px;">
-    <button class="btn-clear-filter" onclick="filtrarHoje()" title="Hoje" style="font-size:12px;color:var(--navy);font-weight:600;">Hoje</button>
-    <button class="btn-clear-filter" onclick="limparFiltros()" title="Limpar filtros">×</button>
+    <button class="btn-clear-filter" onclick="filtrarHoje()" title="Ir para hoje" style="font-size:11px;color:var(--navy);font-weight:700;padding:2px 6px;border:1px solid var(--navy);border-radius:3px;">Hoje</button>
+    <button class="btn-clear-filter" onclick="limparTodosFiltros()" title="Limpar todos os filtros">×</button>
   </div>
 
   <div class="tasks-area">
@@ -1641,12 +1641,15 @@ function filtrarHoje(){
   if(fd){fd.value=todayStr;render();}
 }
 function limparFiltros(){
-  document.getElementById('search-input').value='';
-  document.getElementById('filter-pq').value='';
-  document.getElementById('filter-priority').value='';
+  var si=document.getElementById('search-input');if(si)si.value='';
+  var pq=document.getElementById('filter-pq');if(pq)pq.value='';
+  var pr=document.getElementById('filter-priority');if(pr)pr.value='';
   var fs=document.getElementById('filter-sort');if(fs)fs.value='data_asc';
   var fd=document.getElementById('filter-date');if(fd)fd.value='';
   render();
+}
+function limparTodosFiltros(){
+  limparFiltros();
 }
 
 // ── Backup ──
@@ -2555,9 +2558,9 @@ function renderLicitacoes(){
       var bg=done?'var(--green)':'var(--white)';
       var cor=done?'#fff':'var(--ink)';
       var bord=done?'var(--green)':'var(--border)';
-      html+='<button onclick="licToggleEtapa(''+mun.replace(/'/g,"\'")+'',' +'''+et+'')" '
-        +'style="background:'+bg+';color:'+cor+';border:1.5px solid '+bord+';border-radius:14px;padding:4px 12px;font-size:12px;cursor:pointer;font-family:'Segoe UI',Tahoma,sans-serif;transition:all .15s;">'
-        +(done?'✓ ':'')+et+'</button>';
+      html+='<button onclick="licToggleEtapa(this.dataset.mun,this.dataset.et)" data-mun="'+mun.replace(/"/g,'&quot;')+'" data-et="'+et.replace(/"/g,'&quot;')+'" '
+        +'style="background:'+bg+';color:'+cor+';border:1.5px solid '+bord+';border-radius:14px;padding:4px 12px;font-size:12px;cursor:pointer;font-family:sans-serif;transition:all .15s;">'
+        +(done?'&#10003; ':'')+et+'</button>';
     });
     html+='</div>';
     ts.forEach(function(t){
