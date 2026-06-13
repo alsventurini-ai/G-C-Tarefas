@@ -550,6 +550,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
       <option value="adicao_asc">🕓 Mais antigo</option>
     </select>
     <input type="date" id="filter-date" class="filter-select" onchange="render()" title="Filtrar por dia" style="font-family:'Segoe UI',Tahoma,sans-serif;font-size:13px;">
+    <button class="btn-clear-filter" onclick="filtrarHoje()" title="Hoje" style="font-size:12px;color:var(--navy);font-weight:600;">Hoje</button>
     <button class="btn-clear-filter" onclick="limparFiltros()" title="Limpar filtros">×</button>
   </div>
 
@@ -1029,6 +1030,10 @@ function toggleMic(){
 }
 
 // ── Persistência ──
+function atualizarTitulo(){
+  var pend=tasks.filter(function(t){return !t.done&&!t._futuro;}).length;
+  document.title=pend>0?'('+pend+') Tarefas — G&C':'Tarefas — G&C';
+}
 function save(){
   localStorage.setItem(KEY,JSON.stringify(tasks));
   if(window._fbSave)window._fbSave(tasks,recorrencias,archived,templates);
@@ -1451,7 +1456,7 @@ function addTask(){
   document.getElementById('duracao-input').value='';
   document.getElementById('obs-new-wrap').style.display='none';
   document.getElementById('btn-obs-nova').textContent='📝 Observação';
-  save();render();atualizarFiltros();inp.focus();
+  save();render();atualizarFiltros();atualizarTitulo();inp.focus();
 }
 function toggle(id){
   var t=tasks.find(function(x){return x.id===id;});if(!t)return;
@@ -1630,6 +1635,10 @@ function filtrarLista(lista){
     if(fd&&(t.taskDate||'')!==fd)return false;
     return true;
   });
+}
+function filtrarHoje(){
+  var fd=document.getElementById('filter-date');
+  if(fd){fd.value=todayStr;render();}
 }
 function limparFiltros(){
   document.getElementById('search-input').value='';
@@ -1897,6 +1906,7 @@ function abrirObsInline(id,task){
   var taskEl=document.getElementById('task-'+id);if(taskEl){var bd2=taskEl.querySelector('.task-body');if(bd2){bd2.appendChild(row);area.focus();}}
 }
 function render(){
+  atualizarTitulo();
   var todos=tasks;var visiveis=filtrarLista(todos);
   var p=sortTasks(visiveis.filter(function(x){return!x.done;}),false);
   var d=sortTasks(visiveis.filter(function(x){return x.done&&!x._futuro;}),true);
@@ -1969,6 +1979,18 @@ document.getElementById('lic-modal').addEventListener('click',function(e){if(e.t
 
 
 // ── Certidões ──
+var LIC_ETAPAS_KEY='gc_lic_etapas_v1';
+var LIC_ETAPAS=['Análise do Edital','Impugnação','Checklist','Declarações','Juntada','Conferência Habilitação','Envio Proposta'];
+function licEtapasLoad(){var raw=localStorage.getItem(LIC_ETAPAS_KEY);return raw?JSON.parse(raw):{}}
+function licEtapasSave(data){localStorage.setItem(LIC_ETAPAS_KEY,JSON.stringify(data));}
+function licToggleEtapa(mun,etapa){
+  var data=licEtapasLoad();
+  if(!data[mun])data[mun]=[];
+  var idx=data[mun].indexOf(etapa);
+  if(idx>=0)data[mun].splice(idx,1);
+  else data[mun].push(etapa);
+  licEtapasSave(data);renderLicitacoes();
+}
 var CERT_KEY='gc_certidoes_v2';
 var _certFiltroStatus='all';
 function certFiltrarStatus(st){
@@ -2517,10 +2539,27 @@ function renderLicitacoes(){
     grupos[municipio].push(t);
   });
   var html='';
+  var etapasData=licEtapasLoad();
   Object.keys(grupos).sort().forEach(function(mun){
     var ts=grupos[mun];
-    html+='<div style="margin-bottom:14px;">';
-    html+='<div style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:600;padding:8px 0 6px;border-bottom:1.5px solid var(--border);margin-bottom:8px;">🏛 '+mun+'</div>';
+    var munKey=mun.replace(/[^a-zA-Z0-9]/g,'_');
+    var marcadas=etapasData[mun]||[];
+    var totalEt=LIC_ETAPAS.length;
+    var concEt=marcadas.length;
+    html+='<div style="margin-bottom:20px;">';
+    html+='<div style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:600;padding:8px 0 6px;border-bottom:1.5px solid var(--border);margin-bottom:8px;">🏛 '+mun+' <span style="font-size:10px;color:var(--green);font-weight:400;">'+concEt+'/'+totalEt+' etapas</span></div>';
+    // Checklist de etapas
+    html+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">';
+    LIC_ETAPAS.forEach(function(et){
+      var done=marcadas.indexOf(et)>=0;
+      var bg=done?'var(--green)':'var(--white)';
+      var cor=done?'#fff':'var(--ink)';
+      var bord=done?'var(--green)':'var(--border)';
+      html+='<button onclick="licToggleEtapa(''+mun.replace(/'/g,"\'")+'',' +'''+et+'')" '
+        +'style="background:'+bg+';color:'+cor+';border:1.5px solid '+bord+';border-radius:14px;padding:4px 12px;font-size:12px;cursor:pointer;font-family:'Segoe UI',Tahoma,sans-serif;transition:all .15s;">'
+        +(done?'✓ ':'')+et+'</button>';
+    });
+    html+='</div>';
     ts.forEach(function(t){
       var statusCor=t.done?'var(--green)':'var(--amber)';
       var statusTxt=t.done?'✔ Concluída':'⏳ Pendente';
