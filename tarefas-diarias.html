@@ -222,22 +222,6 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
 .btn-modal-cancel{background:none;border:1px solid var(--border);color:var(--muted);padding:10px 16px;border-radius:2px;font-size:14px;cursor:pointer;font-family:'Segoe UI',Tahoma,sans-serif;}
 .btn-modal-cancel:hover{background:var(--cream);}
 
-/* Modal novo dia */
-.nd-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;z-index:99999;}
-.nd-box{background:var(--cream);border-radius:4px;width:100%;max-width:440px;box-shadow:0 16px 56px rgba(0,0,0,.4);overflow:hidden;}
-.nd-head{background:var(--navy);color:#fff;padding:18px 24px;display:flex;align-items:center;gap:12px;}
-.nd-head-icon{font-size:26px;line-height:1;}
-.nd-head-title{font-family:Georgia,serif;font-size:17px;font-weight:normal;}
-.nd-head-sub{font-size:11px;opacity:.6;margin-top:2px;}
-.nd-body{padding:20px 24px 10px;}
-.nd-msg{font-size:14px;color:var(--ink);line-height:1.6;margin-bottom:14px;}
-.nd-warn{background:#fff8ec;border:1px solid #e8b84b;border-radius:3px;padding:10px 14px;font-size:12.5px;color:#7a5a00;line-height:1.5;margin-bottom:18px;}
-.nd-foot{padding:14px 24px 20px;display:flex;flex-direction:column;gap:9px;}
-.nd-btn-manter{background:var(--green);color:#fff;border:none;padding:13px 20px;border-radius:3px;font-size:15px;font-weight:600;cursor:pointer;font-family:'Segoe UI',Tahoma,sans-serif;}
-.nd-btn-manter:hover{background:#2e7a3c;}
-.nd-btn-limpar{background:none;border:1px solid #c0392b;color:#c0392b;padding:9px 20px;border-radius:3px;font-size:13px;cursor:pointer;font-family:'Segoe UI',Tahoma,sans-serif;}
-.nd-btn-limpar:hover{background:#fdf0f0;}
-
 /* Resumo */
 .resumo-box{background:var(--cream2);border:1px solid var(--border);border-radius:3px;padding:14px 18px;margin:16px 0 0;}
 .resumo-title{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:10px;font-weight:600;}
@@ -250,7 +234,7 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
 @media print{
   body{background:#fff;padding:0;}
   .clipboard{box-shadow:none;max-width:100%;}
-  .clip,.input-area,.action-bar,.task-actions,.progress-wrap,.notif-status,.toast,.filter-bar,.backup-bar,.recorr-panel,.archive-panel,.template-bar,.nd-overlay,.modal-overlay{display:none!important;}
+  .clip,.input-area,.action-bar,.task-actions,.progress-wrap,.notif-status,.toast,.filter-bar,.backup-bar,.recorr-panel,.archive-panel,.template-bar,.modal-overlay{display:none!important;}
   .header{background:var(--navy)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   .stats{background:var(--navy2)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
 }
@@ -882,6 +866,13 @@ async function fbLoad(){
   }catch(e){}
   return null;
 }
+async function fbBackup(payload,docId){
+  try{
+    await setDoc(doc(db,"gc-tarefas-backups",docId),payload);
+    return true;
+  }catch(e){console.warn("Firebase backup:",e);return false;}
+}
+window._fbBackup=fbBackup;
 window._fbSave=fbSave;window._fbLoad=fbLoad;window._fbReady=true;
 document.dispatchEvent(new Event('firebase-ready'));
 </script>
@@ -1118,27 +1109,10 @@ function load(){
   var rawR=localStorage.getItem(RECORR_KEY);recorrencias=rawR?JSON.parse(rawR):[];
   var rawA=localStorage.getItem(ARCH_KEY);archived=rawA?JSON.parse(rawA):[];
   var rawT=localStorage.getItem(TPL_KEY);templates=rawT?JSON.parse(rawT):[];
-  var lastDate=localStorage.getItem(DATE_KEY)||'';
-  if(lastDate&&lastDate!==todayStr&&tasks.length>0){mostrarModalNovoDia(lastDate);}
-  else{localStorage.setItem(DATE_KEY,todayStr);}
+  // Virada de dia: mantém automaticamente todas as tarefas do dia anterior,
+  // sem perguntar (equivalente a sempre clicar em "Manter tarefas do dia anterior").
+  localStorage.setItem(DATE_KEY,todayStr);
   processarRecorrencias();render();renderRecorrencias();renderTemplates();atualizarStatusNotif();verificarAlertas();
-}
-function mostrarModalNovoDia(lastDate){
-  var fmt=fmtDate(lastDate);
-  var overlay=document.createElement('div');overlay.className='nd-overlay';
-  overlay.innerHTML='<div class="nd-box"><div class="nd-head"><div class="nd-head-icon">📅</div><div><div class="nd-head-title">Novo dia detectado</div><div class="nd-head-sub">Tarefas salvas de '+fmt+'</div></div></div><div class="nd-body"><div class="nd-msg">Existem <strong>'+tasks.length+'</strong> tarefa(s) do dia <strong>'+fmt+'</strong>. O que deseja fazer?</div><div class="nd-warn">⚠️ <strong>Atenção:</strong> "Iniciar novo dia" apaga permanentemente as tarefas anteriores.</div></div><div class="nd-foot"><button class="nd-btn-manter" id="nd-manter">✅ Manter tarefas do dia anterior</button><button class="nd-btn-limpar" id="nd-limpar">🗑 Iniciar novo dia e apagar tarefas de '+fmt+'</button></div></div>';
-  document.body.appendChild(overlay);
-  document.getElementById('nd-manter').onclick=function(){
-    overlay.remove();localStorage.setItem(DATE_KEY,todayStr);
-    processarRecorrencias();render();renderRecorrencias();atualizarStatusNotif();verificarAlertas();
-  };
-  document.getElementById('nd-limpar').onclick=function(){
-    if(!confirm('Confirma apagar todas as tarefas de '+fmt+'?'))return;
-    tasks=[];save();
-    recorrencias.forEach(function(r){if(r.active&&r.lastGenerated===lastDate)r.lastGenerated='';});
-    saveRecorrencias();overlay.remove();localStorage.setItem(DATE_KEY,todayStr);
-    processarRecorrencias();render();renderRecorrencias();atualizarStatusNotif();verificarAlertas();
-  };
 }
 
 // ── Templates ──
@@ -1707,6 +1681,82 @@ function restaurarBackup(input){
   };
   reader.readAsText(file);
 }
+
+// ── Backup automático agendado ──
+// Tabela de horários (notação "26h30" = 02h30 do dia seguinte, considerado ainda
+// parte do "dia de transmissão" anterior):
+//   Domingo: nenhum backup
+//   Segunda: 08h00 (a 26h30 de domingo, que cairia às 02h30 de segunda, é removida)
+//   Terça a Sexta: 08h00 e 02h30 (= 26h30 do dia anterior)
+//   Sábado: 02h30 (= 26h30 de sexta) e 10h00 — sem 08h00
+var BACKUP_SCHEDULE={
+  0:[],                       // domingo
+  1:[{h:8,m:0,id:'manha'}],    // segunda (sem madrugada, pois seria a 26h30 de domingo)
+  2:[{h:8,m:0,id:'manha'},{h:2,m:30,id:'madrugada'}],
+  3:[{h:8,m:0,id:'manha'},{h:2,m:30,id:'madrugada'}],
+  4:[{h:8,m:0,id:'manha'},{h:2,m:30,id:'madrugada'}],
+  5:[{h:8,m:0,id:'manha'},{h:2,m:30,id:'madrugada'}],
+  6:[{h:2,m:30,id:'madrugada'},{h:10,m:0,id:'sabado'}] // sábado (sem 08h00)
+};
+var BACKUP_FIRED_KEY='gc_backup_fired_v1';
+var BACKUP_LAST_KEY='gc_backup_last_v1';
+function _backupFiredGet(){try{return JSON.parse(localStorage.getItem(BACKUP_FIRED_KEY)||'{}');}catch(e){return{};}}
+function _backupFiredSet(o){
+  // mantém só os últimos 3 dias para não acumular no localStorage
+  var corte=new Date();corte.setDate(corte.getDate()-3);
+  var cortStr=corte.toISOString().slice(0,10);
+  Object.keys(o).forEach(function(k){if(k.slice(0,10)<cortStr)delete o[k];});
+  localStorage.setItem(BACKUP_FIRED_KEY,JSON.stringify(o));
+}
+function gerarConteudoBackupGeral(){
+  return{
+    versao:'gc_backup_geral_v1',
+    data:new Date().toISOString(),
+    automatico:true,
+    tarefas:tasks,
+    recorrencias:recorrencias,
+    archived:archived,
+    templates:templates,
+    certidoes:certidoes
+  };
+}
+function mostrarBackupLast(txt){
+  localStorage.setItem(BACKUP_LAST_KEY,txt);
+  var el=document.getElementById('backup-last-info');
+  if(el)el.textContent=txt;
+}
+function executarBackupAutomatico(slotId){
+  var agora=new Date();
+  var docId=agora.toISOString().slice(0,10)+'_'+slotId;
+  var dados=gerarConteudoBackupGeral();
+  dados.slot=slotId;
+  if(window._fbBackup){
+    window._fbBackup(dados,docId).then(function(ok){
+      var hh=pad(agora.getHours())+':'+pad(agora.getMinutes());
+      if(ok){mostrarBackupLast('💾 Backup automático: '+hh+' ('+fmtDate(todayStr)+')');}
+      else{mostrarBackupLast('⚠️ Falha no backup automático ('+hh+')');}
+    });
+  }
+}
+function verificarBackupAgendado(){
+  var agora=new Date();
+  var dow=agora.getDay(),hora=agora.getHours(),minuto=agora.getMinutes();
+  var hojeStr=agora.toISOString().slice(0,10);
+  var slots=BACKUP_SCHEDULE[dow]||[];
+  var fired=_backupFiredGet();
+  slots.forEach(function(s){
+    // janela de 5 minutos para garantir o disparo mesmo com o setInterval de 60s
+    if(hora===s.h&&minuto>=s.m&&minuto<s.m+5){
+      var k=hojeStr+'_'+s.id;
+      if(!fired[k]){
+        fired[k]=true;_backupFiredSet(fired);
+        executarBackupAutomatico(s.id);
+      }
+    }
+  });
+}
+setInterval(verificarBackupAgendado,60000);
+(function(){var sv=localStorage.getItem(BACKUP_LAST_KEY);if(sv)mostrarBackupLast(sv);})();
 
 // ── Relatórios ──
 function abrirFiltroRelatorio(agruparPQ,listaFixa){
@@ -2882,6 +2932,7 @@ certLoad();
 document.getElementById('task-input').addEventListener('keydown',function(e){if(e.key==='Enter')addTask();});
 load();
 notaLoad();
+verificarBackupAgendado();
 if('Notification' in window&&Notification.permission==='default'){setTimeout(function(){pedirPermissao();},1500);}
 // Firebase onSnapshot já está ativo e sincroniza automaticamente.
 document.addEventListener('firebase-ready', function(){
