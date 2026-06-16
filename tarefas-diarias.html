@@ -387,6 +387,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
       <div class="hdate-num" id="hday"></div>
       <div class="hdate-label" id="hweek"></div>
       <div class="hdate-label" id="hfulldate" style="opacity:.55;font-size:11px;margin-top:2px;"></div>
+      <div class="hdate-label" id="hclock" style="opacity:.85;font-size:13px;margin-top:4px;font-weight:600;letter-spacing:.5px;"></div>
     </div>
   </div>
   <div class="stats">
@@ -898,6 +899,12 @@ function fmtDate(iso){if(!iso)return'';var p=iso.split('-');return p[2]+'/'+p[1]
 document.getElementById('hday').textContent=now.getDate();
 document.getElementById('hweek').textContent=DAYS[now.getDay()]+', '+MONTHS[now.getMonth()].slice(0,3)+' '+now.getFullYear();
 document.getElementById('hfulldate').textContent=now.getDate()+' de '+MONTHS[now.getMonth()]+' de '+now.getFullYear();
+function atualizarRelogio(){
+  var n=new Date();
+  document.getElementById('hclock').textContent='🕐 '+pad(n.getHours())+':'+pad(n.getMinutes())+':'+pad(n.getSeconds());
+}
+atualizarRelogio();
+setInterval(atualizarRelogio,1000);
 
 // ── Notificações ──
 function atualizarStatusNotif(){
