@@ -722,7 +722,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
     <div class="modal-foot">
       <button class="btn-modal-cancel" onclick="fecharModalEdicao()">Cancelar</button>
       <button class="btn-modal-primary" onclick="salvarModalEdicao()">💾 Salvar</button>
-      <button class="btn-modal-primary" style="background:#4a7a4a;" onclick="salvarModalEdicao()">✅ OK</button>
+      <button class="btn-modal-primary" style="background:#4a7a4a;" onclick="okModalEdicao()">✅ OK</button>
     </div>
   </div>
 </div>
@@ -769,6 +769,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
     <div class="modal-foot">
       <button class="btn-modal-cancel" onclick="fecharModalLicitacao()">Cancelar</button>
       <button class="btn-modal-primary" style="background:#6c3483;" onclick="criarLicitacao()">🏛 Criar 3 tarefas</button>
+      <button class="btn-modal-primary" style="background:#4a7a4a;" onclick="okModalLicitacao()">✅ OK</button>
     </div>
   </div>
 </div>
@@ -803,6 +804,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
     <div class="modal-foot">
       <button class="btn-modal-cancel" onclick="certCloseModal()">Cancelar</button>
       <button class="btn-modal-primary" style="background:#7a3030;" onclick="certSaveEdit()">💾 Salvar</button>
+      <button class="btn-modal-primary" style="background:#4a7a4a;" onclick="okModalCertidao()">✅ OK</button>
     </div>
   </div>
 </div>
@@ -1541,7 +1543,7 @@ function onEditRepeatChange(){
   document.getElementById('em-maxrep-wrap').style.display=(v!=='none')?'flex':'none';
 }
 function salvarModalEdicao(){
-  var novoText=document.getElementById('em-text').value.trim();if(!novoText)return;
+  var novoText=document.getElementById('em-text').value.trim();if(!novoText)return false;
   var novoPQ=document.getElementById('em-pq').value.trim();
   var novaData=document.getElementById('em-date').value;
   var novoTime=document.getElementById('em-time').value;
@@ -1554,7 +1556,7 @@ function salvarModalEdicao(){
   var mode=document.getElementById('edit-modal').dataset.mode;
   if(mode==='duplicar'){
     var nova={id:Date.now(),text:novoText,paraQuem:novoPQ,obs:novoObs,priority:novoPriority,pinned:novoPin,duracao:novoDuracao,schedule:novoTime||'',taskDate:novaData||'',done:false,doneAt:'',alertFired:false,addedAt:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})};
-    tasks.unshift(nova);save();render();atualizarFiltros();fecharModalEdicao();return;
+    tasks.unshift(nova);save();render();atualizarFiltros();fecharModalEdicao();return true;
   }
   if(mode==='recorr'){
     var r=recorrencias.find(function(x){return x.id===_editingId;});
@@ -1566,7 +1568,7 @@ function salvarModalEdicao(){
       save();render();
     }
   } else {
-    var t=tasks.find(function(x){return x.id===_editingId;});if(!t)return;
+    var t=tasks.find(function(x){return x.id===_editingId;});if(!t)return false;
     t.text=novoText;t.paraQuem=novoPQ;t.obs=novoObs;t.priority=novoPriority;t.pinned=novoPin;t.duracao=novoDuracao;t.schedule=novoTime||'';
     var hoje=new Date().toISOString().slice(0,10);
     if(novaData&&novaData>hoje){t.taskDate=novaData;t.done=false;t.doneAt='';t.alertFired=false;}
@@ -1586,12 +1588,16 @@ function salvarModalEdicao(){
       var hoje2=new Date(todayStr+'T00:00:00');
       var existR=t.repeatId?recorrencias.find(function(x){return x.id===t.repeatId;}):null;
       var novaRecorr={id:t.repeatId||t.id,text:novoText,paraQuem:novoPQ,schedule:novoTime||'',repeat:novoRepeat,active:true,maxRep:novoMaxRep,repCount:existR?existR.repCount||0:0,dayOfWeek:hoje2.getDay(),dayOfMonth:hoje2.getDate(),lastGenerated:todayStr,priority:novoPriority};
-      if(novoRepeat==='intraday'){if(_editIntradayTimes.length===0){alert('Adicione horários.');return;}novaRecorr.times=_editIntradayTimes.slice();}
+      if(novoRepeat==='intraday'){if(_editIntradayTimes.length===0){alert('Adicione horários.');return false;}novaRecorr.times=_editIntradayTimes.slice();}
       t.repeatId=novaRecorr.id;adicionarRecorrencia(novaRecorr);
     }
     save();render();atualizarFiltros();
   }
   fecharModalEdicao();
+  return true;
+}
+function okModalEdicao(){
+  salvarModalEdicao();
 }
 document.getElementById('edit-modal').addEventListener('click',function(e){if(e.target===this)fecharModalEdicao();});
 document.addEventListener('keydown',function(e){if(e.key==='Escape')fecharModalEdicao();});
@@ -2024,9 +2030,9 @@ function criarLicitacao(){
   var horaDisputa=document.getElementById('lic-hora').value;
   var licLink=document.getElementById('lic-link').value.trim()||'';
   var obs=document.getElementById('lic-obs').value.trim();
-  if(!municipio){alert('Informe o município.');document.getElementById('lic-municipio').focus();return;}
-  if(!dataDisputa){alert('Informe a data da disputa.');document.getElementById('lic-data').focus();return;}
-  if(!horaDisputa){alert('Informe o horário da disputa.');document.getElementById('lic-hora').focus();return;}
+  if(!municipio){alert('Informe o município.');document.getElementById('lic-municipio').focus();return false;}
+  if(!dataDisputa){alert('Informe a data da disputa.');document.getElementById('lic-data').focus();return false;}
+  if(!horaDisputa){alert('Informe o horário da disputa.');document.getElementById('lic-hora').focus();return false;}
   var dataImpug=somarDiasUteis(dataDisputa,4);
   var dataAnalise=somarDiasCorridos(dataDisputa,8);
   var now2=Date.now();
@@ -2038,6 +2044,10 @@ function criarLicitacao(){
   tasks.push({id:now2+2,text:'📋 Análise de Edital — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataAnalise,alertFired:false,paraQuem:'Licitações',obs:'Análise do edital — '+municipio,priority:'alta',tags:['licitação','edital',municipio],pinned:false,duracao:'',link:licLink});
   save();render();atualizarFiltros();fecharModalLicitacao();
   mostrarToast('✅ 3 tarefas criadas para '+municipio+'!',false);
+  return true;
+}
+function okModalLicitacao(){
+  criarLicitacao();
 }
 document.getElementById('lic-modal').addEventListener('click',function(e){if(e.target===this)fecharModalLicitacao();});
 
@@ -2444,7 +2454,7 @@ function certOpenEdit(idx){
 function certCloseModal(){document.getElementById('cert-edit-modal').style.display='none';}
 function certSaveEdit(){
   var nome=document.getElementById('ce-nome').value.trim();
-  if(!nome){alert('Informe o nome da certidão.');return;}
+  if(!nome){alert('Informe o nome da certidão.');return false;}
   if(_certEditIdx<0){
     certidoes.push({
       id:Date.now()+Math.random(),
@@ -2466,6 +2476,10 @@ function certSaveEdit(){
   certSave();certRender();certCloseModal();
   // Sincroniza certidões no Firebase automaticamente
   if(window._fbSave) window._fbSave(tasks,recorrencias,archived,templates);
+  return true;
+}
+function okModalCertidao(){
+  certSaveEdit();
 }
 function certBaixarModelo(){
   var rows=[['ID','Nome','Municipio/Orgao','Tipo','Emissao Atual','Vencimento Atual','NOVA Emissao','NOVO Vencimento']];
