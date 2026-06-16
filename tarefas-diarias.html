@@ -579,7 +579,10 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
     <button class="btn" style="font-size:12px;padding:5px 11px;border-color:var(--navy2);color:var(--navy2);" onclick="certRelatorioVencimentos('mes')">📋 Rel. Mensal</button>
     <button class="btn" style="font-size:12px;padding:5px 11px;border-color:var(--green);color:var(--green);" onclick="certExportCSV()">📥 Exportar CSV</button>
     <button class="btn" style="font-size:12px;padding:5px 11px;border-color:#1a6b8a;color:#1a6b8a;" onclick="certBaixarModelo()">📋 Baixar Modelo</button>
-    <label class="btn" style="font-size:12px;padding:5px 11px;border-color:#6c3483;color:#6c3483;cursor:pointer;">📤 Importar CSV<input type="file" accept=".csv" style="display:none;" onchange="certImportarCSV(this)"></label>
+    <label class="btn" style="font-size:12px;padding:5px 11px;border-color:#6c3483;color:#6c3483;cursor:pointer;">📤 Escolher CSV<input type="file" accept=".csv" id="cert-import-input" style="display:none;" onchange="certArquivoEscolhido(this)"></label>
+    <span id="cert-import-filename" style="font-size:12px;color:var(--muted);align-self:center;"></span>
+    <button class="btn" id="cert-btn-atualizar" style="font-size:12px;padding:5px 11px;border-color:#2e7d32;color:#2e7d32;display:none;" onclick="certImportarCSV()">🔄 Atualizar</button>
+    <button class="btn" style="font-size:12px;padding:5px 11px;border-color:#b8860b;color:#b8860b;" onclick="certConfirmarImportacao()">🔍 Confirmar Importação</button>
   </div>
   <div id="cert-stats-row" class="cert-stats-row" style="display:flex;gap:10px;margin:0 30px 14px;flex-wrap:wrap;">
     <div class="cert-stat"><div class="cert-stat-num" id="cs-total">0</div><div class="cert-stat-lbl">Total</div></div>
@@ -2471,7 +2474,8 @@ function certSaveEdit(){
       municipio:document.getElementById('ce-municipio').value,
       arquivo:'',
       tipo:document.getElementById('ce-tipo').value,
-      adicionado:new Date().toISOString()
+      adicionado:new Date().toISOString(),
+      atualizadoEm:todayStr
     });
   } else {
     certidoes[_certEditIdx].nome=nome;
@@ -2479,6 +2483,7 @@ function certSaveEdit(){
     certidoes[_certEditIdx].vencimento=document.getElementById('ce-venc').value||null;
     certidoes[_certEditIdx].municipio=document.getElementById('ce-municipio').value;
     certidoes[_certEditIdx].tipo=document.getElementById('ce-tipo').value;
+    certidoes[_certEditIdx].atualizadoEm=todayStr;
   }
   certSave();certRender();certCloseModal();
   // Sincroniza certidões no Firebase automaticamente
@@ -2499,20 +2504,46 @@ function certBaixarModelo(){
   a.download='certidoes_modelo_'+new Date().toISOString().slice(0,10)+'.csv';
   a.click();
 }
-function certImportarCSV(input){
+var _certImportFile=null;
+function certArquivoEscolhido(input){
   var file=input.files[0];
-  if(!file){return;}
+  _certImportFile=file||null;
+  var fnameEl=document.getElementById('cert-import-filename');
+  var btnEl=document.getElementById('cert-btn-atualizar');
+  if(file){
+    fnameEl.textContent='📄 '+file.name;
+    btnEl.style.display='inline-block';
+  } else {
+    fnameEl.textContent='';
+    btnEl.style.display='none';
+  }
+}
+function certConfirmarImportacao(){
+  // Recarrega do localStorage para refletir o estado real persistido
+  try{certidoes=JSON.parse(localStorage.getItem(CERT_KEY)||'[]');}catch(e){certidoes=[];}
+  certRender();
+  var atualizadasHoje=certidoes.filter(function(c){return c.atualizadoEm===todayStr;});
+  var msg=atualizadasHoje.length>0
+    ? '✅ '+atualizadasHoje.length+' certidão(ões) atualizada(s) hoje ('+fmtDate(todayStr)+'):\n\n'+atualizadasHoje.map(function(c){return '• '+c.nome;}).join('\n')
+    : 'ℹ️ Nenhuma certidão foi atualizada hoje ('+fmtDate(todayStr)+').';
+  alert(msg);
+}
+function certImportarCSV(){
+  if(!_certImportFile){mostrarToast('⚠️ Escolha um arquivo CSV primeiro.',false);return;}
+  var file=_certImportFile;
   var reader=new FileReader();
   reader.onload=function(e){
     var lines=e.target.result.split('\n');
     var atualizados=0;
+    var naoEncontrados=[];
+    var semData=[];
     // Detecta separador (vírgula ou ponto e vírgula)
     var sep=lines[0]&&lines[0].indexOf(';')>=0?';':',';
     lines.slice(1).forEach(function(line){
       if(!line.trim()) return;
       var cols=line.split(sep).map(function(c){return c.replace(/^"|"$/g,'').replace(/""/g,'"').trim();});
       var nome=cols[1],novaEmissao=cols[6],novoVenc=cols[7];
-      if(!nome||(!novaEmissao&&!novoVenc)) return;
+      if(!nome) return;
       // Converte dd/mm/aaaa para yyyy-mm-dd
       function conv(d){
         if(!d||d==='—'||d==='-') return null;
@@ -2522,19 +2553,34 @@ function certImportarCSV(input){
         return d||null;
       }
       var eNew=conv(novaEmissao),vNew=conv(novoVenc);
-      if(!eNew&&!vNew) return;
+      if(!eNew&&!vNew){semData.push(nome);return;}
       var idx=certidoes.findIndex(function(c){
         return c.nome&&c.nome.toLowerCase()===nome.toLowerCase();
       });
       if(idx>=0){
         if(eNew) certidoes[idx].emissao=eNew;
         if(vNew) certidoes[idx].vencimento=vNew;
+        certidoes[idx].atualizadoEm=todayStr;
         atualizados++;
+      } else {
+        naoEncontrados.push(nome);
       }
     });
     certSave();certRender();
-    mostrarToast('✅ '+atualizados+' certidão(ões) atualizada(s)!',true);
-    input.value='';
+    if(window._fbSave) window._fbSave(tasks,recorrencias,archived,templates);
+    var msg='✅ '+atualizados+' certidão(ões) atualizada(s).';
+    if(naoEncontrados.length){
+      msg+='\n\n⚠️ Não encontradas no sistema ('+naoEncontrados.length+'):\n'+naoEncontrados.join(', ');
+    }
+    if(semData.length){
+      msg+='\n\nℹ️ Sem datas novas no CSV ('+semData.length+'):\n'+semData.join(', ');
+    }
+    alert(msg);
+    mostrarToast('✅ '+atualizados+' certidão(ões) atualizada(s)!'+(naoEncontrados.length?' ⚠️ '+naoEncontrados.length+' não encontrada(s).':''),false);
+    _certImportFile=null;
+    document.getElementById('cert-import-input').value='';
+    document.getElementById('cert-import-filename').textContent='';
+    document.getElementById('cert-btn-atualizar').style.display='none';
   };
   reader.readAsText(file,'UTF-8');
 }
