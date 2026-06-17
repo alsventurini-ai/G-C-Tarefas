@@ -1632,8 +1632,6 @@ function atualizarFiltros(){
   selPQ.innerHTML='<option value="">👤 Todos</option>';
   getParaQuemList().forEach(function(pq){var o=document.createElement('option');o.value=pq;o.textContent=pq;selPQ.appendChild(o);});
   if(curPQ)selPQ.value=curPQ;
-  getAllTags().forEach(function(g){var o=document.createElement('option');o.value=g;o.textContent=g;selTag.appendChild(o);});
-  if(curTag)selTag.value=curTag;
 }
 function filtrarLista(lista){
   var s=(document.getElementById('search-input').value||'').toLowerCase().trim();
