@@ -210,6 +210,7 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
 .modal-field label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);}
 .modal-input{border:1px solid var(--border);background:var(--white);padding:9px 12px;font-size:14px;border-radius:2px;font-family:'Segoe UI',Tahoma,sans-serif;color:var(--ink);outline:none;width:100%;}
 .modal-input:focus{border-color:var(--navy);box-shadow:0 0 0 2px rgba(26,39,68,.13);}
+.campo-erro{border-color:#c0392b!important;box-shadow:0 0 0 2px rgba(192,57,43,.18)!important;background:#fff5f5!important;}
 .modal-textarea{border:1px solid var(--border);background:var(--white);padding:9px 12px;font-size:13.5px;border-radius:2px;font-family:'Segoe UI',Tahoma,sans-serif;color:var(--ink);outline:none;width:100%;resize:vertical;min-height:70px;line-height:1.4;}
 .modal-textarea:focus{border-color:var(--purple);}
 .modal-select{border:1px solid var(--border);background:var(--white);padding:9px 12px;font-size:14px;border-radius:2px;font-family:'Segoe UI',Tahoma,sans-serif;color:var(--ink);outline:none;cursor:pointer;width:100%;}
@@ -1411,8 +1412,9 @@ function toggleObsNova(){
 }
 function parseTags(str){return str?str.split(',').map(function(t){return t.trim();}).filter(function(t){return t;}):[]}
 function addTask(){
-  var inp=document.getElementById('task-input'),txt=inp.value.trim();if(!txt)return;
+  var inp=document.getElementById('task-input'),txt=inp.value.trim();if(!txt){marcarCampoObrigatorio('task-input');return;}
   var timeSel=document.getElementById('time-input'),dateSel=document.getElementById('date-input');
+  if(!dateSel.value){alert('Informe a data da tarefa.');marcarCampoObrigatorio('date-input');return;}
   var pqInp=document.getElementById('para-quem-input'),repeatSel=document.getElementById('repeat-input');
   var pq=pqInp.value.trim(),maxRep=parseInt(document.getElementById('maxrep-input').value)||0;
   var obsVal=document.getElementById('obs-new-input').value.trim();
@@ -1428,6 +1430,7 @@ function addTask(){
     intradayTimes=[];renderIntradayList('intraday-times-list',[],null);
     document.getElementById('intraday-section').style.display='none';
   } else {
+    if(!timeSel.value){alert('Informe o horário da tarefa.');marcarCampoObrigatorio('time-input');return;}
     var tid=Date.now();
     var dataTask=dateSel.value||'';
     var horaTask=timeSel.value||'';
@@ -1552,8 +1555,17 @@ function onEditRepeatChange(){
   document.getElementById('em-intraday').style.display=(v==='intraday')?'block':'none';
   document.getElementById('em-maxrep-wrap').style.display=(v!=='none')?'flex':'none';
 }
+function marcarCampoObrigatorio(id){
+  var el=document.getElementById(id);
+  if(!el)return;
+  el.classList.add('campo-erro');
+  el.focus();
+  var limpar=function(){el.classList.remove('campo-erro');el.removeEventListener('input',limpar);el.removeEventListener('change',limpar);};
+  el.addEventListener('input',limpar);
+  el.addEventListener('change',limpar);
+}
 function salvarModalEdicao(){
-  var novoText=document.getElementById('em-text').value.trim();if(!novoText)return false;
+  var novoText=document.getElementById('em-text').value.trim();if(!novoText){marcarCampoObrigatorio('em-text');return false;}
   var novoPQ=document.getElementById('em-pq').value.trim();
   var novaData=document.getElementById('em-date').value;
   var novoTime=document.getElementById('em-time').value;
@@ -1598,7 +1610,7 @@ function salvarModalEdicao(){
       var hoje2=new Date(todayStr+'T00:00:00');
       var existR=t.repeatId?recorrencias.find(function(x){return x.id===t.repeatId;}):null;
       var novaRecorr={id:t.repeatId||t.id,text:novoText,paraQuem:novoPQ,schedule:novoTime||'',repeat:novoRepeat,active:true,maxRep:novoMaxRep,repCount:existR?existR.repCount||0:0,dayOfWeek:hoje2.getDay(),dayOfMonth:hoje2.getDate(),lastGenerated:todayStr,priority:novoPriority};
-      if(novoRepeat==='intraday'){if(_editIntradayTimes.length===0){alert('Adicione horários.');return false;}novaRecorr.times=_editIntradayTimes.slice();}
+      if(novoRepeat==='intraday'){if(_editIntradayTimes.length===0){alert('Adicione horários.');var elInt=document.getElementById('em-intraday-list');elInt.classList.add('campo-erro');setTimeout(function(){elInt.classList.remove('campo-erro');},2500);return false;}novaRecorr.times=_editIntradayTimes.slice();}
       t.repeatId=novaRecorr.id;adicionarRecorrencia(novaRecorr);
     }
     save();render();atualizarFiltros();
@@ -2040,9 +2052,9 @@ function criarLicitacao(){
   var horaDisputa=document.getElementById('lic-hora').value;
   var licLink=document.getElementById('lic-link').value.trim()||'';
   var obs=document.getElementById('lic-obs').value.trim();
-  if(!municipio){alert('Informe o município.');document.getElementById('lic-municipio').focus();return false;}
-  if(!dataDisputa){alert('Informe a data da disputa.');document.getElementById('lic-data').focus();return false;}
-  if(!horaDisputa){alert('Informe o horário da disputa.');document.getElementById('lic-hora').focus();return false;}
+  if(!municipio){alert('Informe o município.');marcarCampoObrigatorio('lic-municipio');return false;}
+  if(!dataDisputa){alert('Informe a data da disputa.');marcarCampoObrigatorio('lic-data');return false;}
+  if(!horaDisputa){alert('Informe o horário da disputa.');marcarCampoObrigatorio('lic-hora');return false;}
   var dataImpug=somarDiasUteis(dataDisputa,4);
   var dataAnalise=somarDiasCorridos(dataDisputa,8);
   var now2=Date.now();
@@ -2464,7 +2476,7 @@ function certOpenEdit(idx){
 function certCloseModal(){document.getElementById('cert-edit-modal').style.display='none';}
 function certSaveEdit(){
   var nome=document.getElementById('ce-nome').value.trim();
-  if(!nome){alert('Informe o nome da certidão.');return false;}
+  if(!nome){alert('Informe o nome da certidão.');marcarCampoObrigatorio('ce-nome');return false;}
   if(_certEditIdx<0){
     certidoes.push({
       id:Date.now()+Math.random(),
