@@ -767,13 +767,15 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
       <div style="background:#f5f0fa;border:1px solid #c9a8e8;border-radius:3px;padding:12px 14px;font-size:12.5px;color:#6c3483;line-height:1.7;">
         <strong>Serão criadas automaticamente:</strong><br>
         🏛 <strong>Disputa</strong> — na data informada<br>
-        ⚠️ <strong>Impugnação</strong> — 4 dias úteis antes, mesmo horário<br>
-        📋 <strong>Análise de Edital</strong> — 8 dias corridos antes, às 08:00
+        ⚠️ <strong>Impugnação</strong> — 3 dias úteis antes (Lei 14.133/21, Art. 164)<br>
+        📋 <strong>Análise de Edital</strong> — 8 dias corridos antes, às 08:00<br>
+        📤 <strong>Início Inclusão da Proposta</strong> — 3 dias úteis antes (Lei 14.133/21, Art. 60)<br>
+        ⚖️ <strong>Prazo Final de Impugnação</strong> — 3 dias úteis antes (Lei 14.133/21, Art. 164)
       </div>
     </div>
     <div class="modal-foot">
       <button class="btn-modal-cancel" onclick="fecharModalLicitacao()">Cancelar</button>
-      <button class="btn-modal-primary" style="background:#6c3483;" onclick="criarLicitacao()">🏛 Criar 3 tarefas</button>
+      <button class="btn-modal-primary" style="background:#6c3483;" onclick="criarLicitacao()">🏛 Criar 5 tarefas</button>
       <button class="btn-modal-primary" style="background:#4a7a4a;" onclick="okModalLicitacao()">✅ OK</button>
     </div>
   </div>
@@ -1439,15 +1441,18 @@ function addTask(){
       var recorr2={id:tid,text:txt,paraQuem:pq,schedule:horaTask,repeat:repeat,active:true,maxRep:maxRep,repCount:1,dayOfWeek:now.getDay(),dayOfMonth:now.getDate(),lastGenerated:todayStr,priority:priority,startDate:dataTask||todayStr};
       tasks[tasks.length-1].repeatId=tid;adicionarRecorrencia(recorr2);
     }
-    // Deteccao automatica: "Licitacao — Municipio" gera Impugnacao e Analise do Edital
+    // Deteccao automatica: "Licitacao — Municipio" gera 5 tarefas
     var licMatch=txt.match(/^licitaç[aã]o\s*[-—]\s*(.+)$/i);
     if(licMatch&&dataTask){
       var munAuto=licMatch[1].trim();
-      var dataImpugAuto=somarDiasUteis(dataTask,4);
+      var dataImpugAuto=somarDiasUteis(dataTask,3);
       var dataAnaliseAuto=somarDiasCorridos(dataTask,8);
-      tasks.push({id:tid+1,text:'Impugnação — '+munAuto,done:false,addedAt:timeNow(),doneAt:'',schedule:horaTask,taskDate:dataImpugAuto,alertFired:false,paraQuem:pq||'Licitações',obs:'Prazo de impugnação — '+munAuto,priority:'alta',duracao:'',pinned:false});
-      tasks.push({id:tid+2,text:'Análise do Edital — '+munAuto,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataAnaliseAuto,alertFired:false,paraQuem:pq||'Licitações',obs:'Análise do edital — '+munAuto,priority:'alta',duracao:'',pinned:false});
-      mostrarToast('✅ 3 tarefas criadas para '+munAuto+'!',false);
+      var dataPropostaAuto=somarDiasUteis(dataTask,3);
+      tasks.push({id:tid+1,text:'⚠️ Impugnação — '+munAuto,done:false,addedAt:timeNow(),doneAt:'',schedule:horaTask,taskDate:dataImpugAuto,alertFired:false,paraQuem:pq||'Licitações',obs:'Prazo de impugnação — '+munAuto+'\nDe acordo com a Lei nº 14.133/2021, Art. 164: a impugnação deverá ser protocolada até 3 (três) dias úteis antes da data de abertura do certame.',priority:'alta',duracao:'',pinned:false,_licMunicipio:munAuto,_licDataDisputa:dataTask,_licHoraDisputa:horaTask,_impugnacaoEnviada:null});
+      tasks.push({id:tid+2,text:'📋 Análise do Edital — '+munAuto,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataAnaliseAuto,alertFired:false,paraQuem:pq||'Licitações',obs:'Análise do edital — '+munAuto,priority:'alta',duracao:'',pinned:false});
+      tasks.push({id:tid+3,text:'📤 Início Inclusão da Proposta — '+munAuto,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataPropostaAuto,alertFired:false,paraQuem:pq||'Licitações',obs:'Iniciar inclusão da proposta no sistema — '+munAuto+'\nDe acordo com a Lei nº 14.133/2021, Art. 60: o prazo fixado no edital para apresentação das propostas e lances não pode ser inferior a 8 (oito) dias úteis, contado da data de publicação do edital.',priority:'alta',duracao:'',pinned:false});
+      tasks.push({id:tid+4,text:'⚖️ Prazo Final de Impugnação — '+munAuto,done:false,addedAt:timeNow(),doneAt:'',schedule:horaTask,taskDate:dataImpugAuto,alertFired:false,paraQuem:pq||'Licitações',obs:'ATENÇÃO: encerra hoje o prazo de impugnação ao edital — '+munAuto+'\nDe acordo com a Lei nº 14.133/2021, Art. 164: a impugnação deverá ser protocolada até 3 (três) dias úteis antes da data de abertura do certame.',priority:'alta',duracao:'',pinned:false});
+      mostrarToast('✅ 5 tarefas criadas para '+munAuto+'!',false);
     }
   }
   inp.value='';timeSel.value='';dateSel.value='';pqInp.value='';repeatSel.value='none';
@@ -1465,8 +1470,53 @@ function toggle(id){
   save();render();
   // Ao concluir (não ao reabrir): oferecer obs rápida
   if(!eraFeito && t.done){
-    pedirObsConcluir(t);
+    // Se é tarefa de Impugnação com dados de licitação, perguntar se foi enviada
+    var isImpug=/^⚠️\s*Impugnaç[aã]o\s*[-—]/i.test(t.text)||(/^impugnaç[aã]o\s*[-—]/i.test(t.text)&&t._licDataDisputa);
+    if(isImpug && t._licDataDisputa){
+      pedirImpugnacaoEnviada(t);
+    } else {
+      pedirObsConcluir(t);
+    }
   }
+}
+function pedirImpugnacaoEnviada(task){
+  var old=document.querySelector('.obs-concluir-wrap');if(old)old.remove();
+  var wrap=document.createElement('div');wrap.className='obs-concluir-wrap';
+  wrap.style.cssText='background:#2d1a52;border-top:3px solid #c9a8e8;';
+  var lbl=document.createElement('span');lbl.className='obs-concluir-txt';lbl.style.flex='0 0 auto';lbl.textContent='⚖️ A impugnação foi enviada?';
+  var btnSim=document.createElement('button');btnSim.className='obs-concluir-btn';btnSim.style.cssText='background:rgba(58,140,74,.5);border-color:#5cb85c;font-weight:700;';btnSim.textContent='✅ Sim, foi enviada';
+  var btnNao=document.createElement('button');btnNao.className='obs-concluir-btn';btnNao.style.cssText='background:rgba(176,58,46,.35);border-color:#e74c3c;font-weight:700;';btnNao.textContent='❌ Não foi enviada';
+  var btnPular=document.createElement('button');btnPular.className='obs-concluir-btn';btnPular.style.opacity='.55';btnPular.textContent='Pular';
+  function registrarSim(){
+    var t2=tasks.find(function(x){return x.id===task.id;});
+    if(t2){
+      t2._impugnacaoEnviada=true;
+      // Criar tarefa de conferência do retorno no dia anterior à disputa, com horários 09:30 e 15:30
+      var municipio=t2._licMunicipio||task.text.replace(/^⚠️\s*Impugnaç[aã]o\s*[-—]\s*/i,'').trim();
+      var dataDisputa=t2._licDataDisputa;
+      var dataCont=somarDiasCorridos(dataDisputa,1); // 1 dia corrido antes = dia anterior
+      var horaDisputa=t2._licHoraDisputa||'09:00';
+      var now3=Date.now();
+      tasks.push({id:now3,text:'🔎 Conferir Retorno da Impugnação — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:'09:30',taskDate:dataCont,alertFired:false,paraQuem:'Licitações',obs:'Verificar se houve resposta à impugnação enviada para o pregão de '+municipio+' (sessão: '+dataDisputa+').\nDe acordo com a Lei nº 14.133/2021, Art. 164, § 2º: a impugnação não possui efeito suspensivo automático, mas a decisão deve ser publicada antes da abertura da sessão.',priority:'alta',tags:['licitação','impugnação',municipio],pinned:true,duracao:'',_intradayTimes:['09:30','15:30']});
+      tasks.push({id:now3+1,text:'🔎 Conferir Retorno da Impugnação — '+municipio+' (15h30)',done:false,addedAt:timeNow(),doneAt:'',schedule:'15:30',taskDate:dataCont,alertFired:false,paraQuem:'Licitações',obs:'Segunda verificação: retorno da impugnação — '+municipio+'. Sessão amanhã às '+horaDisputa+'.',priority:'alta',tags:['licitação','impugnação',municipio],pinned:false,duracao:''});
+      save();render();
+      mostrarToast('✅ Impugnação registrada como enviada!\n📌 Tarefa de conferência criada para '+fmtDate(dataCont)+' às 09:30 e 15:30.',false);
+    }
+    wrap.remove();
+  }
+  function registrarNao(){
+    var t2=tasks.find(function(x){return x.id===task.id;});
+    if(t2){t2._impugnacaoEnviada=false;t2.obs=(t2.obs||'')+(t2.obs?'\n':'')+'Impugnação não enviada.';save();render();}
+    wrap.remove();
+    pedirObsConcluir(task);
+  }
+  function pular(){wrap.remove();}
+  btnSim.onclick=registrarSim;
+  btnNao.onclick=registrarNao;
+  btnPular.onclick=pular;
+  wrap.appendChild(lbl);wrap.appendChild(btnSim);wrap.appendChild(btnNao);wrap.appendChild(btnPular);
+  document.body.appendChild(wrap);
+  setTimeout(function(){if(wrap.parentNode)wrap.remove();},30000);
 }
 function pedirObsConcluir(task){
   var old=document.querySelector('.obs-concluir-wrap');if(old)old.remove();
@@ -2053,17 +2103,22 @@ function criarLicitacao(){
   if(!municipio){alert('Informe o município.');marcarCampoObrigatorio('lic-municipio');return false;}
   if(!dataDisputa){alert('Informe a data da disputa.');marcarCampoObrigatorio('lic-data');return false;}
   if(!horaDisputa){alert('Informe o horário da disputa.');marcarCampoObrigatorio('lic-hora');return false;}
-  var dataImpug=somarDiasUteis(dataDisputa,4);
+  var dataImpug=somarDiasUteis(dataDisputa,3);
   var dataAnalise=somarDiasCorridos(dataDisputa,8);
+  var dataInicioPropostaLei=somarDiasUteis(dataDisputa,3);
   var now2=Date.now();
   // Tarefa 1 — Disputa
   tasks.push({id:now2,text:'🏛 Disputa — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataDisputa,alertFired:false,paraQuem:'Licitações',obs:obs,priority:'alta',tags:['licitação',municipio],pinned:false,duracao:'',link:licLink});
-  // Tarefa 2 — Impugnação
-  tasks.push({id:now2+1,text:'⚠️ Impugnação — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataImpug,alertFired:false,paraQuem:'Licitações',obs:'Prazo de impugnação — '+municipio,priority:'alta',tags:['licitação','impugnação',municipio],pinned:false,duracao:'',link:licLink});
+  // Tarefa 2 — Impugnação (guarda municipio e dataDisputa para criar tarefa de conferência se enviada)
+  tasks.push({id:now2+1,text:'⚠️ Impugnação — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataImpug,alertFired:false,paraQuem:'Licitações',obs:'Prazo de impugnação — '+municipio+'\nDe acordo com a Lei nº 14.133/2021, Art. 164: qualquer pessoa é parte legítima para impugnar edital de licitação por irregularidade, devendo protocolar o pedido até 3 (três) dias úteis antes da data de abertura do certame.',priority:'alta',tags:['licitação','impugnação',municipio],pinned:false,duracao:'',link:licLink,_licMunicipio:municipio,_licDataDisputa:dataDisputa,_licHoraDisputa:horaDisputa,_impugnacaoEnviada:null});
   // Tarefa 3 — Análise de Edital
   tasks.push({id:now2+2,text:'📋 Análise de Edital — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataAnalise,alertFired:false,paraQuem:'Licitações',obs:'Análise do edital — '+municipio,priority:'alta',tags:['licitação','edital',municipio],pinned:false,duracao:'',link:licLink});
+  // Tarefa 4 — Início Inclusão da Proposta (Lei 14.133/2021, Art. 60)
+  tasks.push({id:now2+3,text:'📤 Início Inclusão da Proposta — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataInicioPropostaLei,alertFired:false,paraQuem:'Licitações',obs:'Iniciar inclusão da proposta no sistema — '+municipio+'\nDe acordo com a Lei nº 14.133/2021, Art. 60: o prazo fixado no edital para apresentação das propostas e lances não pode ser inferior a 8 (oito) dias úteis, contado da data de publicação do edital.',priority:'alta',tags:['licitação','proposta',municipio],pinned:false,duracao:'',link:licLink});
+  // Tarefa 5 — Prazo Final de Impugnação (Lei 14.133/2021, Art. 164)
+  tasks.push({id:now2+4,text:'⚖️ Prazo Final de Impugnação — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataImpug,alertFired:false,paraQuem:'Licitações',obs:'ATENÇÃO: encerra hoje o prazo de impugnação ao edital — '+municipio+'\nDe acordo com a Lei nº 14.133/2021, Art. 164: a impugnação deverá ser protocolada até 3 (três) dias úteis antes da data de abertura do certame.',priority:'alta',tags:['licitação','impugnação',municipio],pinned:false,duracao:'',link:licLink});
   save();render();atualizarFiltros();fecharModalLicitacao();
-  mostrarToast('✅ 3 tarefas criadas para '+municipio+'!',false);
+  mostrarToast('✅ 5 tarefas criadas para '+municipio+'!',false);
   return true;
 }
 function okModalLicitacao(){
@@ -2628,6 +2683,7 @@ function imprimirLicitacoes(){
     if(!t.text||t._futuro)return false;
     var tx=t.text.toLowerCase();
     if(t.text.indexOf('🏛 Disputa')===0||t.text.indexOf('⚠️ Impugnação')===0||t.text.indexOf('📋 Análise de Edital')===0)return true;
+    if(t.text.indexOf('📤 Início Inclusão da Proposta')===0||t.text.indexOf('⚖️ Prazo Final de Impugnação')===0||t.text.indexOf('🔎 Conferir Retorno da Impugnação')===0)return true;
     if(/^licitaç[aã]o\s*[-—]/i.test(t.text))return true;
     if(/^impugnaç[aã]o\s*[-—]/i.test(t.text))return true;
     if(/^an[aá]lise do edital\s*[-—]/i.test(t.text))return true;
@@ -2647,6 +2703,7 @@ function renderLicitacoes(){
     var tx=t.text.toLowerCase();
     // Criadas pelo botão "+ Nova Licitação" (prefixos automáticos)
     if(t.text.indexOf('🏛 Disputa')===0||t.text.indexOf('⚠️ Impugnação')===0||t.text.indexOf('📋 Análise de Edital')===0) return true;
+    if(t.text.indexOf('📤 Início Inclusão da Proposta')===0||t.text.indexOf('⚖️ Prazo Final de Impugnação')===0||t.text.indexOf('🔎 Conferir Retorno da Impugnação')===0) return true;
     // Criadas pelo fluxo direto (texto livre)
     if(/^licitaç[aã]o\s*[-—]/i.test(t.text)) return true;
     if(/^impugnaç[aã]o\s*[-—]/i.test(t.text)) return true;
