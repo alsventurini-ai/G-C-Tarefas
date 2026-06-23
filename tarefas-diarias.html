@@ -712,6 +712,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
     <span id="cert-import-filename" style="font-size:12px;color:var(--muted);align-self:center;"></span>
     <button class="btn" id="cert-btn-atualizar" style="font-size:12px;padding:5px 11px;border-color:#2e7d32;color:#2e7d32;display:none;" onclick="certImportarCSV()">🔄 Atualizar</button>
     <button class="btn" style="font-size:12px;padding:5px 11px;border-color:#b8860b;color:#b8860b;" onclick="certConfirmarImportacao()">🔍 Confirmar Importação</button>
+    <button class="btn btn-print" style="font-size:12px;padding:5px 11px;" onclick="imprimirCertidoes()">🖨 Imprimir</button>
   </div>
   <div id="cert-stats-row" class="cert-stats-row" style="display:flex;gap:10px;margin:0 30px 14px;flex-wrap:wrap;">
     <div class="cert-stat"><div class="cert-stat-num" id="cs-total">0</div><div class="cert-stat-lbl">Total</div></div>
@@ -719,8 +720,9 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
     <div class="cert-stat"><div class="cert-stat-num amber" id="cs-warn">0</div><div class="cert-stat-lbl">≤25 dias</div></div>
     <div class="cert-stat"><div class="cert-stat-num green" id="cs-ok">0</div><div class="cert-stat-lbl">Em dia</div></div>
   </div>
-  <div class="action-bar">
+  <div class="action-bar" style="flex-wrap:wrap;gap:8px;">
     <button class="btn" style="border-color:#b03a2e;color:#b03a2e;font-weight:600;" onclick="certNovaManual()">+ Nova Certidão</button>
+    <div id="cert-alertas-inline" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;flex:1;"></div>
   </div>
   <div class="filter-bar" style="background:var(--cream2);border-bottom:1px solid var(--border);padding:8px 30px;">
     <label>🔍</label>
@@ -747,6 +749,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
       <button class="btn" style="font-size:12px;padding:5px 11px;" onclick="histPeriodo(7)">7d</button>
       <button class="btn" style="font-size:12px;padding:5px 11px;" onclick="histPeriodo(30)">30d</button>
       <button class="btn" style="font-size:12px;padding:5px 11px;" onclick="histPeriodo(90)">90d</button>
+      <button class="btn btn-print" style="font-size:12px;padding:5px 11px;" onclick="imprimirHistorico()">🖨 Imprimir</button>
     </div>
   </div>
   <div style="padding:8px 30px;background:var(--cream2);border-bottom:1px solid var(--border);">
@@ -944,7 +947,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
     </div>
     <div class="modal-foot">
       <button class="btn-modal-cancel" onclick="certCloseModal()">Cancelar</button>
-      <button class="btn-modal-primary" style="background:#7a3030;" onclick="certSaveEdit()">💾 Salvar</button>
+      <button class="btn-modal-primary" id="btn-cert-salvar" style="background:#7a3030;" onclick="certSaveEdit()">💾 Salvar</button>
       <button class="btn-modal-primary" style="background:#4a7a4a;" onclick="okModalCertidao()">✅ OK</button>
     </div>
   </div>
@@ -2875,6 +2878,22 @@ function certRender(){
   document.getElementById('cs-warn').textContent=warn;
   document.getElementById('cs-ok').textContent=ok;
 
+  // Painel de alertas inline — ao lado do botão Nova Certidão
+  var painel=document.getElementById('cert-alertas-inline');
+  if(painel){
+    var itens='';
+    var vencidas=certidoes.filter(function(c){return certGetStatus(c)==='expired';});
+    var alertas=certidoes.filter(function(c){return certGetStatus(c)==='warning';});
+    vencidas.forEach(function(c){
+      itens+='<span onclick="certFiltrarStatus(\'expired\')" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;background:#fde8e8;border:1px solid #e57373;border-radius:12px;padding:3px 10px;font-size:11px;font-weight:600;color:#b03a2e;white-space:nowrap;">🔴 '+certEsc(c.nome)+'</span>';
+    });
+    alertas.forEach(function(c){
+      itens+='<span onclick="certFiltrarStatus(\'warning\')" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;background:#fff8e1;border:1px solid #ffe082;border-radius:12px;padding:3px 10px;font-size:11px;font-weight:600;color:#c78a1a;white-space:nowrap;">🟡 '+certEsc(c.nome)+'</span>';
+    });
+    painel.innerHTML=itens;
+    painel.style.display=itens?'flex':'none';
+  }
+
 
   var TIPO_LABEL={permanente:'Permanente',mensal:'Mensal',licitacao:'Por licitação',validade:'Validade fixa'};
   // Filtro de busca
@@ -2958,7 +2977,7 @@ function certOpenEdit(idx){
   document.getElementById('ce-tipo').value=c.tipo||'mensal';
   document.getElementById('cert-edit-modal').style.display='flex';
 }
-function certCloseModal(){document.getElementById('cert-edit-modal').style.display='none';}
+function certCloseModal(){document.getElementById('cert-edit-modal').style.display='none';_certModalSalvo=false;var b=document.getElementById('btn-cert-salvar');if(b){b.textContent='💾 Salvar';b.style.background='';}}
 function certSaveEdit(){
   var nome=document.getElementById('ce-nome').value.trim();
   if(!nome){alert('Informe o nome da certidão.');marcarCampoObrigatorio('ce-nome');return false;}
@@ -2982,13 +3001,18 @@ function certSaveEdit(){
     certidoes[_certEditIdx].tipo=document.getElementById('ce-tipo').value;
     certidoes[_certEditIdx].atualizadoEm=todayStr;
   }
-  certSave();certRender();certCloseModal();
+  certSave();certRender();
   // Sincroniza certidões no Firebase automaticamente
   if(window._fbSave) window._fbSave(tasks,recorrencias,archived,templates);
+  _certModalSalvo=true;
+  var btnSalv=document.getElementById('btn-cert-salvar');
+  if(btnSalv){btnSalv.textContent='✅ Salvo!';btnSalv.style.background='#3a7a3a';setTimeout(function(){btnSalv.textContent='💾 Salvar';btnSalv.style.background='';},2000);}
   return true;
 }
+var _certModalSalvo=false;
 function okModalCertidao(){
-  certSaveEdit();
+  if(!_certModalSalvo) certSaveEdit();
+  certCloseModal();
 }
 function certBaixarModelo(){
   var rows=[['ID','Nome','Municipio/Orgao','Tipo','Emissao Atual','Vencimento Atual','NOVA Emissao','NOVO Vencimento']];
@@ -3640,6 +3664,54 @@ function licHistRelatorio(){
     '</body></html>';
   var w=window.open('','_blank','width=1000,height=700,scrollbars=yes');
   if(w){w.document.write(html);w.document.close();}
+}
+
+// ── Impressão universal ──
+function _abrirJanelaImpressao(html){
+  var w=window.open('','_blank','width=1000,height=700,scrollbars=yes');
+  if(w){w.document.write(html);w.document.close();}
+}
+function _htmlImpressaoBase(titulo,corpo){
+  var gerado=new Date().toLocaleDateString('pt-BR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  return'<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>'+esc(titulo)+' — G&C</title>'
+    +'<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:"Segoe UI",Tahoma,sans-serif;background:#fff;padding:32px 40px;color:#1c1c1c;font-size:13px;}h1{font-family:Georgia,serif;font-size:20px;color:#1a2744;margin-bottom:4px;}table{width:100%;border-collapse:collapse;margin-top:12px;}th{text-align:left;padding:6px 10px;font-size:10px;text-transform:uppercase;color:#7a7672;background:#f2ede6;}td{padding:7px 10px;border-bottom:1px solid #e0dbd2;font-size:12px;}tr:nth-child(even){background:#faf8f5;}.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;}.verde{background:#e8f5e9;color:#2e7d32;}.vermelho{background:#fde8e8;color:#b03a2e;}.amber{background:#fff8e1;color:#c78a1a;}.header{border-bottom:3px solid #1a2744;padding-bottom:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-end;}.subtitle{font-size:11px;color:#7a7672;margin-top:3px;}.data-geracao{font-size:11px;color:#aaa;}@media print{.no-print{display:none!important;}}</style></head><body>'
+    +'<div class="header"><div><h1>'+esc(titulo)+'</h1><div class="subtitle">Galhardo &amp; Canales</div></div>'
+    +'<div class="data-geracao">'+esc(gerado)+'</div></div>'
+    +corpo
+    +'<div class="no-print" style="margin-top:28px;text-align:center;">'
+    +'<button onclick="window.print()" style="background:#1a2744;color:#fff;border:none;padding:11px 28px;font-size:14px;border-radius:3px;cursor:pointer;">🖨 Imprimir / PDF</button>&nbsp;&nbsp;'
+    +'<button onclick="window.close()" style="background:none;border:1px solid #d5cfc5;color:#7a7672;padding:11px 18px;font-size:14px;border-radius:3px;cursor:pointer;">Fechar</button></div>'
+    +'</body></html>';
+}
+function imprimirCertidoes(){
+  if(!certidoes||certidoes.length===0){mostrarToast('Nenhuma certidão para imprimir.',false);return;}
+  function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  var rows=certidoes.map(function(c){
+    var st=certGetStatus(c);
+    var stTxt={expired:'🔴 Vencida',warning:'🟡 Em alerta',ok:'🟢 Em dia',permanente:'⚪ Permanente'}[st]||'—';
+    var stCls={expired:'vermelho',warning:'amber',ok:'verde',permanente:''}[st]||'';
+    return'<tr><td>'+esc(c.nome)+'</td><td>'+esc(c.municipio||'—')+'</td>'
+      +'<td>'+certFmtDate(c.vencimento)+'</td>'
+      +'<td><span class="badge '+stCls+'">'+stTxt+'</span></td></tr>';
+  }).join('');
+  var corpo='<table><thead><tr><th>Certidão</th><th>Órgão/Município</th><th>Vencimento</th><th>Status</th></tr></thead><tbody>'+rows+'</tbody></table>';
+  _abrirJanelaImpressao(_htmlImpressaoBase('📜 Certidões & Documentos',corpo));
+}
+function imprimirHistorico(){
+  var lista=document.getElementById('hist-lista');
+  if(!lista||!lista.innerHTML.trim()){mostrarToast('Nenhum histórico para imprimir.',false);return;}
+  var de=document.getElementById('hist-de').value;
+  var ate=document.getElementById('hist-ate').value;
+  var periodo=de&&ate?(fmtDate(de)+' a '+fmtDate(ate)):'Últimos registros';
+  var corpo='<p style="font-size:12px;color:#7a7672;margin-bottom:12px;">Período: '+periodo+'</p>'+lista.innerHTML;
+  _abrirJanelaImpressao(_htmlImpressaoBase('📅 Histórico de Tarefas',corpo));
+}
+function imprimirLicitacoesConcluidas(){
+  var lista=document.getElementById('lic-conc-lista');
+  if(!lista||!lista.innerHTML.trim()){mostrarToast('Nenhuma licitação concluída.',false);return;}
+  var corpo=lista.innerHTML;
+  _abrirJanelaImpressao(_htmlImpressaoBase('✅ Licitações Concluídas',corpo));
 }
 
 // ── Nota do dia ──
