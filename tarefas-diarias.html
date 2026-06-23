@@ -2398,7 +2398,7 @@ function licModalVerificarHistorico(){
     if(!painel) return;
     if(mun.length<3){painel.style.display='none';return;}
     var regs=licHistLoad().filter(function(r){
-      return r.municipio.trim().toLowerCase().indexOf(mun.toLowerCase())>=0;
+      return _normMun(r.municipio).indexOf(_normMun(mun))>=0;
     });
     if(regs.length===0){
       // Município sem histórico — oferecer cadastro rápido
@@ -3124,6 +3124,7 @@ function _getLicGrupos(){
   });
   return grupos;
 }
+function _normMun(s){return(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();}
 function _renderLicGrupoHTML(mun, ts, etapasData, mostrarEtapas, histRegs){
   var marcadas=etapasData[mun]||[];
   var totalEt=LIC_ETAPAS.length;
@@ -3131,7 +3132,8 @@ function _renderLicGrupoHTML(mun, ts, etapasData, mostrarEtapas, histRegs){
   // Buscar quem faz no histórico
   var quemFazTxt='';
   if(histRegs&&histRegs.length>0){
-    var regsDoMun=histRegs.filter(function(r){return r.municipio.trim().toLowerCase()===mun.trim().toLowerCase();});
+    var munNorm=_normMun(mun);
+    var regsDoMun=histRegs.filter(function(r){return _normMun(r.municipio)===munNorm;});
     if(regsDoMun.length>0){
       regsDoMun.sort(function(a,b){return b.data<a.data?-1:1;});
       var ultimo=regsDoMun[0];
