@@ -3204,7 +3204,7 @@ function _renderLicGrupoHTML(mun, ts, etapasData, mostrarEtapas, histRegs){
     }
   }
   ts.forEach(function(t){
-    var isDisputa=true;
+    var isDisputa=/^licita/i.test(t.text.normalize('NFD').replace(/[\u0300-\u036f]/g,''));
     var statusCor=t.done?'var(--green)':'var(--amber)';
     var statusTxt=t.done?'✔ Concluída':'⏳ Pendente';
     var dataStr=t.taskDate?(' — <b>'+fmtDate(t.taskDate)+'</b>'):'';
@@ -3223,6 +3223,25 @@ function _renderLicGrupoHTML(mun, ts, etapasData, mostrarEtapas, histRegs){
       diasBadge='<span class="lic-days-badge '+cls+'">'+dtxt+'</span>';
     }
     var tidLic=t.id;
+    // Linha de progresso — só na tarefa de Disputa/Licitação
+    var progHtml='';
+    if(isDisputa){
+      var KEY_PROG='gc_lic_prog_v1';
+      var progData={};try{progData=JSON.parse(localStorage.getItem(KEY_PROG)||'{}');}catch(e){}
+      var munProg=progData[mun]||[];
+      var LIC_PROG_STEPS=['Análise do Edital','Impugnação','Checklist','Declarações','Juntada','Conferência Habilitação','Envio Proposta'];
+      var munEscProg=mun.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      var checkboxes=LIC_PROG_STEPS.map(function(step){
+        var feito=munProg.indexOf(step)>=0;
+        var bg=feito?'#1a5276':'#fff';
+        var cor=feito?'#fff':'#1a5276';
+        var bord=feito?'#1a5276':'#c8d0e8';
+        return '<button onclick="licProgToggle(\''+munEscProg+'\',\''+step+'\')" '
+          +'style="background:'+bg+';color:'+cor+';border:1.5px solid '+bord+';border-radius:14px;padding:3px 10px;font-size:11px;cursor:pointer;font-family:sans-serif;transition:all .15s;white-space:nowrap;">'
+          +(feito?'✔ ':'')+step+'</button>';
+      }).join('');
+      progHtml='<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;">'+checkboxes+'</div>';
+    }
     html+='<div class="cert-card" style="border-left-color:'+statusCor+';">'+
       '<div class="cert-card-top">'+
       '<span class="cert-card-name">'+t.text+diasBadge+'</span>'+
@@ -3234,30 +3253,10 @@ function _renderLicGrupoHTML(mun, ts, etapasData, mostrarEtapas, histRegs){
       '</div>'+
       '<div class="cert-dates"><span class="cert-date">Data:'+dataStr+horaStr+'</span>'+(t.paraQuem?'<span class="cert-date">Para: <b>'+t.paraQuem+'</b></span>':'')+'</div>'+
       (isDisputa&&quemFazNome?'<div style="margin-top:5px;"><span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;'+(/galhardo/i.test(quemFazNome)?'background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;':'background:#fff3e0;color:#e65100;border:1px solid #ffcc80;')+'">🏢 '+quemFazNome+'</span></div>':'')+
-      (t.obs?'<div class="cert-file-name" style="white-space:normal;font-style:italic;color:var(--muted);">'+t.obs.substring(0,120)+(t.obs.length>120?'…':'')+'</div>':'')+
+      progHtml+
+      (t.obs?'<div class="cert-file-name" style="white-space:normal;font-style:italic;color:var(--muted);margin-top:4px;">'+t.obs.substring(0,120)+(t.obs.length>120?'…':'')+'</div>':'')+
       '</div>';
   });
-  // ── Linha de progresso ──
-  var LIC_PROG=['Checklist','Declarações','Juntada','Conf. Habilitação','Envio Proposta'];
-  var progKey='gc_lic_prog_v1';
-  var progData={};try{progData=JSON.parse(localStorage.getItem(progKey)||'{}');}catch(e){}
-  var munProg=progData[mun]||[];
-  var total_prog=LIC_PROG.length;
-  var feitos_prog=munProg.length;
-  var munEscProg=mun.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-  var checkboxes=LIC_PROG.map(function(step){
-    var feito=munProg.indexOf(step)>=0;
-    var bg=feito?'#1a5276':'#fff';
-    var cor=feito?'#fff':'#1a5276';
-    var bord=feito?'#1a5276':'#c8d0e8';
-    return '<button onclick="licProgToggle(\''+munEscProg+'\',\''+step+'\')" '
-      +'style="background:'+bg+';color:'+cor+';border:1.5px solid '+bord+';border-radius:14px;padding:4px 12px;font-size:12px;cursor:pointer;font-family:sans-serif;transition:all .15s;white-space:nowrap;">'
-      +(feito?'✔ ':'')+step+'</button>';
-  }).join('');
-  html+='<div style="margin-top:10px;padding:8px 10px;background:#f0f4fb;border:1px solid #c8d0e8;border-radius:4px;">'
-    +'<div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--navy2);font-weight:700;margin-bottom:7px;">📋 Andamento — '+feitos_prog+'/'+total_prog+'</div>'
-    +'<div style="display:flex;flex-wrap:wrap;gap:6px;">'+checkboxes+'</div>'
-    +'</div>';
   html+='</div>';
   return html;
 }
