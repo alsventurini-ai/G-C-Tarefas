@@ -3326,18 +3326,19 @@ function renderLicitacoesConcluidas(){
     var munEscC=mun.replace(/'/g,"\\'");
     var html='<div style="margin-bottom:20px;">';
     html+='<div style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--green);font-weight:600;padding:8px 0 6px;border-bottom:1.5px solid #c8e6c9;margin-bottom:8px;">✅ '+mun+'</div>';
-    // Painel quem faz + botões resultado
+    // Painel quem faz + botões resultado — dentro do card da tarefa Licitação
     html+='<div style="background:'+resCor+';border:1px solid #c8ddc8;border-radius:4px;padding:10px 14px;margin-bottom:10px;">';
-    html+='<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">';
+    html+='<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">';
     html+='<span style="font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap;">👤 Quem Faz:</span>';
-    html+='<input type="text" value="'+((venc.nome||'').replace(/"/g,'&quot;'))+'" placeholder="Empresa executora…" '
-      +'onchange="licVencedorSalvar(\''+munEscC+'\',\'nome\',this.value)" '
-      +'style="flex:1;min-width:160px;border:1px solid #b8ddc8;background:#fff;padding:6px 10px;font-size:13px;border-radius:3px;font-family:\'Segoe UI\',Tahoma,sans-serif;color:var(--ink);outline:none;">';
+    html+='<input type="text" id="qf-'+munEscC+'" value="'+((venc.nome||'').replace(/"/g,'&quot;'))+'" placeholder="Empresa executora…" '
+      +'style="flex:1;min-width:140px;border:1px solid #b8ddc8;background:#fff;padding:5px 10px;font-size:13px;border-radius:3px;font-family:\'Segoe UI\',Tahoma,sans-serif;color:var(--ink);outline:none;">';
+    html+='<button onclick="licVencedorSalvar(\''+munEscC+'\',\'nome\',document.getElementById(\'qf-'+munEscC+'\').value)" '
+      +'style="background:#1a5276;color:#fff;border:none;padding:5px 14px;border-radius:3px;font-size:12px;font-weight:600;cursor:pointer;">💾 Salvar</button>';
     html+='</div>';
     html+='<div style="display:flex;gap:8px;flex-wrap:wrap;">';
-    html+='<button onclick="licVencedorSalvar(\''+munEscC+'\',\'resultado\',\'ganhou\')" style="padding:6px 18px;border-radius:20px;border:2px solid #3a8c4a;font-size:13px;font-weight:700;cursor:pointer;font-family:sans-serif;'+(venc.resultado==='ganhou'?'background:#3a8c4a;color:#fff;':'background:#fff;color:#3a8c4a;')+'">✅ Ganhamos</button>';
-    html+='<button onclick="licVencedorSalvar(\''+munEscC+'\',\'resultado\',\'perdeu\')" style="padding:6px 18px;border-radius:20px;border:2px solid #b03a2e;font-size:13px;font-weight:700;cursor:pointer;font-family:sans-serif;'+(venc.resultado==='perdeu'?'background:#b03a2e;color:#fff;':'background:#fff;color:#b03a2e;')+'">❌ Perdemos</button>';
-    html+='<button onclick="licVencedorSalvar(\''+munEscC+'\',\'resultado\',\'deserto\')" style="padding:6px 18px;border-radius:20px;border:2px solid #aaa;font-size:13px;font-weight:700;cursor:pointer;font-family:sans-serif;'+(venc.resultado==='deserto'?'background:#aaa;color:#fff;':'background:#fff;color:#777;')+'">— Deserto</button>';
+    html+='<button onclick="licVencedorSalvar(\''+munEscC+'\',\'resultado\',\'ganhou\')" style="padding:5px 16px;border-radius:20px;border:2px solid #3a8c4a;font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif;'+(venc.resultado==='ganhou'?'background:#3a8c4a;color:#fff;':'background:#fff;color:#3a8c4a;')+'">✅ Ganhamos</button>';
+    html+='<button onclick="licVencedorSalvar(\''+munEscC+'\',\'resultado\',\'perdeu\')" style="padding:5px 16px;border-radius:20px;border:2px solid #b03a2e;font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif;'+(venc.resultado==='perdeu'?'background:#b03a2e;color:#fff;':'background:#fff;color:#b03a2e;')+'">❌ Perdemos</button>';
+    html+='<button onclick="licVencedorSalvar(\''+munEscC+'\',\'resultado\',\'deserto\')" style="padding:5px 16px;border-radius:20px;border:2px solid #aaa;font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif;'+(venc.resultado==='deserto'?'background:#aaa;color:#fff;':'background:#fff;color:#777;')+'">— Deserto</button>';
     html+='</div></div>';
     // Tarefas do grupo
     grupos[mun].forEach(function(t){
