@@ -72,6 +72,16 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
 .maxrep-wrap label{font-size:11px;color:var(--muted);white-space:nowrap;}
 .maxrep-input{border:1px solid var(--border);background:var(--white);padding:5px 8px;font-size:14px;border-radius:2px;width:64px;text-align:center;font-family:'Segoe UI',Tahoma,sans-serif;color:var(--ink);outline:none;}
 .intraday-section{margin-top:9px;padding:10px 12px;background:var(--cream2);border:1px solid var(--border);border-radius:3px;display:none;}
+/* Dias úteis */
+.du-wrap{margin-top:9px;padding:10px 14px;background:#edf5f0;border:1px solid #b8ddc8;border-radius:3px;display:none;}
+.du-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.du-label{font-size:11px;color:#2e7d32;font-weight:600;white-space:nowrap;}
+.du-input{border:1px solid #b8ddc8;background:var(--white);padding:7px 10px;font-size:14px;border-radius:2px;font-family:'Segoe UI',Tahoma,sans-serif;color:var(--ink);outline:none;}
+.du-input:focus{border-color:#3a8c4a;}
+.du-num{width:80px;text-align:center;}
+.du-preview{font-size:12px;color:#2e7d32;font-weight:700;margin-left:4px;white-space:nowrap;}
+.du-toggle{background:none;border:1px solid #3a8c4a;color:#3a8c4a;padding:5px 12px;font-size:12px;border-radius:2px;cursor:pointer;font-family:'Segoe UI',Tahoma,sans-serif;}
+.du-toggle.active{background:#3a8c4a;color:#fff;}
 .intraday-section-title{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;display:block;}
 .intraday-add-row{display:flex;gap:7px;align-items:center;}
 .btn-add-time{background:var(--navy);color:#fff;border:none;padding:8px 14px;border-radius:2px;font-size:13px;cursor:pointer;font-family:'Segoe UI',Tahoma,sans-serif;}
@@ -411,6 +421,8 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <div class="tab-bar">
     <button class="tab-btn active" id="tab-btn-tarefas" onclick="mudarAba('tarefas')">📋 Tarefas</button>
     <button class="tab-btn" id="tab-btn-licitacoes" onclick="mudarAba('licitacoes')">🏛 Licitações <span class="tab-badge" id="tab-lic-badge" style="display:none;">0</span></button>
+    <button class="tab-btn" id="tab-btn-lic-concluidas" onclick="mudarAba('lic-concluidas')">✅ Lic. Concluídas <span class="tab-badge" id="tab-lic-conc-badge" style="display:none;background:#3a8c4a;">0</span></button>
+    <button class="tab-btn" id="tab-btn-lic-historico" onclick="mudarAba('lic-historico')">📊 Hist. Licitações</button>
     <button class="tab-btn" id="tab-btn-certidoes" onclick="mudarAba('certidoes')">📜 Certidões <span class="tab-badge" id="tab-cert-badge" style="display:none;">!</span></button>
     <button class="tab-btn" id="tab-btn-historico" onclick="mudarAba('historico')">📅 Histórico</button>
     <button class="tab-btn" id="tab-btn-busca" onclick="abrirBuscaGlobal()" style="margin-left:auto;">🔍</button>
@@ -476,8 +488,20 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
       </div>
       <div class="intraday-times" id="intraday-times-list"></div>
     </div>
-    <div style="margin-top:8px;display:flex;gap:8px;align-items:center;">
+    <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
       <button class="obs-toggle" onclick="toggleObsNova()" id="btn-obs-nova">📝 Observação</button>
+      <button class="du-toggle" id="btn-du-toggle" onclick="toggleDiasUteis()">📅 Dias úteis</button>
+    </div>
+    <div class="du-wrap" id="du-wrap">
+      <div class="du-row">
+        <span class="du-label">📅 A partir de:</span>
+        <input type="date" id="du-data-base" class="du-input" oninput="calcDUPreview()">
+        <span class="du-label">+</span>
+        <input type="number" id="du-dias" class="du-input du-num" min="1" max="999" placeholder="Dias" oninput="calcDUPreview()">
+        <span class="du-label">dias úteis →</span>
+        <span class="du-preview" id="du-preview">—</span>
+        <button class="btn-add" style="font-size:12px;padding:7px 14px;margin-left:6px;" onclick="aplicarDiasUteis()">Aplicar na data ↑</button>
+      </div>
     </div>
     <div class="obs-new-wrap" id="obs-new-wrap">
       <textarea id="obs-new-input" placeholder="Observações, contexto, próximos passos…"></textarea>
@@ -557,7 +581,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   </div>
   <div id="tab-licitacoes" class="tab-content">
   <div class="action-bar" style="justify-content:space-between;">
-    <span style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.3px;color:var(--muted);font-weight:600;">🏛 Licitações</span>
+    <span style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.3px;color:var(--muted);font-weight:600;">🏛 Licitações — Pendentes</span>
     <button class="btn" style="font-size:12px;padding:5px 11px;border-color:#8e44ad;color:#8e44ad;" onclick="imprimirLicitacoes()">🖨 Imprimir</button>
   </div>
   <div id="lic-stats-row" style="display:flex;gap:10px;margin:0 30px 10px;flex-wrap:wrap;"></div>
@@ -570,6 +594,108 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
     </select>
   </div>
   <div id="lic-lista" style="padding:0 30px 24px;background:var(--cream);"></div>
+  </div>
+
+  <!-- Aba Licitações Concluídas -->
+  <div id="tab-lic-concluidas" class="tab-content">
+  <div class="action-bar" style="justify-content:space-between;">
+    <span style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.3px;color:var(--green);font-weight:600;">✅ Licitações Concluídas</span>
+    <button class="btn" style="font-size:12px;padding:5px 11px;border-color:#3a8c4a;color:#3a8c4a;" onclick="imprimirLicitacoesConcluidas()">🖨 Imprimir</button>
+  </div>
+  <div id="lic-conc-stats-row" style="display:flex;gap:10px;margin:0 30px 10px;flex-wrap:wrap;"></div>
+  <div style="padding:0 30px 10px;display:flex;align-items:center;gap:8px;">
+    <span style="font-size:11px;color:var(--muted);white-space:nowrap;">Ordenar por:</span>
+    <select id="lic-conc-sort" class="filter-select" onchange="renderLicitacoesConcluidas()" style="font-size:13px;flex:1;">
+      <option value="municipio">🔤 A-Z Município</option>
+      <option value="data">📅 Data mais recente</option>
+    </select>
+  </div>
+  <div id="lic-conc-lista" style="padding:0 30px 24px;background:var(--cream);"></div>
+  </div>
+
+  <!-- Aba Histórico de Licitações -->
+  <div id="tab-lic-historico" class="tab-content">
+  <div class="action-bar" style="justify-content:space-between;flex-wrap:wrap;gap:6px;">
+    <span style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.3px;color:var(--muted);font-weight:600;">📊 Histórico de Licitações</span>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      <button class="btn" style="border-color:#1a6b3a;color:#1a6b3a;font-weight:600;" onclick="licHistNovoModal()">+ Nova entrada</button>
+      <button class="btn" style="border-color:var(--navy2);color:var(--navy2);" onclick="licHistExportCSV()">📥 Exportar CSV</button>
+      <label class="btn" style="border-color:var(--amber);color:var(--amber);cursor:pointer;">📤 Importar CSV<input type="file" accept=".csv" id="lic-hist-import-input" style="display:none;" onchange="licHistImportCSV(this)"></label>
+      <button class="btn" style="border-color:#8e44ad;color:#8e44ad;" onclick="licHistRelatorio()">📋 Relatório</button>
+    </div>
+  </div>
+  <div id="lic-hist-stats-row" style="display:flex;gap:10px;margin:0 30px 10px;flex-wrap:wrap;"></div>
+  <div style="padding:0 30px 10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+    <input type="text" id="lic-hist-search" placeholder="🔍 Buscar município, quem faz…" oninput="licHistRender()" style="flex:1;min-width:180px;border:1px solid var(--border);background:var(--white);padding:7px 10px;font-size:13px;border-radius:2px;font-family:'Segoe UI',Tahoma,sans-serif;color:var(--ink);outline:none;">
+    <select id="lic-hist-sort" class="filter-select" onchange="licHistRender()" style="font-size:13px;">
+      <option value="data_desc">📅 Mais recente</option>
+      <option value="data_asc">📅 Mais antigo</option>
+      <option value="municipio">🔤 A-Z Município</option>
+      <option value="quemfaz">👤 Quem Faz</option>
+    </select>
+    <select id="lic-hist-filtro-resultado" class="filter-select" onchange="licHistRender()" style="font-size:13px;">
+      <option value="">🎯 Todos os resultados</option>
+      <option value="ganhou">✅ Ganhamos</option>
+      <option value="perdeu">❌ Perdemos</option>
+      <option value="deserto">— Deserto/Cancelado</option>
+    </select>
+  </div>
+  <div id="lic-hist-lista" style="padding:0 30px 24px;background:var(--cream);"></div>
+  </div>
+
+  <!-- Modal Histórico de Licitação -->
+  <div id="lic-hist-modal" class="modal-overlay" style="display:none;">
+  <div class="modal-box" style="max-width:560px;">
+    <div class="modal-head" style="background:#1a5276;">
+      <span class="modal-head-title" id="lic-hist-modal-title">📊 Nova Licitação — Histórico</span>
+      <button class="modal-close" onclick="licHistFecharModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-row">
+        <div class="modal-field">
+          <label>🏙 Município *</label>
+          <input type="text" id="lh-municipio" class="modal-input" placeholder="Nome da cidade…" autocomplete="off">
+        </div>
+        <div class="modal-field" style="flex:0 0 160px;">
+          <label>📅 Data da Disputa *</label>
+          <input type="date" id="lh-data" class="modal-input">
+        </div>
+      </div>
+      <div class="modal-row">
+        <div class="modal-field">
+          <label>📋 Nº Pregão / Processo</label>
+          <input type="text" id="lh-pregao" class="modal-input" placeholder="PE 001/2025…" autocomplete="off">
+        </div>
+        <div class="modal-field" style="flex:0 0 160px;">
+          <label>🎯 Resultado</label>
+          <select id="lh-resultado" class="modal-input" style="cursor:pointer;">
+            <option value="">— Não definido</option>
+            <option value="ganhou">✅ Ganhamos</option>
+            <option value="perdeu">❌ Perdemos</option>
+            <option value="deserto">— Deserto/Cancelado</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-row">
+        <div class="modal-field">
+          <label>👤 Quem Faz (empresa executora)</label>
+          <input type="text" id="lh-vencedor" class="modal-input" placeholder="Nome da empresa que executa o contrato…" autocomplete="off">
+        </div>
+        <div class="modal-field" style="flex:0 0 220px;">
+          <label>🔗 Link (PNCP/edital)</label>
+          <input type="url" id="lh-link" class="modal-input" placeholder="https://…">
+        </div>
+      </div>
+      <div class="modal-field" style="margin-top:4px;">
+        <label>📝 Observações</label>
+        <textarea id="lh-obs" class="modal-textarea" placeholder="Plataforma utilizada, motivo da derrota, estratégia…" style="min-height:60px;"></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-modal-cancel" onclick="licHistFecharModal()">Cancelar</button>
+      <button class="btn-modal-primary" onclick="licHistSalvar()">💾 Salvar</button>
+    </div>
+  </div>
   </div>
 
   <!-- Aba Certidões -->
@@ -726,7 +852,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
     </div>
     <div class="modal-foot">
       <button class="btn-modal-cancel" onclick="fecharModalEdicao()">Cancelar</button>
-      <button class="btn-modal-primary" onclick="salvarModalEdicao()">💾 Salvar</button>
+      <button class="btn-modal-primary" id="btn-modal-salvar" onclick="salvarModalEdicao()">💾 Salvar</button>
       <button class="btn-modal-primary" style="background:#4a7a4a;" onclick="okModalEdicao()">✅ OK</button>
     </div>
   </div>
@@ -743,9 +869,13 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
       <div class="modal-row">
         <div class="modal-field">
           <label>🏙 Município</label>
-          <input type="text" id="lic-municipio" class="modal-input" placeholder="Nome da cidade…" autocomplete="off">
+          <input type="text" id="lic-municipio" class="modal-input" placeholder="Nome da cidade…" autocomplete="off" oninput="licModalVerificarHistorico()">
         </div>
       </div>
+
+      <!-- Painel histórico — aparece dinamicamente -->
+      <div id="lic-hist-painel" style="display:none;margin-bottom:14px;border-radius:4px;overflow:hidden;border:1.5px solid #c8d0e8;"></div>
+
       <div class="modal-row">
         <div class="modal-field">
           <label>📅 Data da Disputa</label>
@@ -1413,6 +1543,86 @@ function toggleObsNova(){
   if(!vis)document.getElementById('obs-new-input').focus();
 }
 function parseTags(str){return str?str.split(',').map(function(t){return t.trim();}).filter(function(t){return t;}):[]}
+
+// ── Dias Úteis ──
+var _duAberto=false;
+function toggleDiasUteis(){
+  _duAberto=!_duAberto;
+  var wrap=document.getElementById('du-wrap');
+  var btn=document.getElementById('btn-du-toggle');
+  wrap.style.display=_duAberto?'block':'none';
+  btn.classList.toggle('active',_duAberto);
+  if(_duAberto){
+    // Pre-preencher data base com a data já selecionada no campo principal, se houver
+    var dateMain=document.getElementById('date-input').value;
+    if(dateMain&&!document.getElementById('du-data-base').value){
+      document.getElementById('du-data-base').value=dateMain;
+    }
+    document.getElementById('du-data-base').focus();
+  }
+}
+var _feriadosNacionais=[
+  '01-01','04-21','05-01','09-07','10-12','11-02','11-15','11-20','12-25'
+];
+// Páscoa (Gauss) e feriados móveis
+function _calcPascoa(ano){
+  var a=ano%19,b=Math.floor(ano/100),c=ano%100;
+  var d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25);
+  var g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30;
+  var i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7;
+  var m=Math.floor((a+11*h+22*l)/451);
+  var mes=Math.floor((h+l-7*m+114)/31),dia=((h+l-7*m+114)%31)+1;
+  return new Date(ano,mes-1,dia);
+}
+function _isFeriadoNacional(d){
+  var mmdd=(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0');
+  if(_feriadosNacionais.indexOf(mmdd)>=0) return true;
+  var ano=d.getFullYear();
+  var pascoa=_calcPascoa(ano);
+  // Sexta-feira Santa = D-2, Carnaval = D-47 e D-48, Corpus Christi = D+60
+  var offs=[-2,-48,-47,60];
+  for(var i=0;i<offs.length;i++){
+    var fd=new Date(pascoa.getTime()+offs[i]*86400000);
+    if(fd.getFullYear()===d.getFullYear()&&fd.getMonth()===d.getMonth()&&fd.getDate()===d.getDate()) return true;
+  }
+  return false;
+}
+function _isDiaUtil(d){
+  var dow=d.getDay();
+  if(dow===0||dow===6) return false;
+  if(_isFeriadoNacional(d)) return false;
+  return true;
+}
+function somarDiasUteis(dataStr,n){
+  var d=new Date(dataStr+'T12:00:00');
+  var count=0;
+  while(count<n){d.setDate(d.getDate()+1);if(_isDiaUtil(d))count++;}
+  return d.toISOString().slice(0,10);
+}
+function calcDUPreview(){
+  var base=document.getElementById('du-data-base').value;
+  var dias=parseInt(document.getElementById('du-dias').value);
+  var prev=document.getElementById('du-preview');
+  if(!base||!dias||dias<1){prev.textContent='—';return;}
+  var resultado=somarDiasUteis(base,dias);
+  var d=new Date(resultado+'T12:00:00');
+  var diasSemana=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  var meses=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  prev.textContent=diasSemana[d.getDay()]+', '+d.getDate()+' '+meses[d.getMonth()]+' '+d.getFullYear();
+  prev.setAttribute('data-isodate',resultado);
+}
+function aplicarDiasUteis(){
+  var iso=document.getElementById('du-preview').getAttribute('data-isodate');
+  if(!iso){alert('Informe a data base e a quantidade de dias úteis.');return;}
+  document.getElementById('date-input').value=iso;
+  // Fechar painel
+  _duAberto=false;
+  document.getElementById('du-wrap').style.display='none';
+  document.getElementById('btn-du-toggle').classList.remove('active');
+  mostrarToast('📅 Data aplicada: '+document.getElementById('du-preview').textContent,false);
+  document.getElementById('task-input').focus();
+}
+
 function addTask(){
   var inp=document.getElementById('task-input'),txt=inp.value.trim();if(!txt){marcarCampoObrigatorio('task-input');return;}
   var timeSel=document.getElementById('time-input'),dateSel=document.getElementById('date-input');
@@ -1445,9 +1655,9 @@ function addTask(){
     var licMatch=txt.match(/^licitaç[aã]o\s*[-—]\s*(.+)$/i);
     if(licMatch&&dataTask){
       var munAuto=licMatch[1].trim();
-      var dataImpugAuto=somarDiasUteis(dataTask,3);
+      var dataImpugAuto=somarDiasUteis_subtrair(dataTask,3);
       var dataAnaliseAuto=somarDiasCorridos(dataTask,8);
-      var dataPropostaAuto=somarDiasUteis(dataTask,3);
+      var dataPropostaAuto=somarDiasUteis_subtrair(dataTask,3);
       tasks.push({id:tid+1,text:'⚠️ Impugnação — '+munAuto,done:false,addedAt:timeNow(),doneAt:'',schedule:horaTask,taskDate:dataImpugAuto,alertFired:false,paraQuem:pq||'Licitações',obs:'Prazo de impugnação — '+munAuto+'\nDe acordo com a Lei nº 14.133/2021, Art. 164: a impugnação deverá ser protocolada até 3 (três) dias úteis antes da data de abertura do certame.',priority:'alta',duracao:'',pinned:false,_licMunicipio:munAuto,_licDataDisputa:dataTask,_licHoraDisputa:horaTask,_impugnacaoEnviada:null});
       tasks.push({id:tid+2,text:'📋 Análise do Edital — '+munAuto,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataAnaliseAuto,alertFired:false,paraQuem:pq||'Licitações',obs:'Análise do edital — '+munAuto,priority:'alta',duracao:'',pinned:false});
       tasks.push({id:tid+3,text:'📤 Início Inclusão da Proposta — '+munAuto,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataPropostaAuto,alertFired:false,paraQuem:pq||'Licitações',obs:'Iniciar inclusão da proposta no sistema — '+munAuto+'\nDe acordo com a Lei nº 14.133/2021, Art. 60: o prazo fixado no edital para apresentação das propostas e lances não pode ser inferior a 8 (oito) dias úteis, contado da data de publicação do edital.',priority:'alta',duracao:'',pinned:false});
@@ -1461,6 +1671,11 @@ function addTask(){
   document.getElementById('duracao-input').value='';
   document.getElementById('obs-new-wrap').style.display='none';
   document.getElementById('btn-obs-nova').textContent='📝 Observação';
+  // Limpar painel de dias úteis
+  document.getElementById('du-data-base').value='';
+  document.getElementById('du-dias').value='';
+  document.getElementById('du-preview').textContent='—';
+  document.getElementById('du-preview').removeAttribute('data-isodate');
   save();render();atualizarFiltros();atualizarTitulo();inp.focus();
 }
 function toggle(id){
@@ -1579,7 +1794,7 @@ function abrirModalEdicao(id){
   document.getElementById('edit-modal').style.display='flex';
   setTimeout(function(){document.getElementById('em-text').focus();},80);
 }
-function fecharModalEdicao(){document.getElementById('edit-modal').style.display='none';_editingId=null;}
+function fecharModalEdicao(){document.getElementById('edit-modal').style.display='none';_editingId=null;_modalSalvo=false;var btnSalv=document.getElementById('btn-modal-salvar');if(btnSalv){btnSalv.textContent='💾 Salvar';btnSalv.style.background='';}}
 function duplicarTarefa(id){
   var t=tasks.find(function(x){return x.id===id;});if(!t)return;
   _editingId='__novo__';
@@ -1665,11 +1880,16 @@ function salvarModalEdicao(){
     }
     save();render();atualizarFiltros();
   }
-  fecharModalEdicao();
+  _modalSalvo=true;
+  // Feedback visual no botão Salvar
+  var btnSalv=document.getElementById('btn-modal-salvar');
+  if(btnSalv){btnSalv.textContent='✅ Salvo!';btnSalv.style.background='#3a7a3a';setTimeout(function(){btnSalv.textContent='💾 Salvar';btnSalv.style.background='';},2000);}
   return true;
 }
+var _modalSalvo=false;
 function okModalEdicao(){
-  salvarModalEdicao();
+  if(!_modalSalvo){salvarModalEdicao();}
+  fecharModalEdicao();
 }
 document.getElementById('edit-modal').addEventListener('click',function(e){if(e.target===this)fecharModalEdicao();});
 document.addEventListener('keydown',function(e){if(e.key==='Escape')fecharModalEdicao();});
@@ -2045,6 +2265,16 @@ function abrirObsInline(id,task){
   br.appendChild(bs);br.appendChild(bc);row.appendChild(lbl);row.appendChild(area);row.appendChild(br);
   var taskEl=document.getElementById('task-'+id);if(taskEl){var bd2=taskEl.querySelector('.task-body');if(bd2){bd2.appendChild(row);area.focus();}}
 }
+function atualizarBadgesLic(){
+  var grupos=_getLicGrupos();
+  var munKeys=Object.keys(grupos);
+  var gruposPend=munKeys.filter(function(m){return grupos[m].some(function(t){return !t.done;});});
+  var gruposConc=munKeys.filter(function(m){return grupos[m].every(function(t){return t.done;});});
+  var badge=document.getElementById('tab-lic-badge');
+  var badgeConc=document.getElementById('tab-lic-conc-badge');
+  if(badge){if(gruposPend.length>0){badge.textContent=gruposPend.length;badge.style.display='inline';}else{badge.style.display='none';}}
+  if(badgeConc){if(gruposConc.length>0){badgeConc.textContent=gruposConc.length;badgeConc.style.display='inline';}else{badgeConc.style.display='none';}}
+}
 function render(){
   atualizarTitulo();
   var todos=tasks;var visiveis=filtrarLista(todos);
@@ -2067,6 +2297,7 @@ function render(){
   document.getElementById('pbar').style.width=pct+'%';
   document.getElementById('footer-el').textContent='Dados salvos automaticamente · '+now.getDate()+' de '+MONTHS[now.getMonth()]+' de '+now.getFullYear();
   atualizarFiltros();
+  atualizarBadgesLic();
 }
 
 // ── Licitação ──
@@ -2078,8 +2309,88 @@ function abrirModalLicitacao(){
   document.getElementById('lic-modal').style.display='flex';
   setTimeout(function(){document.getElementById('lic-municipio').focus();},80);
 }
-function fecharModalLicitacao(){document.getElementById('lic-modal').style.display='none';}
-function somarDiasUteis(dataIso,dias){
+function fecharModalLicitacao(){
+  document.getElementById('lic-modal').style.display='none';
+  var p=document.getElementById('lic-hist-painel');
+  if(p){p.style.display='none';p.innerHTML='';}
+}
+
+var _licHistTimer=null;
+function licModalVerificarHistorico(){
+  if(_licHistTimer) clearTimeout(_licHistTimer);
+  _licHistTimer=setTimeout(function(){
+    var mun=(document.getElementById('lic-municipio').value||'').trim();
+    var painel=document.getElementById('lic-hist-painel');
+    if(!painel) return;
+    if(mun.length<3){painel.style.display='none';return;}
+    var regs=licHistLoad().filter(function(r){
+      return r.municipio.trim().toLowerCase().indexOf(mun.toLowerCase())>=0;
+    });
+    if(regs.length===0){
+      // Município sem histórico — oferecer cadastro rápido
+      painel.style.display='block';
+      painel.style.borderColor='#c8d0e8';
+      painel.innerHTML=
+        '<div style="background:#f0f4fb;padding:10px 14px;">'
+        +'<div style="font-size:11px;font-weight:700;color:var(--navy2);margin-bottom:8px;">📋 Nenhum histórico para este município</div>'
+        +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">'
+        +'<span style="font-size:12px;color:var(--muted);white-space:nowrap;">👤 Quem faz atualmente:</span>'
+        +'<input type="text" id="lic-novo-quemfaz" placeholder="Empresa executora (opcional)…" '
+        +'style="flex:1;min-width:140px;border:1px solid #c8d0e8;background:#fff;padding:6px 10px;font-size:13px;border-radius:3px;font-family:\'Segoe UI\',Tahoma,sans-serif;color:var(--ink);outline:none;">'
+        +'<select id="lic-novo-resultado" style="border:1px solid #c8d0e8;background:#fff;padding:6px 10px;font-size:13px;border-radius:3px;font-family:\'Segoe UI\',Tahoma,sans-serif;color:var(--ink);outline:none;cursor:pointer;">'
+        +'<option value="">— Resultado anterior</option>'
+        +'<option value="ganhou">✅ G&C ganhou</option>'
+        +'<option value="perdeu">❌ Perdemos</option>'
+        +'<option value="deserto">— Deserto/Cancelado</option>'
+        +'</select>'
+        +'</div>'
+        +'<div style="font-size:11px;color:var(--muted);margin-top:6px;">Se preenchido, será salvo no Hist. Licitações ao criar.</div>'
+        +'</div>';
+      return;
+    }
+    // Município com histórico
+    regs.sort(function(a,b){return b.data<a.data?-1:1;});
+    var resCorMap={ganhou:'#e8f5e9',perdeu:'#fde8e8',deserto:'#f5f5f5'};
+    var resLblMap={ganhou:'✅ G&C ganhou',perdeu:'❌ Perdemos',deserto:'— Deserto'};
+    var resBordMap={ganhou:'#3a8c4a',perdeu:'#b03a2e',deserto:'#bbb'};
+    var ultimo=regs[0];
+    var bg=resCorMap[ultimo.resultado]||'#fff8e1';
+    var bord=resBordMap[ultimo.resultado]||'#c78a1a';
+    painel.style.borderColor=bord;
+    var itens=regs.slice(0,4).map(function(r){
+      var resLbl=resLblMap[r.resultado]||'';
+      var resBord2=resBordMap[r.resultado]||'#ddd';
+      var resCor2=resCorMap[r.resultado]||'#fff';
+      return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px dashed #ddd;">'
+        +'<span style="font-size:11px;color:var(--muted);min-width:80px;">'+fmtDate(r.data)+'</span>'
+        +'<span style="font-size:13px;font-weight:600;flex:1;color:#1a2744;">'+(r.vencedor||'<span style="color:#aaa;font-weight:400;">Não registrado</span>')+'</span>'
+        +(resLbl?'<span style="font-size:11px;font-weight:700;background:'+resCor2+';border:1px solid '+resBord2+';border-radius:3px;padding:2px 8px;white-space:nowrap;">'+resLbl+'</span>':'')
+        +(r.pregao?'<span style="font-size:11px;color:var(--muted);">'+r.pregao+'</span>':'')
+        +'</div>';
+    }).join('');
+    var mais=regs.length>4?'<div style="font-size:11px;color:var(--muted);margin-top:4px;">+'+( regs.length-4)+' registro(s) anteriores — veja Hist. Licitações</div>':'';
+    painel.style.display='block';
+    painel.innerHTML=
+      '<div style="background:'+bg+';padding:10px 14px;">'
+      +'<div style="font-size:11px;font-weight:700;color:var(--navy2);margin-bottom:6px;">📊 Histórico encontrado — '+regs.length+' registro(s)</div>'
+      +'<div style="font-size:12px;color:var(--muted);margin-bottom:8px;">👤 Mais recente: <strong style="color:#1a2744;font-size:13px;">'+(ultimo.vencedor||'não registrado')+'</strong>'+(ultimo.resultado?' · <span style="color:'+(ultimo.resultado==='ganhou'?'#2e7d32':ultimo.resultado==='perdeu'?'#b03a2e':'#777')+';">'+resLblMap[ultimo.resultado]+'</span>':'')+'</div>'
+      +itens+mais
+      +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;padding-top:8px;border-top:1px solid rgba(0,0,0,.08);">'
+      +'<span style="font-size:11px;color:var(--muted);white-space:nowrap;">👤 Quem faz agora:</span>'
+      +'<input type="text" id="lic-novo-quemfaz" placeholder="Confirmar ou atualizar empresa…" value="'+(ultimo.vencedor||'')+'" '
+      +'style="flex:1;min-width:140px;border:1px solid #c8d0e8;background:#fff;padding:6px 10px;font-size:13px;border-radius:3px;font-family:\'Segoe UI\',Tahoma,sans-serif;color:var(--ink);outline:none;">'
+      +'<select id="lic-novo-resultado" style="border:1px solid #c8d0e8;background:#fff;padding:6px 10px;font-size:13px;border-radius:3px;font-family:\'Segoe UI\',Tahoma,sans-serif;color:var(--ink);outline:none;cursor:pointer;">'
+      +'<option value="">— Resultado anterior</option>'
+      +'<option value="ganhou"'+(ultimo.resultado==='ganhou'?' selected':'')+'>✅ G&C ganhou</option>'
+      +'<option value="perdeu"'+(ultimo.resultado==='perdeu'?' selected':'')+'>❌ Perdemos</option>'
+      +'<option value="deserto"'+(ultimo.resultado==='deserto'?' selected':'')+'>— Deserto/Cancelado</option>'
+      +'</select>'
+      +'</div>'
+      +'<div style="font-size:11px;color:var(--muted);margin-top:5px;">Se alterado, um novo registro será adicionado ao Hist. Licitações ao criar.</div>'
+      +'</div>';
+  },300);
+}
+function somarDiasUteis_subtrair(dataIso,dias){
   var d=new Date(dataIso+'T00:00:00');
   var restantes=dias;
   while(restantes>0){
@@ -2103,9 +2414,9 @@ function criarLicitacao(){
   if(!municipio){alert('Informe o município.');marcarCampoObrigatorio('lic-municipio');return false;}
   if(!dataDisputa){alert('Informe a data da disputa.');marcarCampoObrigatorio('lic-data');return false;}
   if(!horaDisputa){alert('Informe o horário da disputa.');marcarCampoObrigatorio('lic-hora');return false;}
-  var dataImpug=somarDiasUteis(dataDisputa,3);
+  var dataImpug=somarDiasUteis_subtrair(dataDisputa,3);
   var dataAnalise=somarDiasCorridos(dataDisputa,8);
-  var dataInicioPropostaLei=somarDiasUteis(dataDisputa,3);
+  var dataInicioPropostaLei=somarDiasUteis_subtrair(dataDisputa,3);
   var now2=Date.now();
   // Tarefa 1 — Disputa
   tasks.push({id:now2,text:'🏛 Disputa — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataDisputa,alertFired:false,paraQuem:'Licitações',obs:obs,priority:'alta',tags:['licitação',municipio],pinned:false,duracao:'',link:licLink});
@@ -2117,7 +2428,26 @@ function criarLicitacao(){
   tasks.push({id:now2+3,text:'📤 Início Inclusão da Proposta — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataInicioPropostaLei,alertFired:false,paraQuem:'Licitações',obs:'Iniciar inclusão da proposta no sistema — '+municipio+'\nDe acordo com a Lei nº 14.133/2021, Art. 60: o prazo fixado no edital para apresentação das propostas e lances não pode ser inferior a 8 (oito) dias úteis, contado da data de publicação do edital.',priority:'alta',tags:['licitação','proposta',municipio],pinned:false,duracao:'',link:licLink});
   // Tarefa 5 — Prazo Final de Impugnação (Lei 14.133/2021, Art. 164)
   tasks.push({id:now2+4,text:'⚖️ Prazo Final de Impugnação — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataImpug,alertFired:false,paraQuem:'Licitações',obs:'ATENÇÃO: encerra hoje o prazo de impugnação ao edital — '+municipio+'\nDe acordo com a Lei nº 14.133/2021, Art. 164: a impugnação deverá ser protocolada até 3 (três) dias úteis antes da data de abertura do certame.',priority:'alta',tags:['licitação','impugnação',municipio],pinned:false,duracao:'',link:licLink});
-  save();render();atualizarFiltros();fecharModalLicitacao();
+  save();render();atualizarFiltros();
+  // Salvar no histórico se houver dados preenchidos no painel
+  var quemFazEl=document.getElementById('lic-novo-quemfaz');
+  var resultadoEl=document.getElementById('lic-novo-resultado');
+  if(quemFazEl&&(quemFazEl.value.trim()||resultadoEl.value)){
+    var listaHist=licHistLoad();
+    listaHist.push({
+      id:Date.now(),
+      municipio:municipio,
+      data:dataDisputa,
+      pregao:obs||'',
+      resultado:resultadoEl?resultadoEl.value:'',
+      vencedor:quemFazEl.value.trim(),
+      obs:'Criado automaticamente ao cadastrar licitação',
+      link:licLink,
+      criadoEm:new Date().toISOString()
+    });
+    licHistSave(listaHist);
+  }
+  fecharModalLicitacao();
   mostrarToast('✅ 5 tarefas criadas para '+municipio+'!',false);
   return true;
 }
@@ -2665,8 +2995,9 @@ function certExportCSV(){
   a.click();
 }
 function mudarAba(aba){
-  ['tarefas','licitacoes','certidoes','historico'].forEach(function(a){
-    document.getElementById('tab-'+a).classList.toggle('active', a===aba);
+  ['tarefas','licitacoes','lic-concluidas','lic-historico','certidoes','historico'].forEach(function(a){
+    var tabEl=document.getElementById('tab-'+a);
+    if(tabEl) tabEl.classList.toggle('active', a===aba);
     var btn=document.getElementById('tab-btn-'+a);
     if(btn) btn.classList.toggle('active', a===aba);
   });
@@ -2675,7 +3006,9 @@ function mudarAba(aba){
   document.querySelector('.tasks-area').style.display=isTarefas?'':'none';
   if(aba==='certidoes') certRender();
   if(aba==='licitacoes') renderLicitacoes();
-  if(aba==='historico'){histPeriodo(7);} // padrão: últimos 7 dias
+  if(aba==='lic-concluidas') renderLicitacoesConcluidas();
+  if(aba==='lic-historico') licHistRender();
+  if(aba==='historico'){histPeriodo(7);}
 }
 
 function imprimirLicitacoes(){
@@ -2693,40 +3026,19 @@ function imprimirLicitacoes(){
   if(lics.length===0){mostrarToast('Nenhuma tarefa de licitação.',false);return;}
   abrirFiltroRelatorio(false,lics);
 }
-function renderLicitacoes(){
-  var lista=document.getElementById('lic-lista');
-  var stats=document.getElementById('lic-stats-row');
-  if(!lista) return;
-  // Filtra tarefas de licitação — baseado no TEXTO da tarefa
+// ── Helper: filtra e agrupa todas as tarefas de licitação ──
+function _getLicGrupos(){
   var lics=tasks.filter(function(t){
     if(!t.text) return false;
     var tx=t.text.toLowerCase();
-    // Criadas pelo botão "+ Nova Licitação" (prefixos automáticos)
     if(t.text.indexOf('🏛 Disputa')===0||t.text.indexOf('⚠️ Impugnação')===0||t.text.indexOf('📋 Análise de Edital')===0) return true;
     if(t.text.indexOf('📤 Início Inclusão da Proposta')===0||t.text.indexOf('⚖️ Prazo Final de Impugnação')===0||t.text.indexOf('🔎 Conferir Retorno da Impugnação')===0) return true;
-    // Criadas pelo fluxo direto (texto livre)
     if(/^licitaç[aã]o\s*[-—]/i.test(t.text)) return true;
     if(/^impugnaç[aã]o\s*[-—]/i.test(t.text)) return true;
     if(/^an[aá]lise do edital\s*[-—]/i.test(t.text)) return true;
-    // Criadas manualmente contendo a palavra "licitação" ou "licitacao"
     if(tx.indexOf('licitaç')>=0||tx.indexOf('licitac')>=0) return true;
     return false;
   });
-  // Atualiza badge
-  var badge=document.getElementById('tab-lic-badge');
-  var pendentes=lics.filter(function(t){return !t.done;}).length;
-  if(pendentes>0){badge.textContent=pendentes;badge.style.display='inline';}
-  else{badge.style.display='none';}
-  // Stats
-  var total=lics.length,pend=lics.filter(function(t){return !t.done;}).length,conc=lics.filter(function(t){return t.done;}).length;
-  stats.innerHTML='<div class="cert-stat"><div class="cert-stat-num" style="color:var(--navy)">'+total+'</div><div class="cert-stat-lbl">Total</div></div>'+
-    '<div class="cert-stat"><div class="cert-stat-num" style="color:var(--amber)">'+pend+'</div><div class="cert-stat-lbl">Pendentes</div></div>'+
-    '<div class="cert-stat"><div class="cert-stat-num" style="color:var(--green)">'+conc+'</div><div class="cert-stat-lbl">Concluídas</div></div>';
-  if(lics.length===0){
-    lista.innerHTML='<div class="cert-empty">Nenhuma tarefa de licitação encontrada.</div>';
-    return;
-  }
-  // Agrupa por município (extrai do texto)
   var grupos={};
   lics.forEach(function(t){
     var municipio='Geral';
@@ -2736,34 +3048,15 @@ function renderLicitacoes(){
     if(!grupos[municipio]) grupos[municipio]=[];
     grupos[municipio].push(t);
   });
-  var html='';
-  var etapasData=licEtapasLoad();
-  var licSort=(document.getElementById('lic-sort')||{}).value||'municipio';
-  var munKeys=Object.keys(grupos);
-  if(licSort==='municipio'){
-    munKeys.sort();
-  } else if(licSort==='data'){
-    munKeys.sort(function(a,b){
-      var dataA=grupos[a].map(function(t){return t.taskDate||'9999';}).sort()[0];
-      var dataB=grupos[b].map(function(t){return t.taskDate||'9999';}).sort()[0];
-      return dataA<dataB?-1:dataA>dataB?1:0;
-    });
-  } else if(licSort==='status'){
-    munKeys.sort(function(a,b){
-      var pendA=grupos[a].filter(function(t){return !t.done;}).length;
-      var pendB=grupos[b].filter(function(t){return !t.done;}).length;
-      return pendB-pendA;
-    });
-  }
-  munKeys.forEach(function(mun){
-    var ts=grupos[mun];
-    var munKey=mun.replace(/[^a-zA-Z0-9]/g,'_');
-    var marcadas=etapasData[mun]||[];
-    var totalEt=LIC_ETAPAS.length;
-    var concEt=marcadas.length;
-    html+='<div style="margin-bottom:20px;">';
-    html+='<div style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:600;padding:8px 0 6px;border-bottom:1.5px solid var(--border);margin-bottom:8px;">🏛 '+mun+' <span style="font-size:10px;color:var(--green);font-weight:400;">'+concEt+'/'+totalEt+' etapas</span></div>';
-    // Checklist de etapas
+  return grupos;
+}
+function _renderLicGrupoHTML(mun, ts, etapasData, mostrarEtapas){
+  var marcadas=etapasData[mun]||[];
+  var totalEt=LIC_ETAPAS.length;
+  var concEt=marcadas.length;
+  var html='<div style="margin-bottom:20px;">';
+  html+='<div style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:600;padding:8px 0 6px;border-bottom:1.5px solid var(--border);margin-bottom:8px;">🏛 '+mun+' <span style="font-size:10px;color:var(--green);font-weight:400;">'+concEt+'/'+totalEt+' etapas</span></div>';
+  if(mostrarEtapas){
     html+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">';
     LIC_ETAPAS.forEach(function(et){
       var done=marcadas.indexOf(et)>=0;
@@ -2775,44 +3068,412 @@ function renderLicitacoes(){
         +(done?'&#10003; ':'')+et+'</button>';
     });
     html+='</div>';
-    ts.forEach(function(t){
-      var statusCor=t.done?'var(--green)':'var(--amber)';
-      var statusTxt=t.done?'✔ Concluída':'⏳ Pendente';
+  }
+  ts.forEach(function(t){
+    var statusCor=t.done?'var(--green)':'var(--amber)';
+    var statusTxt=t.done?'✔ Concluída':'⏳ Pendente';
+    var dataStr=t.taskDate?(' — <b>'+fmtDate(t.taskDate)+'</b>'):'';
+    var horaStr=t.schedule?(' às '+t.schedule):'';
+    var diasBadge='';
+    if(!t.done&&t.taskDate){
+      var hoje=new Date();hoje.setHours(0,0,0,0);
+      var alvo=new Date(t.taskDate+'T00:00:00');
+      var diff=Math.round((alvo-hoje)/86400000);
+      var cls='ok',dtxt='';
+      if(diff<0){cls='urgente';dtxt='Atrasada '+Math.abs(diff)+'d';}
+      else if(diff===0){cls='hoje';dtxt='HOJE';}
+      else if(diff<=3){cls='urgente';dtxt='Em '+diff+'d';}
+      else if(diff<=7){cls='proximo';dtxt='Em '+diff+'d';}
+      else{cls='ok';dtxt='Em '+diff+'d';}
+      diasBadge='<span class="lic-days-badge '+cls+'">'+dtxt+'</span>';
+    }
+    var tidLic=t.id;
+    html+='<div class="cert-card" style="border-left-color:'+statusCor+';">'+
+      '<div class="cert-card-top">'+
+      '<span class="cert-card-name">'+t.text+diasBadge+'</span>'+
+      '<span style="display:flex;gap:4px;align-items:center;">'+
+      '<span class="cert-badge" style="background:'+(t.done?'#e8f5e9':'#fff8e1')+';color:'+(t.done?'#2e7d32':'#c78a1a')+';border:1px solid '+(t.done?'#c8e6c9':'#ffe082')+';">'+statusTxt+'</span>'+
+      '<button onclick="abrirModalEdicao('+tidLic+')" style="background:none;border:1px solid #bbb;border-radius:3px;padding:2px 7px;font-size:12px;cursor:pointer;color:#555;" title="Editar">✏️</button>'+
+      '<button onclick="del('+tidLic+')" style="background:none;border:1px solid #e57373;border-radius:3px;padding:2px 7px;font-size:12px;cursor:pointer;color:#c0392b;" title="Excluir">×</button>'+
+      '</span>'+
+      '</div>'+
+      '<div class="cert-dates"><span class="cert-date">Data:'+dataStr+horaStr+'</span>'+(t.paraQuem?'<span class="cert-date">Para: <b>'+t.paraQuem+'</b></span>':'')+'</div>'+
+      (t.obs?'<div class="cert-file-name" style="white-space:normal;font-style:italic;color:var(--muted);">'+t.obs.substring(0,120)+(t.obs.length>120?'…':'')+'</div>':'')+
+      '</div>';
+  });
+  html+='</div>';
+  return html;
+}
+function renderLicitacoes(){
+  var lista=document.getElementById('lic-lista');
+  var stats=document.getElementById('lic-stats-row');
+  if(!lista) return;
+  var grupos=_getLicGrupos();
+  var munKeys=Object.keys(grupos);
+  // Conta totais para badges e stats
+  var totalTasks=0,pendTasks=0,concTasks=0;
+  munKeys.forEach(function(m){grupos[m].forEach(function(t){totalTasks++;if(t.done)concTasks++;else pendTasks++;});});
+  // Badge aba principal: grupos com pendentes
+  var gruposPend=munKeys.filter(function(m){return grupos[m].some(function(t){return !t.done;});});
+  var badge=document.getElementById('tab-lic-badge');
+  if(gruposPend.length>0){badge.textContent=gruposPend.length;badge.style.display='inline';}
+  else{badge.style.display='none';}
+  // Badge aba concluídas
+  var gruposConc=munKeys.filter(function(m){return grupos[m].every(function(t){return t.done;});});
+  var badgeConc=document.getElementById('tab-lic-conc-badge');
+  if(gruposConc.length>0){badgeConc.textContent=gruposConc.length;badgeConc.style.display='inline';}
+  else{badgeConc.style.display='none';}
+  // Stats
+  stats.innerHTML='<div class="cert-stat"><div class="cert-stat-num" style="color:var(--navy)">'+gruposPend.length+'</div><div class="cert-stat-lbl">Municípios</div></div>'+
+    '<div class="cert-stat"><div class="cert-stat-num" style="color:var(--amber)">'+pendTasks+'</div><div class="cert-stat-lbl">Tarefas pend.</div></div>'+
+    '<div class="cert-stat"><div class="cert-stat-num" style="color:var(--green)">'+gruposConc.length+'</div><div class="cert-stat-lbl">Concluídas →</div></div>';
+  if(gruposPend.length===0){
+    lista.innerHTML='<div class="cert-empty">Nenhuma licitação pendente. Veja a aba <strong>✅ Lic. Concluídas</strong>.</div>';
+    return;
+  }
+  var licSort=(document.getElementById('lic-sort')||{}).value||'municipio';
+  if(licSort==='municipio'){gruposPend.sort();}
+  else if(licSort==='data'){
+    gruposPend.sort(function(a,b){
+      var dataA=grupos[a].filter(function(t){return !t.done;}).map(function(t){return t.taskDate||'9999';}).sort()[0]||'9999';
+      var dataB=grupos[b].filter(function(t){return !t.done;}).map(function(t){return t.taskDate||'9999';}).sort()[0]||'9999';
+      return dataA<dataB?-1:dataA>dataB?1:0;
+    });
+  } else if(licSort==='status'){gruposPend.sort();}
+  var etapasData=licEtapasLoad();
+  var html='';
+
+  // ── Painel "Quem Faz" — histórico dos municípios ativos ──
+  var histRegs=licHistLoad();
+  if(histRegs.length>0){
+    var painelItens='';
+    gruposPend.forEach(function(mun){
+      var regsDoMun=histRegs.filter(function(r){return r.municipio.trim().toLowerCase()===mun.trim().toLowerCase();});
+      if(regsDoMun.length===0) return;
+      regsDoMun.sort(function(a,b){return b.data<a.data?-1:1;});
+      var ultimo=regsDoMun[0];
+      var resCorMap={ganhou:'#e8f5e9',perdeu:'#fde8e8',deserto:'#f5f5f5'};
+      var resLblMap={ganhou:'✅ G&C','perdeu':'❌ Perdemos',deserto:'—'};
+      var resBordMap={ganhou:'#3a8c4a',perdeu:'#b03a2e',deserto:'#bbb'};
+      var bg=resCorMap[ultimo.resultado]||'#fff8e1';
+      var bord=resBordMap[ultimo.resultado]||'#c78a1a';
+      painelItens+='<div style="background:'+bg+';border:1.5px solid '+bord+';border-radius:4px;padding:8px 12px;min-width:180px;flex:1;">'
+        +'<div style="font-size:11px;font-weight:700;color:#1a2744;margin-bottom:3px;">🏙 '+mun+'</div>'
+        +'<div style="font-size:12px;color:#333;font-weight:600;">'+(ultimo.vencedor?'👤 '+ultimo.vencedor:'<span style="color:#aaa;">Não registrado</span>')+'</div>'
+        +'<div style="font-size:11px;color:var(--muted);margin-top:2px;">'+fmtDate(ultimo.data)+(regsDoMun.length>1?' · '+regsDoMun.length+' registros':'')+'</div>'
+        +'</div>';
+    });
+    if(painelItens){
+      html+='<div style="margin:0 0 16px;padding:12px 14px;background:#f0f4fb;border:1px solid #c8d0e8;border-radius:4px;">'
+        +'<div style="font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--navy2);font-weight:700;margin-bottom:10px;">👤 Quem Faz — Histórico dos municípios ativos</div>'
+        +'<div style="display:flex;gap:8px;flex-wrap:wrap;">'+painelItens+'</div>'
+        +'<div style="margin-top:8px;font-size:11px;color:var(--muted);">Baseado na aba <b>Hist. Licitações</b> · registro mais recente por município</div>'
+        +'</div>';
+    }
+  }
+
+  gruposPend.forEach(function(mun){html+=_renderLicGrupoHTML(mun,grupos[mun],etapasData,true);});
+  lista.innerHTML=html;
+}
+function renderLicitacoesConcluidas(){
+  var lista=document.getElementById('lic-conc-lista');
+  var stats=document.getElementById('lic-conc-stats-row');
+  if(!lista) return;
+  var grupos=_getLicGrupos();
+  var munKeys=Object.keys(grupos);
+  var gruposConc=munKeys.filter(function(m){return grupos[m].every(function(t){return t.done;});});
+  var totalTasks=0;
+  gruposConc.forEach(function(m){totalTasks+=grupos[m].length;});
+  stats.innerHTML='<div class="cert-stat"><div class="cert-stat-num" style="color:var(--green)">'+gruposConc.length+'</div><div class="cert-stat-lbl">Municípios</div></div>'+
+    '<div class="cert-stat"><div class="cert-stat-num" style="color:var(--green)">'+totalTasks+'</div><div class="cert-stat-lbl">Tarefas</div></div>';
+  if(gruposConc.length===0){
+    lista.innerHTML='<div class="cert-empty">Nenhuma licitação concluída ainda.</div>';
+    return;
+  }
+  var licSort=(document.getElementById('lic-conc-sort')||{}).value||'municipio';
+  if(licSort==='municipio'){gruposConc.sort();}
+  else if(licSort==='data'){
+    gruposConc.sort(function(a,b){
+      var dataA=grupos[a].map(function(t){return t.taskDate||'0000';}).sort().reverse()[0]||'0000';
+      var dataB=grupos[b].map(function(t){return t.taskDate||'0000';}).sort().reverse()[0]||'0000';
+      return dataB<dataA?-1:dataB>dataA?1:0;
+    });
+  }
+  var etapasData=licEtapasLoad();
+  var lista_html='';
+  gruposConc.forEach(function(mun){
+    var marcadas=etapasData[mun]||[];
+    var totalEt=LIC_ETAPAS.length;
+    var concEt=marcadas.length;
+    var vencData=licVencedorLoad();
+    var venc=vencData[mun]||{nome:'',resultado:''};
+    var resCorMap={ganhou:'#e8f5e9',perdeu:'#fde8e8',deserto:'#f5f5f5'};
+    var resLblMap={ganhou:'✅ Ganhamos',perdeu:'❌ Perdemos',deserto:'— Deserto/Cancelado'};
+    var resCor=venc.resultado?resCorMap[venc.resultado]||'#fff8e1':'#fff8e1';
+    var resLbl=venc.resultado?resLblMap[venc.resultado]||'':'';
+    var html='<div style="margin-bottom:20px;">';
+    html+='<div style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--green);font-weight:600;padding:8px 0 6px;border-bottom:1.5px solid #c8e6c9;margin-bottom:8px;">✅ '+mun+' <span style="font-size:10px;color:var(--muted);font-weight:400;">'+concEt+'/'+totalEt+' etapas</span></div>';
+    // Painel quem faz
+    html+='<div style="background:'+resCor+';border:1px solid #c8ddc8;border-radius:4px;padding:10px 14px;margin-bottom:10px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">';
+    html+='<span style="font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap;">👤 QUEM FAZ:</span>';
+    html+='<input type="text" value="'+((venc.nome||'').replace(/"/g,'&quot;'))+'" placeholder="Empresa executora…" '
+      +'onchange="licVencedorSalvar(\''+mun.replace(/'/g,"\\'")+'\',' +'\'nome\',this.value)" '
+      +'style="flex:1;min-width:160px;border:1px solid #b8ddc8;background:#fff;padding:6px 10px;font-size:13px;border-radius:3px;font-family:\'Segoe UI\',Tahoma,sans-serif;color:var(--ink);outline:none;">';
+    html+='<select onchange="licVencedorSalvar(\''+mun.replace(/'/g,"\\'")+'\',' +'\'resultado\',this.value)" '
+      +'style="border:1px solid #b8ddc8;background:#fff;padding:6px 10px;font-size:13px;border-radius:3px;font-family:\'Segoe UI\',Tahoma,sans-serif;color:var(--ink);outline:none;cursor:pointer;">';
+    html+='<option value="">— Resultado</option>';
+    ['ganhou','perdeu','deserto'].forEach(function(r){html+='<option value="'+r+'"'+(venc.resultado===r?' selected':'')+'>'+resLblMap[r]+'</option>';});
+    html+='</select>';
+    if(resLbl) html+='<span style="font-size:12px;font-weight:700;color:'+(venc.resultado==='ganhou'?'#2e7d32':venc.resultado==='perdeu'?'#b03a2e':'#7a7672')+';">'+resLbl+'</span>';
+    html+='</div>';
+    // Tarefas do grupo
+    grupos[mun].forEach(function(t){
       var dataStr=t.taskDate?(' — <b>'+fmtDate(t.taskDate)+'</b>'):'';
       var horaStr=t.schedule?(' às '+t.schedule):'';
-      // Badge dias faltam
-      var diasBadge='';
-      if(!t.done&&t.taskDate){
-        var hoje=new Date();hoje.setHours(0,0,0,0);
-        var alvo=new Date(t.taskDate+'T00:00:00');
-        var diff=Math.round((alvo-hoje)/86400000);
-        var cls='ok';
-        var dtxt='';
-        if(diff<0){cls='urgente';dtxt='Atrasada '+Math.abs(diff)+'d';}
-        else if(diff===0){cls='hoje';dtxt='HOJE';}
-        else if(diff<=3){cls='urgente';dtxt='Em '+diff+'d';}
-        else if(diff<=7){cls='proximo';dtxt='Em '+diff+'d';}
-        else{cls='ok';dtxt='Em '+diff+'d';}
-        diasBadge='<span class="lic-days-badge '+cls+'">'+dtxt+'</span>';
-      }
       var tidLic=t.id;
-      html+='<div class="cert-card" style="border-left-color:'+statusCor+';">'+
+      html+='<div class="cert-card" style="border-left-color:var(--green);opacity:.85;">'+
         '<div class="cert-card-top">'+
-        '<span class="cert-card-name">'+t.text+diasBadge+'</span>'+
+        '<span class="cert-card-name">'+t.text+'</span>'+
         '<span style="display:flex;gap:4px;align-items:center;">'+
-        '<span class="cert-badge" style="background:'+(t.done?'#e8f5e9':'#fff8e1')+';color:'+(t.done?'#2e7d32':'#c78a1a')+';border:1px solid '+(t.done?'#c8e6c9':'#ffe082')+';">'+statusTxt+'</span>'+
+        '<span class="cert-badge" style="background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9;">✔ Concluída</span>'+
         '<button onclick="abrirModalEdicao('+tidLic+')" style="background:none;border:1px solid #bbb;border-radius:3px;padding:2px 7px;font-size:12px;cursor:pointer;color:#555;" title="Editar">✏️</button>'+
-        '<button onclick="del('+tidLic+')" style="background:none;border:1px solid #e57373;border-radius:3px;padding:2px 7px;font-size:12px;cursor:pointer;color:#c0392b;" title="Excluir">×</button>'+
         '</span>'+
         '</div>'+
         '<div class="cert-dates"><span class="cert-date">Data:'+dataStr+horaStr+'</span>'+(t.paraQuem?'<span class="cert-date">Para: <b>'+t.paraQuem+'</b></span>':'')+'</div>'+
-        (t.obs?'<div class="cert-file-name" style="white-space:normal;font-style:italic;color:var(--muted);">'+t.obs.substring(0,120)+(t.obs.length>120?'…':'')+'</div>':'')+
         '</div>';
     });
     html+='</div>';
+    lista_html+=html;
+  });
+  lista.innerHTML=lista_html;
+}
+function imprimirLicitacoesConcluidas(){
+  var grupos=_getLicGrupos();
+  var munKeys=Object.keys(grupos);
+  var gruposConc=munKeys.filter(function(m){return grupos[m].every(function(t){return t.done;});});
+  var lics=[];
+  gruposConc.forEach(function(m){lics=lics.concat(grupos[m]);});
+  if(lics.length===0){mostrarToast('Nenhuma licitação concluída.',false);return;}
+  abrirFiltroRelatorio(false,lics);
+}
+// ── Vencedor por município (aba Lic. Concluídas) ──
+var LIC_VENCEDOR_KEY='gc_lic_vencedor_v1';
+function licVencedorLoad(){var raw=localStorage.getItem(LIC_VENCEDOR_KEY);return raw?JSON.parse(raw):{};}
+function licVencedorSave(data){localStorage.setItem(LIC_VENCEDOR_KEY,JSON.stringify(data));if(window._fbSave)window._fbSave(tasks,recorrencias,archived,templates);}
+function licVencedorSalvar(mun,campo,valor){
+  var data=licVencedorLoad();
+  if(!data[mun])data[mun]={nome:'',resultado:''};
+  data[mun][campo]=valor;
+  licVencedorSave(data);
+  // Rerender suave sem fechar inputs (só atualiza cor do painel)
+  var licSort=(document.getElementById('lic-conc-sort')||{}).value||'municipio';
+  renderLicitacoesConcluidas();
+}
+
+// ── Histórico de Licitações ──
+var LIC_HIST_KEY='gc_lic_historico_v1';
+var _licHistEditId=null;
+function licHistLoad(){var raw=localStorage.getItem(LIC_HIST_KEY);return raw?JSON.parse(raw):[];}
+function licHistSave(data){localStorage.setItem(LIC_HIST_KEY,JSON.stringify(data));if(window._fbSave)window._fbSave(tasks,recorrencias,archived,templates);}
+function licHistNovoModal(){
+  _licHistEditId=null;
+  document.getElementById('lic-hist-modal-title').textContent='📊 Nova Licitação — Histórico';
+  ['lh-municipio','lh-pregao','lh-vencedor','lh-link','lh-obs'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('lh-data').value='';
+  document.getElementById('lh-resultado').value='';
+  document.getElementById('lic-hist-modal').style.display='flex';
+  setTimeout(function(){document.getElementById('lh-municipio').focus();},80);
+}
+function licHistEditarModal(id){
+  var lista=licHistLoad();
+  var reg=lista.find(function(r){return r.id===id;});
+  if(!reg)return;
+  _licHistEditId=id;
+  document.getElementById('lic-hist-modal-title').textContent='✏️ Editar — Histórico';
+  document.getElementById('lh-municipio').value=reg.municipio||'';
+  document.getElementById('lh-data').value=reg.data||'';
+  document.getElementById('lh-pregao').value=reg.pregao||'';
+  document.getElementById('lh-resultado').value=reg.resultado||'';
+  document.getElementById('lh-vencedor').value=reg.vencedor||'';
+  document.getElementById('lh-link').value=reg.link||'';
+  document.getElementById('lh-link').value=reg.link||'';
+  document.getElementById('lh-obs').value=reg.obs||'';
+  document.getElementById('lic-hist-modal').style.display='flex';
+  setTimeout(function(){document.getElementById('lh-municipio').focus();},80);
+}
+function licHistFecharModal(){document.getElementById('lic-hist-modal').style.display='none';_licHistEditId=null;}
+document.addEventListener('DOMContentLoaded',function(){
+  var m=document.getElementById('lic-hist-modal');
+  if(m)m.addEventListener('click',function(e){if(e.target===this)licHistFecharModal();});
+});
+function licHistSalvar(){
+  var mun=document.getElementById('lh-municipio').value.trim();
+  var data=document.getElementById('lh-data').value;
+  if(!mun){alert('Informe o município.');document.getElementById('lh-municipio').focus();return;}
+  if(!data){alert('Informe a data da disputa.');document.getElementById('lh-data').focus();return;}
+  var lista=licHistLoad();
+  var reg={
+    id:_licHistEditId||Date.now(),
+    municipio:mun,
+    data:data,
+    pregao:document.getElementById('lh-pregao').value.trim(),
+    resultado:document.getElementById('lh-resultado').value,
+    vencedor:document.getElementById('lh-vencedor').value.trim(),
+    link:document.getElementById('lh-link').value.trim(),
+    obs:document.getElementById('lh-obs').value.trim(),
+    criadoEm:_licHistEditId?(lista.find(function(r){return r.id===_licHistEditId;})||{}).criadoEm||new Date().toISOString():new Date().toISOString()
+  };
+  if(_licHistEditId){
+    var idx=lista.findIndex(function(r){return r.id===_licHistEditId;});
+    if(idx>=0)lista[idx]=reg; else lista.push(reg);
+  } else {lista.push(reg);}
+  licHistSave(lista);
+  licHistFecharModal();
+  licHistRender();
+  mostrarToast('✅ Registro salvo — '+mun,false);
+}
+function licHistExcluir(id){
+  if(!confirm('Excluir este registro do histórico?'))return;
+  var lista=licHistLoad().filter(function(r){return r.id!==id;});
+  licHistSave(lista);licHistRender();
+}
+function licHistRender(){
+  var lista=document.getElementById('lic-hist-lista');
+  var stats=document.getElementById('lic-hist-stats-row');
+  if(!lista)return;
+  var regs=licHistLoad();
+  // Filtros
+  var q=(document.getElementById('lic-hist-search')||{}).value||'';
+  var filtroRes=(document.getElementById('lic-hist-filtro-resultado')||{}).value||'';
+  var sort=(document.getElementById('lic-hist-sort')||{}).value||'data_desc';
+  if(q){var ql=q.toLowerCase();regs=regs.filter(function(r){return(r.municipio+r.vencedor+r.pregao+r.obs).toLowerCase().indexOf(ql)>=0;});}
+  if(filtroRes)regs=regs.filter(function(r){return r.resultado===filtroRes;});
+  if(sort==='data_desc')regs.sort(function(a,b){return b.data<a.data?-1:b.data>a.data?1:0;});
+  else if(sort==='data_asc')regs.sort(function(a,b){return a.data<b.data?-1:a.data>b.data?1:0;});
+  else if(sort==='municipio')regs.sort(function(a,b){return a.municipio.localeCompare(b.municipio);});
+  else if(sort==='quemfaz')regs.sort(function(a,b){return(a.vencedor||'').localeCompare(b.vencedor||'');});
+  // Stats
+  var total=regs.length;
+  var ganhou=regs.filter(function(r){return r.resultado==='ganhou';}).length;
+  var perdeu=regs.filter(function(r){return r.resultado==='perdeu';}).length;
+  var txVit=total>0?Math.round(ganhou/total*100):0;
+  stats.innerHTML='<div class="cert-stat"><div class="cert-stat-num" style="color:var(--navy)">'+total+'</div><div class="cert-stat-lbl">Registros</div></div>'+
+    '<div class="cert-stat"><div class="cert-stat-num" style="color:var(--green)">'+ganhou+'</div><div class="cert-stat-lbl">Vitórias</div></div>'+
+    '<div class="cert-stat"><div class="cert-stat-num" style="color:var(--red)">'+perdeu+'</div><div class="cert-stat-lbl">Derrotas</div></div>'+
+    '<div class="cert-stat"><div class="cert-stat-num" style="color:var(--amber)">'+txVit+'%</div><div class="cert-stat-lbl">Taxa vitória</div></div>';
+  if(regs.length===0){lista.innerHTML='<div class="cert-empty">Nenhum registro encontrado. Clique em <strong>+ Nova entrada</strong> para começar.</div>';return;}
+  var resCorMap={ganhou:'#e8f5e9',perdeu:'#fde8e8',deserto:'#f5f5f5'};
+  var resLblMap={ganhou:'✅ Ganhamos',perdeu:'❌ Perdemos',deserto:'— Deserto'};
+  var resBordMap={ganhou:'var(--green)',perdeu:'var(--red)',deserto:'var(--muted)'};
+  var html='';
+  regs.forEach(function(r){
+    var resCor=r.resultado?resCorMap[r.resultado]||'#fff':'#fff';
+    var resBord=r.resultado?resBordMap[r.resultado]||'var(--border)':'var(--border)';
+    var resLbl=r.resultado?resLblMap[r.resultado]||'':'';
+    var dataFmt=r.data?fmtDate(r.data):'—';
+    var diff='';
+    if(r.data){var hoje=new Date();hoje.setHours(0,0,0,0);var alvo=new Date(r.data+'T00:00:00');var d=Math.round((hoje-alvo)/86400000);diff='há '+d+' dia'+(d!==1?'s':'');}
+    html+='<div class="cert-card" style="border-left-color:'+resBord+';background:'+resCor+';">'+
+      '<div class="cert-card-top">'+
+      '<span class="cert-card-name" style="font-size:15px;font-weight:600;">🏙 '+r.municipio+(r.pregao?' <span style="font-size:12px;color:var(--muted);font-weight:400;">'+r.pregao+'</span>':'')+'</span>'+
+      '<span style="display:flex;gap:4px;align-items:center;">'+
+      (resLbl?'<span class="cert-badge" style="background:'+resCor+';color:'+(r.resultado==='ganhou'?'#2e7d32':r.resultado==='perdeu'?'#b03a2e':'#777')+';border:1px solid '+resBord+';">'+resLbl+'</span>':'')+
+      '<button onclick="licHistEditarModal('+r.id+')" style="background:none;border:1px solid #bbb;border-radius:3px;padding:2px 7px;font-size:12px;cursor:pointer;color:#555;">✏️</button>'+
+      '<button onclick="licHistExcluir('+r.id+')" style="background:none;border:1px solid #e57373;border-radius:3px;padding:2px 7px;font-size:12px;cursor:pointer;color:#c0392b;">×</button>'+
+      '</span>'+
+      '</div>'+
+      '<div class="cert-dates">'+
+        '<span class="cert-date">📅 <b>'+fmtDate(r.data)+'</b>'+(diff?' ('+diff+')':'')+'</span>'+
+        (r.vencedor?'<span class="cert-date">👤 Quem faz: <b>'+r.vencedor+'</b></span>':'')+
+        (r.link?'<span class="cert-date"><a href="'+r.link+'" target="_blank" style="color:var(--navy2);">🔗 Link</a></span>':'')+
+      '</div>'+
+      (r.obs?'<div class="cert-file-name" style="white-space:normal;font-style:italic;color:var(--muted);margin-top:4px;">'+r.obs+'</div>':'')+
+      '</div>';
   });
   lista.innerHTML=html;
 }
+function licHistExportCSV(){
+  var regs=licHistLoad();
+  if(regs.length===0){mostrarToast('Nenhum registro para exportar.',false);return;}
+  var header='Município;Data;Nº Pregão;Resultado;Quem Faz;Observações;Link\n';
+  var rows=regs.map(function(r){
+    function esc(v){return'"'+(String(v||'').replace(/"/g,'""'))+'"';}
+    return[esc(r.municipio),esc(r.data),esc(r.pregao),esc(r.resultado),esc(r.vencedor),esc(r.obs),esc(r.link)].join(';');
+  }).join('\n');
+  var blob=new Blob(['\uFEFF'+header+rows],{type:'text/csv;charset=utf-8;'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');a.href=url;a.download='historico_licitacoes_'+todayStr+'.csv';a.click();URL.revokeObjectURL(url);
+}
+function licHistImportCSV(input){
+  var file=input.files[0];if(!file)return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var lines=e.target.result.replace(/^\uFEFF/,'').split('\n').filter(function(l){return l.trim();});
+    var importados=0;var lista=licHistLoad();
+    for(var i=1;i<lines.length;i++){
+      var cols=lines[i].split(';').map(function(c){return c.replace(/^"|"$/g,'').replace(/""/g,'"').trim();});
+      if(!cols[0]||!cols[1])continue;
+      lista.push({id:Date.now()+i,municipio:cols[0],data:cols[1],pregao:cols[2]||'',resultado:cols[3]||'',vencedor:cols[4]||'',obs:cols[5]||'',link:cols[6]||'',criadoEm:new Date().toISOString()});
+      importados++;
+    }
+    licHistSave(lista);licHistRender();input.value='';
+    mostrarToast('✅ '+importados+' registro(s) importado(s).',false);
+  };
+  reader.readAsText(file,'UTF-8');
+}
+function licHistRelatorio(){
+  var regs=licHistLoad();
+  if(regs.length===0){mostrarToast('Nenhum registro para relatório.',false);return;}
+  var ganhou=regs.filter(function(r){return r.resultado==='ganhou';}).length;
+  var perdeu=regs.filter(function(r){return r.resultado==='perdeu';}).length;
+  var deserto=regs.filter(function(r){return r.resultado==='deserto';}).length;
+  var total=regs.length;
+  var txVit=total>0?Math.round(ganhou/total*100):0;
+  var quemFaz={};
+  regs.forEach(function(r){if(r.vencedor){quemFaz[r.vencedor]=(quemFaz[r.vencedor]||0)+1;}});
+  var top=Object.keys(quemFaz).sort(function(a,b){return quemFaz[b]-quemFaz[a];}).slice(0,10);
+  function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  var rows=regs.sort(function(a,b){return b.data<a.data?-1:1;}).map(function(r){
+    var resCor={ganhou:'#e8f5e9',perdeu:'#fde8e8',deserto:'#f5f5f5'}[r.resultado]||'#fff';
+    var resLbl={ganhou:'✅ Ganhamos',perdeu:'❌ Perdemos',deserto:'— Deserto'}[r.resultado]||'—';
+    return'<tr style="background:'+resCor+';">'+
+      '<td style="padding:7px 10px;border-bottom:1px solid #e0dbd2;font-size:13px;">'+esc(r.municipio)+'</td>'+
+      '<td style="padding:7px 10px;border-bottom:1px solid #e0dbd2;font-size:12px;">'+esc(fmtDate(r.data))+'</td>'+
+      '<td style="padding:7px 10px;border-bottom:1px solid #e0dbd2;font-size:12px;">'+esc(r.pregao)+'</td>'+
+      '<td style="padding:7px 10px;border-bottom:1px solid #e0dbd2;font-size:12px;font-weight:700;">'+esc(resLbl)+'</td>'+
+      '<td style="padding:7px 10px;border-bottom:1px solid #e0dbd2;font-size:12px;">'+esc(r.vencedor)+'</td>'+
+      '<td style="padding:7px 10px;border-bottom:1px solid #e0dbd2;font-size:12px;font-style:italic;color:#777;">'+esc(r.obs)+'</td></tr>';
+  }).join('');
+  var topRows=top.map(function(v){return'<tr><td style="padding:5px 10px;font-size:13px;">'+esc(v)+'</td><td style="padding:5px 10px;font-size:13px;font-weight:700;">'+quemFaz[v]+'×</td></tr>';}).join('');
+  var html='<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Histórico de Licitações — G&C</title>'+
+    '<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:"Segoe UI",Tahoma,sans-serif;background:#fff;padding:32px 40px;color:#1c1c1c;}@media print{.no-print{display:none!important;}}</style></head><body>'+
+    '<div style="border-bottom:3px solid #1a2744;padding-bottom:14px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:flex-end;">'+
+      '<div><div style="font-family:Georgia,serif;font-size:22px;color:#1a2744;">📊 Histórico de Licitações</div><div style="font-size:12px;color:#7a7672;margin-top:4px;">Galhardo &amp; Canales</div></div>'+
+      '<div style="text-align:right;font-size:11px;color:#aaa;">Gerado em '+new Date().toLocaleDateString('pt-BR',{weekday:'long',year:'numeric',month:'long',day:'numeric'})+'</div></div>'+
+    '<div style="display:flex;gap:20px;margin-bottom:20px;flex-wrap:wrap;">'+
+      '<div style="background:#f2ede6;border-radius:4px;padding:12px 20px;text-align:center;"><div style="font-size:28px;font-weight:700;color:#1a2744;">'+total+'</div><div style="font-size:11px;color:#777;text-transform:uppercase;">Total</div></div>'+
+      '<div style="background:#e8f5e9;border-radius:4px;padding:12px 20px;text-align:center;"><div style="font-size:28px;font-weight:700;color:#2e7d32;">'+ganhou+'</div><div style="font-size:11px;color:#777;text-transform:uppercase;">Vitórias</div></div>'+
+      '<div style="background:#fde8e8;border-radius:4px;padding:12px 20px;text-align:center;"><div style="font-size:28px;font-weight:700;color:#b03a2e;">'+perdeu+'</div><div style="font-size:11px;color:#777;text-transform:uppercase;">Derrotas</div></div>'+
+      '<div style="background:#fff8e1;border-radius:4px;padding:12px 20px;text-align:center;"><div style="font-size:28px;font-weight:700;color:#c78a1a;">'+txVit+'%</div><div style="font-size:11px;color:#777;text-transform:uppercase;">Taxa vitória</div></div>'+
+    '</div>'+
+    (top.length>0?'<div style="margin-bottom:20px;"><div style="font-size:13px;font-weight:700;color:#1a2744;margin-bottom:8px;">🏆 Concorrentes mais frequentes</div>'+
+      '<table style="border-collapse:collapse;"><tbody>'+topRows+'</tbody></table></div>':'')+
+    '<table style="width:100%;border-collapse:collapse;">'+
+      '<thead><tr style="background:#f2ede6;"><th style="text-align:left;padding:7px 10px;font-size:10px;text-transform:uppercase;color:#7a7672;">Município</th>'+
+      '<th style="text-align:left;padding:7px 10px;font-size:10px;text-transform:uppercase;color:#7a7672;">Data</th>'+
+      '<th style="text-align:left;padding:7px 10px;font-size:10px;text-transform:uppercase;color:#7a7672;">Pregão</th>'+
+      '<th style="text-align:left;padding:7px 10px;font-size:10px;text-transform:uppercase;color:#7a7672;">Resultado</th>'+
+      '<th style="text-align:left;padding:7px 10px;font-size:10px;text-transform:uppercase;color:#7a7672;">Quem Faz</th>'+
+      '<th style="text-align:left;padding:7px 10px;font-size:10px;text-transform:uppercase;color:#7a7672;">Observações</th></tr></thead>'+
+      '<tbody>'+rows+'</tbody></table>'+
+    '<div class="no-print" style="margin-top:28px;text-align:center;">'+
+      '<button onclick="window.print()" style="background:#1a2744;color:#fff;border:none;padding:11px 28px;font-size:14px;border-radius:3px;cursor:pointer;">🖨 Imprimir / PDF</button>&nbsp;&nbsp;'+
+      '<button onclick="window.close()" style="background:none;border:1px solid #d5cfc5;color:#7a7672;padding:11px 18px;font-size:14px;border-radius:3px;cursor:pointer;">Fechar</button></div>'+
+    '</body></html>';
+  var w=window.open('','_blank','width=1000,height=700,scrollbars=yes');
+  if(w){w.document.write(html);w.document.close();}
+}
+
 // ── Nota do dia ──
 var NOTA_KEY='gc_notas_dia';
 var _notaTimer=null;
