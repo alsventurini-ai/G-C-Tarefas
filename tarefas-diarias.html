@@ -3144,7 +3144,7 @@ function _renderLicGrupoHTML(mun, ts, etapasData, mostrarEtapas, histRegs){
     }
   }
   var html='<div style="margin-bottom:20px;">';
-  html+='<div style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:600;padding:8px 0 6px;border-bottom:1.5px solid var(--border);margin-bottom:8px;">🏛 '+mun+' <span style="font-size:10px;color:var(--green);font-weight:400;">'+concEt+'/'+totalEt+' etapas</span>'+quemFazTxt+'</div>';
+  html+='<div style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:600;padding:8px 0 6px;border-bottom:1.5px solid var(--border);margin-bottom:8px;">🏛 '+mun+' <span style="font-size:10px;color:var(--green);font-weight:400;">'+concEt+'/'+totalEt+' etapas</span></div>';
   if(mostrarEtapas){
     html+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">';
     LIC_ETAPAS.forEach(function(et){
@@ -3158,7 +3158,18 @@ function _renderLicGrupoHTML(mun, ts, etapasData, mostrarEtapas, histRegs){
     });
     html+='</div>';
   }
+  // Buscar quem faz no histórico para exibir nas tarefas
+  var quemFazNome='';
+  if(histRegs&&histRegs.length>0){
+    var munNorm2=_normMun(mun);
+    var regsDoMun2=histRegs.filter(function(r){return _normMun(r.municipio)===munNorm2;});
+    if(regsDoMun2.length>0){
+      regsDoMun2.sort(function(a,b){return b.data<a.data?-1:1;});
+      if(regsDoMun2[0].vencedor) quemFazNome=regsDoMun2[0].vencedor;
+    }
+  }
   ts.forEach(function(t){
+    var isDisputa=t.text.indexOf('🏛 ')===0||t.text.indexOf('Licitação')===0||t.text.indexOf('Licitaç')===0;
     var statusCor=t.done?'var(--green)':'var(--amber)';
     var statusTxt=t.done?'✔ Concluída':'⏳ Pendente';
     var dataStr=t.taskDate?(' — <b>'+fmtDate(t.taskDate)+'</b>'):'';
@@ -3187,6 +3198,7 @@ function _renderLicGrupoHTML(mun, ts, etapasData, mostrarEtapas, histRegs){
       '</span>'+
       '</div>'+
       '<div class="cert-dates"><span class="cert-date">Data:'+dataStr+horaStr+'</span>'+(t.paraQuem?'<span class="cert-date">Para: <b>'+t.paraQuem+'</b></span>':'')+'</div>'+
+      (isDisputa&&quemFazNome?'<div style="font-size:12px;color:#1a5276;margin-top:3px;font-weight:600;">👤 Quem faz: '+quemFazNome+'</div>':'')+
       (t.obs?'<div class="cert-file-name" style="white-space:normal;font-style:italic;color:var(--muted);">'+t.obs.substring(0,120)+(t.obs.length>120?'…':'')+'</div>':'')+
       '</div>';
   });
