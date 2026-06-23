@@ -901,12 +901,10 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
         <textarea id="lic-obs" class="modal-textarea" placeholder="Número do pregão, plataforma, observações…" style="min-height:60px;"></textarea>
       </div>
       <div style="background:#f5f0fa;border:1px solid #c9a8e8;border-radius:3px;padding:12px 14px;font-size:12.5px;color:#6c3483;line-height:1.7;">
-        <strong>Serão criadas automaticamente:</strong><br>
-        🏛 <strong>Disputa</strong> — na data informada<br>
-        ⚠️ <strong>Impugnação</strong> — 3 dias úteis antes (Lei 14.133/21, Art. 164)<br>
-        📋 <strong>Análise de Edital</strong> — 8 dias corridos antes, às 08:00<br>
-        📤 <strong>Início Inclusão da Proposta</strong> — 3 dias úteis antes (Lei 14.133/21, Art. 60)<br>
-        ⚖️ <strong>Prazo Final de Impugnação</strong> — 3 dias úteis antes (Lei 14.133/21, Art. 164)
+        <strong>Será criada 1 tarefa:</strong><br>
+        🏛 <strong>Licitação - Município</strong> — na data informada<br><br>
+        <span style="opacity:.8;">Após criar, clique em <strong>🚀 Participar</strong> na aba Licitações para gerar automaticamente:<br>
+        ⚠️ Impugnação · 📋 Análise de Edital · 📤 Início Proposta · ⚖️ Prazo Final de Impugnação</span>
       </div>
     </div>
     <div class="modal-foot">
@@ -2496,20 +2494,9 @@ function criarLicitacao(){
   if(!municipio){alert('Informe o município.');marcarCampoObrigatorio('lic-municipio');return false;}
   if(!dataDisputa){alert('Informe a data da disputa.');marcarCampoObrigatorio('lic-data');return false;}
   if(!horaDisputa){alert('Informe o horário da disputa.');marcarCampoObrigatorio('lic-hora');return false;}
-  var dataImpug=somarDiasUteis_subtrair(dataDisputa,3);
-  var dataAnalise=somarDiasCorridos(dataDisputa,8);
-  var dataInicioPropostaLei=somarDiasUteis_subtrair(dataDisputa,3);
   var now2=Date.now();
-  // Tarefa 1 — Disputa
-  tasks.push({id:now2,text:'🏛 Disputa — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataDisputa,alertFired:false,paraQuem:'Licitações',obs:obs,priority:'alta',tags:['licitação',municipio],pinned:false,duracao:'',link:licLink});
-  // Tarefa 2 — Impugnação (guarda municipio e dataDisputa para criar tarefa de conferência se enviada)
-  tasks.push({id:now2+1,text:'⚠️ Impugnação — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataImpug,alertFired:false,paraQuem:'Licitações',obs:'Prazo de impugnação — '+municipio+'\nDe acordo com a Lei nº 14.133/2021, Art. 164: qualquer pessoa é parte legítima para impugnar edital de licitação por irregularidade, devendo protocolar o pedido até 3 (três) dias úteis antes da data de abertura do certame.',priority:'alta',tags:['licitação','impugnação',municipio],pinned:false,duracao:'',link:licLink,_licMunicipio:municipio,_licDataDisputa:dataDisputa,_licHoraDisputa:horaDisputa,_impugnacaoEnviada:null});
-  // Tarefa 3 — Análise de Edital
-  tasks.push({id:now2+2,text:'📋 Análise de Edital — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataAnalise,alertFired:false,paraQuem:'Licitações',obs:'Análise do edital — '+municipio,priority:'alta',tags:['licitação','edital',municipio],pinned:false,duracao:'',link:licLink});
-  // Tarefa 4 — Início Inclusão da Proposta (Lei 14.133/2021, Art. 60)
-  tasks.push({id:now2+3,text:'📤 Início Inclusão da Proposta — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataInicioPropostaLei,alertFired:false,paraQuem:'Licitações',obs:'Iniciar inclusão da proposta no sistema — '+municipio+'\nDe acordo com a Lei nº 14.133/2021, Art. 60: o prazo fixado no edital para apresentação das propostas e lances não pode ser inferior a 8 (oito) dias úteis, contado da data de publicação do edital.',priority:'alta',tags:['licitação','proposta',municipio],pinned:false,duracao:'',link:licLink});
-  // Tarefa 5 — Prazo Final de Impugnação (Lei 14.133/2021, Art. 164)
-  tasks.push({id:now2+4,text:'⚖️ Prazo Final de Impugnação — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataImpug,alertFired:false,paraQuem:'Licitações',obs:'ATENÇÃO: encerra hoje o prazo de impugnação ao edital — '+municipio+'\nDe acordo com a Lei nº 14.133/2021, Art. 164: a impugnação deverá ser protocolada até 3 (três) dias úteis antes da data de abertura do certame.',priority:'alta',tags:['licitação','impugnação',municipio],pinned:false,duracao:'',link:licLink});
+  // Apenas tarefa principal
+  tasks.push({id:now2,text:'Licitação - '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataDisputa,alertFired:false,paraQuem:'Licitações',obs:obs,priority:'alta',tags:['licitação',municipio],pinned:false,duracao:'',link:licLink,_licMunicipio:municipio,_licDataDisputa:dataDisputa,_licHoraDisputa:horaDisputa});
   save();render();atualizarFiltros();
   // Salvar no histórico se houver Quem Faz preenchido
   var quemFazFixo=document.getElementById('lic-quemfaz').value.trim();
@@ -2519,22 +2506,35 @@ function criarLicitacao(){
   var resultadoFinal=resultadoEl?resultadoEl.value:'';
   if(quemFazFinal||resultadoFinal){
     var listaHist=licHistLoad();
-    listaHist.push({
-      id:Date.now(),
-      municipio:municipio,
-      data:dataDisputa,
-      pregao:obs||'',
-      resultado:resultadoFinal,
-      vencedor:quemFazFinal,
-      obs:'Criado automaticamente ao cadastrar licitação',
-      link:licLink,
-      criadoEm:new Date().toISOString()
-    });
+    listaHist.push({id:Date.now(),municipio:municipio,data:dataDisputa,pregao:obs||'',resultado:resultadoFinal,vencedor:quemFazFinal,obs:'Criado automaticamente ao cadastrar licitação',link:licLink,criadoEm:new Date().toISOString()});
     licHistSave(listaHist);
   }
   fecharModalLicitacao();
-  mostrarToast('✅ 5 tarefas criadas para '+municipio+'!',false);
+  mostrarToast('✅ Licitação criada para '+municipio+'! Clique em 🚀 Participar para gerar as demais tarefas.',false);
   return true;
+}
+function licParticipar(mun){
+  var taskPrincipal=tasks.find(function(t){
+    return /^licita/i.test(t.text.normalize('NFD').replace(/[\u0300-\u036f]/g,''))&&_normMun(t.text.replace(/^Licita[çc][aã]o\s*[-\-]\s*/i,''))===_normMun(mun);
+  });
+  if(!taskPrincipal){mostrarToast('❌ Tarefa de licitação não encontrada.',false);return;}
+  var dataDisputa=taskPrincipal._licDataDisputa||taskPrincipal.taskDate||'';
+  var horaDisputa=taskPrincipal._licHoraDisputa||taskPrincipal.schedule||'08:00';
+  var licLink=taskPrincipal.link||'';
+  if(!dataDisputa){mostrarToast('❌ Tarefa sem data. Edite e informe a data antes de participar.',false);return;}
+  var jatem=tasks.some(function(t){return /^(⚠️|📋 Análise|📤 Início|⚖️ Prazo)/i.test(t.text)&&_normMun(t.text.replace(/^.*?[-—]\s*/,''))===_normMun(mun);});
+  if(jatem){if(!confirm('Já existem tarefas para '+mun+'. Criar novamente?'))return;}
+  var dataImpug=somarDiasUteis_subtrair(dataDisputa,3);
+  var dataAnalise=somarDiasCorridos(dataDisputa,8);
+  var dataInicioProposta=somarDiasUteis_subtrair(dataDisputa,3);
+  var now3=Date.now();
+  tasks.push({id:now3+1,text:'⚠️ Impugnação — '+mun,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataImpug,alertFired:false,paraQuem:'Licitações',obs:'Prazo de impugnação — '+mun+'\nDe acordo com a Lei nº 14.133/2021, Art. 164.',priority:'alta',tags:['licitação','impugnação',mun],pinned:false,duracao:'',link:licLink,_licMunicipio:mun,_licDataDisputa:dataDisputa,_licHoraDisputa:horaDisputa,_impugnacaoEnviada:null});
+  tasks.push({id:now3+2,text:'📋 Análise de Edital — '+mun,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataAnalise,alertFired:false,paraQuem:'Licitações',obs:'Análise do edital — '+mun,priority:'alta',tags:['licitação','edital',mun],pinned:false,duracao:'',link:licLink});
+  tasks.push({id:now3+3,text:'📤 Início Inclusão da Proposta — '+mun,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataInicioProposta,alertFired:false,paraQuem:'Licitações',obs:'Iniciar inclusão da proposta — '+mun+'\nLei nº 14.133/2021, Art. 60.',priority:'alta',tags:['licitação','proposta',mun],pinned:false,duracao:'',link:licLink});
+  tasks.push({id:now3+4,text:'⚖️ Prazo Final de Impugnação — '+mun,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataImpug,alertFired:false,paraQuem:'Licitações',obs:'ATENÇÃO: encerra hoje o prazo de impugnação ao edital — '+mun+'\nLei nº 14.133/2021, Art. 164.',priority:'alta',tags:['licitação','impugnação',mun],pinned:false,duracao:'',link:licLink});
+  save();render();atualizarFiltros();
+  renderLicitacoes();
+  mostrarToast('✅ 4 tarefas criadas para '+mun+'!',false);
 }
 function okModalLicitacao(){
   criarLicitacao();
@@ -3213,6 +3213,8 @@ function _renderLicGrupoHTML(mun, ts, etapasData, mostrarEtapas, histRegs){
       diasBadge='<span class="lic-days-badge '+cls+'">'+dtxt+'</span>';
     }
     var tidLic=t.id;
+    // Verificar se já participou (tem tarefas de impugnação etc.)
+    var jaParticipa=tasks.some(function(jt){return /^(⚠️|📋 Análise|📤 Início|⚖️ Prazo)/i.test(jt.text)&&_normMun(jt.text.replace(/^.*?[-—]\s*/,''))===_normMun(mun);});
     // Linha de progresso — só na tarefa de Disputa/Licitação
     var progHtml='';
     if(isDisputa){
@@ -3243,6 +3245,7 @@ function _renderLicGrupoHTML(mun, ts, etapasData, mostrarEtapas, histRegs){
       '</div>'+
       '<div class="cert-dates"><span class="cert-date">Data:'+dataStr+horaStr+'</span>'+(t.paraQuem?'<span class="cert-date">Para: <b>'+t.paraQuem+'</b></span>':'')+'</div>'+
       (isDisputa&&quemFazNome?'<div style="margin-top:5px;"><span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;'+(/galhardo/i.test(quemFazNome)?'background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;':'background:#fff3e0;color:#e65100;border:1px solid #ffcc80;')+'">🏢 '+quemFazNome+'</span></div>':'')+
+      (isDisputa&&!jaParticipa?'<div style="margin-top:6px;"><button onclick="licParticipar(\''+mun.replace(/'/g,"\\'")+'\')" style="background:#1a5276;color:#fff;border:none;border-radius:20px;padding:5px 16px;font-size:12px;font-weight:700;cursor:pointer;">🚀 Participar</button></div>':'')+
       progHtml+
       (t.obs?'<div class="cert-file-name" style="white-space:normal;font-style:italic;color:var(--muted);margin-top:4px;">'+t.obs.substring(0,120)+(t.obs.length>120?'…':'')+'</div>':'')+
       '</div>';
