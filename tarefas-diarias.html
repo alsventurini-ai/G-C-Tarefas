@@ -966,8 +966,9 @@ async function fbSave(t,r,a,tp){
     var cert=localStorage.getItem('gc_certidoes_v2')||'[]';
     var licHist=localStorage.getItem('gc_lic_historico_v1')||'[]';
     var licVenc=localStorage.getItem('gc_lic_vencedor_v1')||'{}';
+    var licProg=localStorage.getItem('gc_lic_prog_v1')||'{}';
     _fbLastSaveTs=Date.now();
-    await setDoc(REF,{tasks:JSON.stringify(t),recorrencias:JSON.stringify(r),archived:JSON.stringify(a||[]),templates:JSON.stringify(tp||[]),certidoes:cert,licHistorico:licHist,licVencedor:licVenc,updatedAt:new Date().toISOString()});
+    await setDoc(REF,{tasks:JSON.stringify(t),recorrencias:JSON.stringify(r),archived:JSON.stringify(a||[]),templates:JSON.stringify(tp||[]),certidoes:cert,licHistorico:licHist,licVencedor:licVenc,licProgresso:licProg,updatedAt:new Date().toISOString()});
   }
   catch(e){console.warn("Firebase save:",e);}
 }
@@ -985,6 +986,7 @@ onSnapshot(REF, function(snap){
     if(d.certidoes) localStorage.setItem('gc_certidoes_v2',d.certidoes);
     if(d.licHistorico) localStorage.setItem('gc_lic_historico_v1',d.licHistorico);
     if(d.licVencedor) localStorage.setItem('gc_lic_vencedor_v1',d.licVencedor);
+    if(d.licProgresso) localStorage.setItem('gc_lic_prog_v1',d.licProgresso);
     // Só atualiza se os dados do Firebase forem diferentes dos locais
     var localRaw=localStorage.getItem('gc_tarefas_v3');
     var localTasks=localRaw?JSON.parse(localRaw):[];
@@ -2543,6 +2545,23 @@ document.getElementById('lic-modal').addEventListener('click',function(e){if(e.t
 // ── Certidões ──
 var LIC_ETAPAS_KEY='gc_lic_etapas_v1';
 var LIC_ETAPAS=['Análise do Edital','Impugnação','Checklist','Declarações','Juntada','Conferência Habilitação','Envio Proposta'];
+function licProgToggle(mun,step){
+  var KEY_PROG='gc_lic_prog_v1';
+  var data={};try{data=JSON.parse(localStorage.getItem(KEY_PROG)||'{}');}catch(e){}
+  if(!data[mun]) data[mun]=[];
+  var idx=data[mun].indexOf(step);
+  if(idx>=0) data[mun].splice(idx,1);
+  else data[mun].push(step);
+  localStorage.setItem(KEY_PROG,JSON.stringify(data));
+  if(window._fbSave){
+    var t=JSON.parse(localStorage.getItem('gc_tarefas_v3')||'[]');
+    var r=JSON.parse(localStorage.getItem('gc_recorrencias')||'[]');
+    var a=JSON.parse(localStorage.getItem('gc_archived')||'[]');
+    var tp=JSON.parse(localStorage.getItem('gc_templates')||'[]');
+    window._fbSave(t,r,a,tp);
+  }
+  renderLicitacoes();
+}
 function licEtapasLoad(){var raw=localStorage.getItem(LIC_ETAPAS_KEY);return raw?JSON.parse(raw):{}}
 function licEtapasSave(data){localStorage.setItem(LIC_ETAPAS_KEY,JSON.stringify(data));}
 function licToggleEtapa(mun,etapa){
@@ -3218,6 +3237,27 @@ function _renderLicGrupoHTML(mun, ts, etapasData, mostrarEtapas, histRegs){
       (t.obs?'<div class="cert-file-name" style="white-space:normal;font-style:italic;color:var(--muted);">'+t.obs.substring(0,120)+(t.obs.length>120?'…':'')+'</div>':'')+
       '</div>';
   });
+  // ── Linha de progresso ──
+  var LIC_PROG=['Checklist','Declarações','Juntada','Conf. Habilitação','Envio Proposta'];
+  var progKey='gc_lic_prog_v1';
+  var progData={};try{progData=JSON.parse(localStorage.getItem(progKey)||'{}');}catch(e){}
+  var munProg=progData[mun]||[];
+  var total_prog=LIC_PROG.length;
+  var feitos_prog=munProg.length;
+  var munEscProg=mun.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  var checkboxes=LIC_PROG.map(function(step){
+    var feito=munProg.indexOf(step)>=0;
+    var bg=feito?'#1a5276':'#fff';
+    var cor=feito?'#fff':'#1a5276';
+    var bord=feito?'#1a5276':'#c8d0e8';
+    return '<button onclick="licProgToggle(\''+munEscProg+'\',\''+step+'\')" '
+      +'style="background:'+bg+';color:'+cor+';border:1.5px solid '+bord+';border-radius:14px;padding:4px 12px;font-size:12px;cursor:pointer;font-family:sans-serif;transition:all .15s;white-space:nowrap;">'
+      +(feito?'✔ ':'')+step+'</button>';
+  }).join('');
+  html+='<div style="margin-top:10px;padding:8px 10px;background:#f0f4fb;border:1px solid #c8d0e8;border-radius:4px;">'
+    +'<div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--navy2);font-weight:700;margin-bottom:7px;">📋 Andamento — '+feitos_prog+'/'+total_prog+'</div>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:6px;">'+checkboxes+'</div>'
+    +'</div>';
   html+='</div>';
   return html;
 }
