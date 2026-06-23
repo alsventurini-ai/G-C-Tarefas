@@ -3169,7 +3169,7 @@ function _renderLicGrupoHTML(mun, ts, etapasData, mostrarEtapas, histRegs){
     }
   }
   ts.forEach(function(t){
-    var isDisputa=t.text.indexOf('🏛 ')===0||t.text.indexOf('Licitação')===0||t.text.indexOf('Licitaç')===0;
+    var isDisputa=/^(🏛|Licita)/i.test(t.text);
     var statusCor=t.done?'var(--green)':'var(--amber)';
     var statusTxt=t.done?'✔ Concluída':'⏳ Pendente';
     var dataStr=t.taskDate?(' — <b>'+fmtDate(t.taskDate)+'</b>'):'';
