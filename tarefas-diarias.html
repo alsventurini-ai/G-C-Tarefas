@@ -3124,12 +3124,25 @@ function _getLicGrupos(){
   });
   return grupos;
 }
-function _renderLicGrupoHTML(mun, ts, etapasData, mostrarEtapas){
+function _renderLicGrupoHTML(mun, ts, etapasData, mostrarEtapas, histRegs){
   var marcadas=etapasData[mun]||[];
   var totalEt=LIC_ETAPAS.length;
   var concEt=marcadas.length;
+  // Buscar quem faz no histórico
+  var quemFazTxt='';
+  if(histRegs&&histRegs.length>0){
+    var regsDoMun=histRegs.filter(function(r){return r.municipio.trim().toLowerCase()===mun.trim().toLowerCase();});
+    if(regsDoMun.length>0){
+      regsDoMun.sort(function(a,b){return b.data<a.data?-1:1;});
+      var ultimo=regsDoMun[0];
+      if(ultimo.vencedor){
+        var corRes=ultimo.resultado==='ganhou'?'#2e7d32':ultimo.resultado==='perdeu'?'#b03a2e':'#7a7672';
+        quemFazTxt=' <span style="font-size:10px;background:#f0f4fb;border:1px solid #c8d0e8;border-radius:3px;padding:1px 7px;color:'+corRes+';font-weight:600;">👤 '+ultimo.vencedor+'</span>';
+      }
+    }
+  }
   var html='<div style="margin-bottom:20px;">';
-  html+='<div style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:600;padding:8px 0 6px;border-bottom:1.5px solid var(--border);margin-bottom:8px;">🏛 '+mun+' <span style="font-size:10px;color:var(--green);font-weight:400;">'+concEt+'/'+totalEt+' etapas</span></div>';
+  html+='<div style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:600;padding:8px 0 6px;border-bottom:1.5px solid var(--border);margin-bottom:8px;">🏛 '+mun+' <span style="font-size:10px;color:var(--green);font-weight:400;">'+concEt+'/'+totalEt+' etapas</span>'+quemFazTxt+'</div>';
   if(mostrarEtapas){
     html+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">';
     LIC_ETAPAS.forEach(function(et){
@@ -3215,38 +3228,9 @@ function renderLicitacoes(){
     });
   } else if(licSort==='status'){gruposPend.sort();}
   var etapasData=licEtapasLoad();
-  var html='';
-
-  // ── Painel "Quem Faz" — histórico dos municípios ativos ──
   var histRegs=licHistLoad();
-  if(histRegs.length>0){
-    var painelItens='';
-    gruposPend.forEach(function(mun){
-      var regsDoMun=histRegs.filter(function(r){return r.municipio.trim().toLowerCase()===mun.trim().toLowerCase();});
-      if(regsDoMun.length===0) return;
-      regsDoMun.sort(function(a,b){return b.data<a.data?-1:1;});
-      var ultimo=regsDoMun[0];
-      var resCorMap={ganhou:'#e8f5e9',perdeu:'#fde8e8',deserto:'#f5f5f5'};
-      var resLblMap={ganhou:'✅ G&C','perdeu':'❌ Perdemos',deserto:'—'};
-      var resBordMap={ganhou:'#3a8c4a',perdeu:'#b03a2e',deserto:'#bbb'};
-      var bg=resCorMap[ultimo.resultado]||'#fff8e1';
-      var bord=resBordMap[ultimo.resultado]||'#c78a1a';
-      painelItens+='<div style="background:'+bg+';border:1.5px solid '+bord+';border-radius:4px;padding:8px 12px;min-width:180px;flex:1;">'
-        +'<div style="font-size:11px;font-weight:700;color:#1a2744;margin-bottom:3px;">🏙 '+mun+'</div>'
-        +'<div style="font-size:12px;color:#333;font-weight:600;">'+(ultimo.vencedor?'👤 '+ultimo.vencedor:'<span style="color:#aaa;">Não registrado</span>')+'</div>'
-        +'<div style="font-size:11px;color:var(--muted);margin-top:2px;">'+fmtDate(ultimo.data)+(regsDoMun.length>1?' · '+regsDoMun.length+' registros':'')+'</div>'
-        +'</div>';
-    });
-    if(painelItens){
-      html+='<div style="margin:0 0 16px;padding:12px 14px;background:#f0f4fb;border:1px solid #c8d0e8;border-radius:4px;">'
-        +'<div style="font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--navy2);font-weight:700;margin-bottom:10px;">👤 Quem Faz — Histórico dos municípios ativos</div>'
-        +'<div style="display:flex;gap:8px;flex-wrap:wrap;">'+painelItens+'</div>'
-        +'<div style="margin-top:8px;font-size:11px;color:var(--muted);">Baseado na aba <b>Hist. Licitações</b> · registro mais recente por município</div>'
-        +'</div>';
-    }
-  }
-
-  gruposPend.forEach(function(mun){html+=_renderLicGrupoHTML(mun,grupos[mun],etapasData,true);});
+  var html='';
+  gruposPend.forEach(function(mun){html+=_renderLicGrupoHTML(mun,grupos[mun],etapasData,true,histRegs);});
   lista.innerHTML=html;
 }
 function renderLicitacoesConcluidas(){
