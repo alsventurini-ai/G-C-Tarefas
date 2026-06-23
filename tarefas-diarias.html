@@ -3181,17 +3181,7 @@ function _renderLicGrupoHTML(mun, ts, etapasData, mostrarEtapas, histRegs){
   var html='<div style="margin-bottom:20px;">';
   html+='<div style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:600;padding:8px 0 6px;border-bottom:1.5px solid var(--border);margin-bottom:8px;">🏛 '+mun+' <span style="font-size:10px;color:var(--green);font-weight:400;">'+concEt+'/'+totalEt+' etapas</span></div>';
   if(mostrarEtapas){
-    html+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">';
-    LIC_ETAPAS.forEach(function(et){
-      var done=marcadas.indexOf(et)>=0;
-      var bg=done?'var(--green)':'var(--white)';
-      var cor=done?'#fff':'var(--ink)';
-      var bord=done?'var(--green)':'var(--border)';
-      html+='<button onclick="licToggleEtapa(this.dataset.mun,this.dataset.et)" data-mun="'+mun.replace(/"/g,'&quot;')+'" data-et="'+et.replace(/"/g,'&quot;')+'" '
-        +'style="background:'+bg+';color:'+cor+';border:1.5px solid '+bord+';border-radius:14px;padding:4px 12px;font-size:12px;cursor:pointer;font-family:sans-serif;transition:all .15s;">'
-        +(done?'&#10003; ':'')+et+'</button>';
-    });
-    html+='</div>';
+    // etapas removidas — andamento agora fica dentro do card da tarefa Licitação
   }
   // Buscar quem faz no histórico para exibir nas tarefas
   var quemFazNome='';
@@ -3229,7 +3219,7 @@ function _renderLicGrupoHTML(mun, ts, etapasData, mostrarEtapas, histRegs){
       var KEY_PROG='gc_lic_prog_v1';
       var progData={};try{progData=JSON.parse(localStorage.getItem(KEY_PROG)||'{}');}catch(e){}
       var munProg=progData[mun]||[];
-      var LIC_PROG_STEPS=['Análise do Edital','Impugnação','Checklist','Declarações','Juntada','Conferência Habilitação','Envio Proposta'];
+      var LIC_PROG_STEPS=['Checklist','Declarações','Juntada','Conf. Habilitação','Envio Proposta','Resposta Impugnação','Suspensão'];
       var munEscProg=mun.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
       var checkboxes=LIC_PROG_STEPS.map(function(step){
         var feito=munProg.indexOf(step)>=0;
