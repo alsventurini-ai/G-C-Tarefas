@@ -519,6 +519,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
     <button class="btn btn-archive" onclick="toggleArchivePanel()">🗂 Arquivo</button>
     <button class="btn btn-resumo" onclick="mostrarResumo()">📊 Resumo</button>
     <button class="btn" onclick="clearDone()">✕ Concluídas</button>
+    <button class="btn btn-danger" onclick="recuperarBackupFirebase()">🆘 Recuperar Backup</button>
     <button class="btn btn-danger" onclick="clearAll()">🗑 Limpar tudo</button>
   </div>
 
@@ -950,7 +951,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
 <!-- Firebase -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, onSnapshot, getDoc, collection, getDocs, orderBy, query, limit } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 const cfg={apiKey:"AIzaSyB5XSJfgy7TNpfzdFuNCiTtSwTNBZZ6pzg",authDomain:"gc-lab-171c5.firebaseapp.com",projectId:"gc-lab-171c5",storageBucket:"gc-lab-171c5.firebasestorage.app",messagingSenderId:"653904508130",appId:"1:653904508130:web:9f40c0c82ae184703e9abb"};
 const app=initializeApp(cfg);
 const db=getFirestore(app);
@@ -1018,6 +1019,26 @@ async function fbBackup(payload,docId){
   }catch(e){console.warn("Firebase backup:",e);return false;}
 }
 window._fbBackup=fbBackup;
+// Recuperar backup mais recente do Firebase
+window._fbRecuperarBackup=async function(){
+  try{
+    var col=collection(db,'gc-tarefas-backups');
+    var q=query(col,orderBy('data','desc'),limit(5));
+    var snap=await getDocs(q);
+    if(snap.empty){
+      // Tentar buscar direto do doc principal
+      var docSnap=await getDoc(REF);
+      if(docSnap.exists()){
+        var d=docSnap.data();
+        return {source:'principal', data:d};
+      }
+      return null;
+    }
+    var docs=[];
+    snap.forEach(function(d){docs.push({id:d.id,data:d.data()});});
+    return {source:'backup', docs:docs};
+  }catch(e){console.error('Recuperar backup:',e);return null;}
+};
 window._fbSave=fbSave;window._fbLoad=fbLoad;window._fbReady=true;
 document.dispatchEvent(new Event('firebase-ready'));
 </script>
@@ -2141,6 +2162,54 @@ function abrirJanelaImpressao(lista,de,ate,pq,agruparPQ,incPend,incConc){
 }
 
 // ── Limpar ──
+function recuperarBackupFirebase(){
+  if(!window._fbRecuperarBackup){mostrarToast('Firebase não conectado ainda. Aguarde.',false);return;}
+  mostrarToast('🔄 Buscando backup no Firebase…',false);
+  window._fbRecuperarBackup().then(function(resultado){
+    if(!resultado){mostrarToast('❌ Nenhum backup encontrado no Firebase.',false);return;}
+    if(resultado.source==='principal'){
+      var d=resultado.data;
+      var dataAtual=d.updatedAt?new Date(d.updatedAt).toLocaleString('pt-BR'):'desconhecida';
+      if(!confirm('Backup encontrado!\nAtualizado em: '+dataAtual+'\n\nRestaurar estes dados?'))return;
+      _aplicarDadosFirebase(d);
+    } else {
+      var opcoes=resultado.docs.map(function(b,i){
+        var dt=b.data.data?new Date(b.data.data).toLocaleString('pt-BR'):b.id;
+        var qtd=0;try{qtd=(b.data.tarefas?JSON.parse(b.data.tarefas):[]).length;}catch(e){}
+        return (i+1)+'. '+dt+' ('+qtd+' tarefas)';
+      }).join('\n');
+      var escolha=prompt('Backups disponíveis:\n'+opcoes+'\n\nDigite o número:');
+      var idx=parseInt(escolha)-1;
+      if(isNaN(idx)||idx<0||idx>=resultado.docs.length){mostrarToast('Cancelado.',false);return;}
+      _aplicarDadosBackup(resultado.docs[idx].data);
+    }
+  }).catch(function(e){mostrarToast('❌ Erro: '+e.message,false);});
+}
+function _aplicarDadosFirebase(d){
+  try{
+    if(d.tasks){tasks=JSON.parse(d.tasks);localStorage.setItem(KEY,d.tasks);}
+    if(d.recorrencias){recorrencias=JSON.parse(d.recorrencias);localStorage.setItem(RECORR_KEY,d.recorrencias);}
+    if(d.archived){archived=JSON.parse(d.archived);localStorage.setItem(ARCH_KEY,d.archived);}
+    if(d.templates){templates=JSON.parse(d.templates);localStorage.setItem(TPL_KEY,d.templates);}
+    if(d.certidoes){localStorage.setItem('gc_certidoes_v2',d.certidoes);certidoes=JSON.parse(d.certidoes);}
+    if(d.licHistorico){localStorage.setItem('gc_lic_historico_v1',d.licHistorico);}
+    if(d.licVencedor){localStorage.setItem('gc_lic_vencedor_v1',d.licVencedor);}
+    processarRecorrencias();render();renderRecorrencias();renderTemplates();atualizarFiltros();
+    mostrarToast('✅ Dados recuperados do Firebase!',false);
+  }catch(e){mostrarToast('❌ Erro: '+e.message,false);}
+}
+function _aplicarDadosBackup(d){
+  try{
+    var t=d.tarefas||d.tasks;var r=d.recorrencias;var a=d.archived;var tp=d.templates;
+    if(t){tasks=typeof t==='string'?JSON.parse(t):t;localStorage.setItem(KEY,JSON.stringify(tasks));}
+    if(r){recorrencias=typeof r==='string'?JSON.parse(r):r;localStorage.setItem(RECORR_KEY,JSON.stringify(recorrencias));}
+    if(a){archived=typeof a==='string'?JSON.parse(a):a;localStorage.setItem(ARCH_KEY,JSON.stringify(archived));}
+    if(tp){templates=typeof tp==='string'?JSON.parse(tp):tp;localStorage.setItem(TPL_KEY,JSON.stringify(templates));}
+    if(d.certidoes){var cert=typeof d.certidoes==='string'?d.certidoes:JSON.stringify(d.certidoes);localStorage.setItem('gc_certidoes_v2',cert);certidoes=JSON.parse(cert);}
+    processarRecorrencias();render();renderRecorrencias();renderTemplates();atualizarFiltros();
+    mostrarToast('✅ Backup restaurado!',false);
+  }catch(e){mostrarToast('❌ Erro: '+e.message,false);}
+}
 function clearDone(){if(!confirm('Arquivar todas as tarefas concluídas?'))return;
   var conc=tasks.filter(function(t){return t.done&&!t._futuro;});
   conc.forEach(function(t){archived.push(Object.assign({},t,{archivedAt:new Date().toISOString()}));});
@@ -3264,7 +3333,17 @@ function imprimirLicitacoesConcluidas(){
 // ── Vencedor por município (aba Lic. Concluídas) ──
 var LIC_VENCEDOR_KEY='gc_lic_vencedor_v1';
 function licVencedorLoad(){var raw=localStorage.getItem(LIC_VENCEDOR_KEY);return raw?JSON.parse(raw):{};}
-function licVencedorSave(data){localStorage.setItem(LIC_VENCEDOR_KEY,JSON.stringify(data));if(window._fbSave)window._fbSave(tasks,recorrencias,archived,templates);}
+function licVencedorSave(data){
+  localStorage.setItem(LIC_VENCEDOR_KEY,JSON.stringify(data));
+  if(window._fbSave){
+    var t=JSON.parse(localStorage.getItem(KEY)||'[]');
+    var r=JSON.parse(localStorage.getItem(RECORR_KEY)||'[]');
+    var a=JSON.parse(localStorage.getItem(ARCH_KEY)||'[]');
+    var tp=JSON.parse(localStorage.getItem(TPL_KEY)||'[]');
+    window._fbSave(t,r,a,tp);
+  }
+}
+
 function licVencedorSalvar(mun,campo,valor){
   var data=licVencedorLoad();
   if(!data[mun])data[mun]={nome:'',resultado:''};
@@ -3279,7 +3358,16 @@ function licVencedorSalvar(mun,campo,valor){
 var LIC_HIST_KEY='gc_lic_historico_v1';
 var _licHistEditId=null;
 function licHistLoad(){var raw=localStorage.getItem(LIC_HIST_KEY);return raw?JSON.parse(raw):[];}
-function licHistSave(data){localStorage.setItem(LIC_HIST_KEY,JSON.stringify(data));if(window._fbSave)window._fbSave(tasks,recorrencias,archived,templates);}
+function licHistSave(data){
+  localStorage.setItem(LIC_HIST_KEY,JSON.stringify(data));
+  if(window._fbSave){
+    var t=JSON.parse(localStorage.getItem(KEY)||'[]');
+    var r=JSON.parse(localStorage.getItem(RECORR_KEY)||'[]');
+    var a=JSON.parse(localStorage.getItem(ARCH_KEY)||'[]');
+    var tp=JSON.parse(localStorage.getItem(TPL_KEY)||'[]');
+    window._fbSave(t,r,a,tp);
+  }
+}
 function licHistNovoModal(){
   _licHistEditId=null;
   document.getElementById('lic-hist-modal-title').textContent='📊 Nova Licitação — Histórico';
