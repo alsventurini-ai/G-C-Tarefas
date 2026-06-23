@@ -3319,30 +3319,26 @@ function renderLicitacoesConcluidas(){
   var etapasData=licEtapasLoad();
   var lista_html='';
   gruposConc.forEach(function(mun){
-    var marcadas=etapasData[mun]||[];
-    var totalEt=LIC_ETAPAS.length;
-    var concEt=marcadas.length;
     var vencData=licVencedorLoad();
     var venc=vencData[mun]||{nome:'',resultado:''};
     var resCorMap={ganhou:'#e8f5e9',perdeu:'#fde8e8',deserto:'#f5f5f5'};
-    var resLblMap={ganhou:'✅ Ganhamos',perdeu:'❌ Perdemos',deserto:'— Deserto/Cancelado'};
     var resCor=venc.resultado?resCorMap[venc.resultado]||'#fff8e1':'#fff8e1';
-    var resLbl=venc.resultado?resLblMap[venc.resultado]||'':'';
+    var munEscC=mun.replace(/'/g,"\\'");
     var html='<div style="margin-bottom:20px;">';
-    html+='<div style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--green);font-weight:600;padding:8px 0 6px;border-bottom:1.5px solid #c8e6c9;margin-bottom:8px;">✅ '+mun+' <span style="font-size:10px;color:var(--muted);font-weight:400;">'+concEt+'/'+totalEt+' etapas</span></div>';
-    // Painel quem faz
-    html+='<div style="background:'+resCor+';border:1px solid #c8ddc8;border-radius:4px;padding:10px 14px;margin-bottom:10px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">';
-    html+='<span style="font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap;">👤 QUEM FAZ:</span>';
+    html+='<div style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--green);font-weight:600;padding:8px 0 6px;border-bottom:1.5px solid #c8e6c9;margin-bottom:8px;">✅ '+mun+'</div>';
+    // Painel quem faz + botões resultado
+    html+='<div style="background:'+resCor+';border:1px solid #c8ddc8;border-radius:4px;padding:10px 14px;margin-bottom:10px;">';
+    html+='<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">';
+    html+='<span style="font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap;">👤 Quem Faz:</span>';
     html+='<input type="text" value="'+((venc.nome||'').replace(/"/g,'&quot;'))+'" placeholder="Empresa executora…" '
-      +'onchange="licVencedorSalvar(\''+mun.replace(/'/g,"\\'")+'\',' +'\'nome\',this.value)" '
+      +'onchange="licVencedorSalvar(\''+munEscC+'\',\'nome\',this.value)" '
       +'style="flex:1;min-width:160px;border:1px solid #b8ddc8;background:#fff;padding:6px 10px;font-size:13px;border-radius:3px;font-family:\'Segoe UI\',Tahoma,sans-serif;color:var(--ink);outline:none;">';
-    html+='<select onchange="licVencedorSalvar(\''+mun.replace(/'/g,"\\'")+'\',' +'\'resultado\',this.value)" '
-      +'style="border:1px solid #b8ddc8;background:#fff;padding:6px 10px;font-size:13px;border-radius:3px;font-family:\'Segoe UI\',Tahoma,sans-serif;color:var(--ink);outline:none;cursor:pointer;">';
-    html+='<option value="">— Resultado</option>';
-    ['ganhou','perdeu','deserto'].forEach(function(r){html+='<option value="'+r+'"'+(venc.resultado===r?' selected':'')+'>'+resLblMap[r]+'</option>';});
-    html+='</select>';
-    if(resLbl) html+='<span style="font-size:12px;font-weight:700;color:'+(venc.resultado==='ganhou'?'#2e7d32':venc.resultado==='perdeu'?'#b03a2e':'#7a7672')+';">'+resLbl+'</span>';
     html+='</div>';
+    html+='<div style="display:flex;gap:8px;flex-wrap:wrap;">';
+    html+='<button onclick="licVencedorSalvar(\''+munEscC+'\',\'resultado\',\'ganhou\')" style="padding:6px 18px;border-radius:20px;border:2px solid #3a8c4a;font-size:13px;font-weight:700;cursor:pointer;font-family:sans-serif;'+(venc.resultado==='ganhou'?'background:#3a8c4a;color:#fff;':'background:#fff;color:#3a8c4a;')+'">✅ Ganhamos</button>';
+    html+='<button onclick="licVencedorSalvar(\''+munEscC+'\',\'resultado\',\'perdeu\')" style="padding:6px 18px;border-radius:20px;border:2px solid #b03a2e;font-size:13px;font-weight:700;cursor:pointer;font-family:sans-serif;'+(venc.resultado==='perdeu'?'background:#b03a2e;color:#fff;':'background:#fff;color:#b03a2e;')+'">❌ Perdemos</button>';
+    html+='<button onclick="licVencedorSalvar(\''+munEscC+'\',\'resultado\',\'deserto\')" style="padding:6px 18px;border-radius:20px;border:2px solid #aaa;font-size:13px;font-weight:700;cursor:pointer;font-family:sans-serif;'+(venc.resultado==='deserto'?'background:#aaa;color:#fff;':'background:#fff;color:#777;')+'">— Deserto</button>';
+    html+='</div></div>';
     // Tarefas do grupo
     grupos[mun].forEach(function(t){
       var dataStr=t.taskDate?(' — <b>'+fmtDate(t.taskDate)+'</b>'):'';
