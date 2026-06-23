@@ -3214,7 +3214,7 @@ function _renderLicGrupoHTML(mun, ts, etapasData, mostrarEtapas, histRegs){
       '</span>'+
       '</div>'+
       '<div class="cert-dates"><span class="cert-date">Data:'+dataStr+horaStr+'</span>'+(t.paraQuem?'<span class="cert-date">Para: <b>'+t.paraQuem+'</b></span>':'')+'</div>'+
-      (isDisputa&&quemFazNome?'<div style="font-size:12px;color:#1a5276;margin-top:3px;font-weight:600;">👤 Quem faz: '+quemFazNome+'</div>':'')+
+      (isDisputa&&quemFazNome?'<div style="margin-top:5px;"><span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;'+(/galhardo/i.test(quemFazNome)?'background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;':'background:#fff3e0;color:#e65100;border:1px solid #ffcc80;')+'">🏢 '+quemFazNome+'</span></div>':'')+
       (t.obs?'<div class="cert-file-name" style="white-space:normal;font-style:italic;color:var(--muted);">'+t.obs.substring(0,120)+(t.obs.length>120?'…':'')+'</div>':'')+
       '</div>';
   });
