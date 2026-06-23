@@ -3119,10 +3119,17 @@ function _getLicGrupos(){
     var m=t.text.match(/[-—]\s*(.+)$/);
     if(m) municipio=m[1].trim();
     else if(t.paraQuem&&t.paraQuem!=='Licitações') municipio=t.paraQuem;
-    if(!grupos[municipio]) grupos[municipio]=[];
-    grupos[municipio].push(t);
+    // Agrupa usando nome normalizado como chave mas guarda nome original
+    var chave=_normMun(municipio);
+    if(!grupos[chave]) grupos[chave]={nome:municipio,tasks:[]};
+    // Guarda o nome mais "bonito" (com acentos se disponível)
+    if(municipio.length>grupos[chave].nome.length||grupos[chave].nome==='Geral') grupos[chave].nome=municipio;
+    grupos[chave].tasks.push(t);
   });
-  return grupos;
+  // Retorna no formato antigo {municipio: [tasks]} mas com nomes normalizados como chave
+  var resultado={};
+  Object.keys(grupos).forEach(function(k){resultado[grupos[k].nome]=grupos[k].tasks;});
+  return resultado;
 }
 function _normMun(s){return(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();}
 function _renderLicGrupoHTML(mun, ts, etapasData, mostrarEtapas, histRegs){
