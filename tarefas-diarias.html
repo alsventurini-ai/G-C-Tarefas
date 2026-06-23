@@ -3546,6 +3546,7 @@ function licHistImportJSON(input){
   };
   reader.readAsText(file,'UTF-8');
 }
+function licHistRelatorio(){
   var regs=licHistLoad();
   if(regs.length===0){mostrarToast('Nenhum registro para relatório.',false);return;}
   var ganhou=regs.filter(function(r){return r.resultado==='ganhou';}).length;
