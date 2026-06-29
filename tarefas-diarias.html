@@ -1703,7 +1703,7 @@ function addTask(){
     var tid=Date.now();
     var dataTask=dateSel.value||'';
     var horaTask=timeSel.value||'';
-    tasks.push({id:tid,text:txt,done:false,addedAt:timeNow(),doneAt:'',schedule:horaTask,taskDate:dataTask,alertFired:false,paraQuem:pq,obs:obsVal,priority:priority,duracao:duracao,pinned:false});
+    var _licM=txt.match(/^licitaç[aã]o\s*[-—]\s*(.+)$/i);    tasks.push({id:tid,text:txt,done:false,addedAt:timeNow(),doneAt:'',schedule:horaTask,taskDate:dataTask,alertFired:false,paraQuem:pq,obs:obsVal,priority:priority,duracao:duracao,pinned:false,_licMunicipio:(_licM?_licM[1].trim():undefined),_licDataDisputa:(_licM?dataTask:undefined),_licHoraDisputa:(_licM?horaTask:undefined)});
     if(repeat!=='none'){
       var recorr2={id:tid,text:txt,paraQuem:pq,schedule:horaTask,repeat:repeat,active:true,maxRep:maxRep,repCount:1,dayOfWeek:now.getDay(),dayOfMonth:now.getDate(),lastGenerated:todayStr,priority:priority,startDate:dataTask||todayStr};
       tasks[tasks.length-1].repeatId=tid;adicionarRecorrencia(recorr2);
@@ -1716,9 +1716,9 @@ function addTask(){
       var dataAnaliseAuto=somarDiasCorridos(dataTask,8);
       var dataPropostaAuto=somarDiasUteis_subtrair(dataTask,3);
       tasks.push({id:tid+1,text:'⚠️ Impugnação — '+munAuto,done:false,addedAt:timeNow(),doneAt:'',schedule:horaTask,taskDate:dataImpugAuto,alertFired:false,paraQuem:pq||'Licitações',obs:'Prazo de impugnação — '+munAuto+'\nDe acordo com a Lei nº 14.133/2021, Art. 164: a impugnação deverá ser protocolada até 3 (três) dias úteis antes da data de abertura do certame.',priority:'alta',duracao:'',pinned:false,_licMunicipio:munAuto,_licDataDisputa:dataTask,_licHoraDisputa:horaTask,_impugnacaoEnviada:null});
-      tasks.push({id:tid+2,text:'📋 Análise do Edital — '+munAuto,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataAnaliseAuto,alertFired:false,paraQuem:pq||'Licitações',obs:'Análise do edital — '+munAuto,priority:'alta',duracao:'',pinned:false});
-      tasks.push({id:tid+3,text:'📤 Início Inclusão da Proposta — '+munAuto,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataPropostaAuto,alertFired:false,paraQuem:pq||'Licitações',obs:'Iniciar inclusão da proposta no sistema — '+munAuto+'\nDe acordo com a Lei nº 14.133/2021, Art. 60: o prazo fixado no edital para apresentação das propostas e lances não pode ser inferior a 8 (oito) dias úteis, contado da data de publicação do edital.',priority:'alta',duracao:'',pinned:false});
-      tasks.push({id:tid+4,text:'⚖️ Prazo Final de Impugnação — '+munAuto,done:false,addedAt:timeNow(),doneAt:'',schedule:horaTask,taskDate:dataImpugAuto,alertFired:false,paraQuem:pq||'Licitações',obs:'ATENÇÃO: encerra hoje o prazo de impugnação ao edital — '+munAuto+'\nDe acordo com a Lei nº 14.133/2021, Art. 164: a impugnação deverá ser protocolada até 3 (três) dias úteis antes da data de abertura do certame.',priority:'alta',duracao:'',pinned:false});
+      tasks.push({id:tid+2,text:'📋 Análise de Edital — '+munAuto,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataAnaliseAuto,alertFired:false,paraQuem:pq||'Licitações',obs:'Análise do edital — '+munAuto,priority:'alta',duracao:'',pinned:false,_licMunicipio:munAuto,_licDataDisputa:dataTask});
+      tasks.push({id:tid+3,text:'📤 Início Inclusão da Proposta — '+munAuto,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataPropostaAuto,alertFired:false,paraQuem:pq||'Licitações',obs:'Iniciar inclusão da proposta no sistema — '+munAuto+'\nDe acordo com a Lei nº 14.133/2021, Art. 60: o prazo fixado no edital para apresentação das propostas e lances não pode ser inferior a 8 (oito) dias úteis, contado da data de publicação do edital.',priority:'alta',duracao:'',pinned:false,_licMunicipio:munAuto,_licDataDisputa:dataTask});
+      tasks.push({id:tid+4,text:'⚖️ Prazo Final de Impugnação — '+munAuto,done:false,addedAt:timeNow(),doneAt:'',schedule:horaTask,taskDate:dataImpugAuto,alertFired:false,paraQuem:pq||'Licitações',obs:'ATENÇÃO: encerra hoje o prazo de impugnação ao edital — '+munAuto+'\nDe acordo com a Lei nº 14.133/2021, Art. 164: a impugnação deverá ser protocolada até 3 (três) dias úteis antes da data de abertura do certame.',priority:'alta',duracao:'',pinned:false,_licMunicipio:munAuto,_licDataDisputa:dataTask,_licHoraDisputa:horaTask});
       mostrarToast('✅ 5 tarefas criadas para '+munAuto+'!',false);
     }
   }
@@ -2353,6 +2353,26 @@ function makeEl(t){
   }
   if(t._futuro){var fb=document.createElement('div');fb.className='futuro-badge';fb.textContent='🔮 Tarefa futura agendada';body.appendChild(fb);}
   if(t.obs){var od=document.createElement('div');od.className='task-obs';od.textContent='📝 '+t.obs;body.appendChild(od);}
+  // Botões Participar/Não Participar — apenas na tarefa principal de licitação não concluída
+  if(t._licMunicipio&&/^licita/i.test(t.text.normalize('NFD').replace(/[\u0300-\u036f]/g,''))&&!t.done){
+    var KEY_PROG='gc_lic_prog_v1';
+    var _progData={};try{_progData=JSON.parse(localStorage.getItem(KEY_PROG)||'{}');}catch(e){}
+    var _munProg=_progData[t._licMunicipio]||[];
+    var _jaPartic=_munProg.indexOf('✅ Participamos')>=0;
+    var _jaNaoPartic=_munProg.indexOf('❌ Não participamos')>=0;
+    var _licBtns=document.createElement('div');
+    _licBtns.style.cssText='display:flex;gap:6px;margin-top:7px;flex-wrap:wrap;';
+    var _bSim=document.createElement('button');
+    _bSim.style.cssText='padding:4px 14px;border-radius:20px;border:2px solid #3a8c4a;font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif;'+(_jaPartic?'background:#3a8c4a;color:#fff;':'background:#fff;color:#3a8c4a;');
+    _bSim.textContent='✅ Participar';
+    _bSim.onclick=(function(mun){return function(){licDecisaoParticipar(mun);render();};})(t._licMunicipio);
+    var _bNao=document.createElement('button');
+    _bNao.style.cssText='padding:4px 14px;border-radius:20px;border:2px solid #b03a2e;font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif;'+(_jaNaoPartic?'background:#b03a2e;color:#fff;':'background:#fff;color:#b03a2e;');
+    _bNao.textContent='❌ Não Participar';
+    _bNao.onclick=(function(mun,tid){return function(){licNaoParticiparTarefas(mun,tid);};})(t._licMunicipio,t.id);
+    _licBtns.appendChild(_bSim);_licBtns.appendChild(_bNao);
+    body.appendChild(_licBtns);
+  }
   var tm=document.createElement('div');tm.className='task-time';
   tm.textContent=t.done&&t.doneAt?'✓ '+t.doneAt:(t.addedAt?t.addedAt:'');
   var acts=document.createElement('div');acts.className='task-actions';
@@ -2563,9 +2583,10 @@ function criarLicitacao(){
   var dataAnalise=somarDiasCorridos(dataDisputa,-8);
   var dataInicioProposta=somarDiasUteis_subtrair(dataDisputa,3);
   var labelTipo=licNumero?(licTipo+' '+licNumero):licTipo;
-  var obsBase=(obs?(obs+' | '):'')+'['+labelTipo+']';
+  var licQuemFaz=((document.getElementById('lic-quemfaz')||{}).value||'').trim();
+  var obsBase=(obs?(obs+' | '):'')+'['+labelTipo+']'+(licQuemFaz?' | Quem Faz: '+licQuemFaz:'');
   // Tarefa principal
-  tasks.push({id:now2,text:'Licitação - '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataDisputa,alertFired:false,paraQuem:'Licitações',obs:obsBase,priority:'alta',tags:['licitação',municipio,licTipo],pinned:false,duracao:'',link:licLink,_licMunicipio:municipio,_licDataDisputa:dataDisputa,_licHoraDisputa:horaDisputa,_licTipo:licTipo,_licNumero:licNumero});
+  tasks.push({id:now2,text:'Licitação - '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataDisputa,alertFired:false,paraQuem:'Licitações',obs:obsBase,priority:'alta',tags:['licitação',municipio,licTipo],pinned:false,duracao:'',link:licLink,_licMunicipio:municipio,_licDataDisputa:dataDisputa,_licHoraDisputa:horaDisputa,_licTipo:licTipo,_licNumero:licNumero,_licQuemFaz:licQuemFaz});
   tasks.push({id:now2+1,text:'⚠️ Impugnação — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataImpug,alertFired:false,paraQuem:'Licitações',obs:'Prazo de impugnação — '+municipio+' ('+labelTipo+')\nLei nº 14.133/2021, Art. 164.',priority:'alta',tags:['licitação','impugnação',municipio],pinned:false,duracao:'',link:licLink,_licMunicipio:municipio,_licDataDisputa:dataDisputa,_licHoraDisputa:horaDisputa,_impugnacaoEnviada:null,_licTipo:licTipo,_licNumero:licNumero});
   tasks.push({id:now2+2,text:'📋 Análise de Edital — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataAnalise,alertFired:false,paraQuem:'Licitações',obs:'Análise do edital — '+municipio+' ('+labelTipo+')',priority:'alta',tags:['licitação','edital',municipio],pinned:false,duracao:'',link:licLink,_licMunicipio:municipio,_licTipo:licTipo,_licNumero:licNumero});
   tasks.push({id:now2+3,text:'📤 Início Inclusão da Proposta — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataInicioProposta,alertFired:false,paraQuem:'Licitações',obs:'Iniciar inclusão da proposta — '+municipio+' ('+labelTipo+')\nLei nº 14.133/2021, Art. 60.',priority:'alta',tags:['licitação','proposta',municipio],pinned:false,duracao:'',link:licLink,_licMunicipio:municipio,_licTipo:licTipo,_licNumero:licNumero});
@@ -2577,6 +2598,15 @@ function criarLicitacao(){
   var listaHist=licHistLoad();
   listaHist.push({id:Date.now(),municipio:municipio,data:dataDisputa,pregao:labelTipo,resultado:'',vencedor:'',obs:obs||'',link:licLink,criadoEm:new Date().toISOString(),_licTipo:licTipo,_licNumero:licNumero});
   licHistSave(listaHist);
+  // Salvar quem faz automaticamente no licVencedor
+  if(licQuemFaz){
+    var vd=licVencedorLoad();
+    var norm=_normMun(municipio);
+    var chaveReal=Object.keys(vd).find(function(k){return _normMun(k)===norm;})||municipio;
+    if(!vd[chaveReal])vd[chaveReal]={nome:'',resultado:''};
+    if(!vd[chaveReal].nome)vd[chaveReal].nome=licQuemFaz;
+    licVencedorSave(vd);
+  }
   // Limpar campos e fechar
   fecharModalLicitacao();
   mostrarToast('✅ Licitação criada para '+municipio+' — '+labelTipo+' | 5 tarefas!',false);
@@ -3778,6 +3808,28 @@ function licLogRegistrar(municipio,tipo,descricao){
 function licLogDoMunicipio(municipio){
   var norm=_normMun(municipio);
   return licLogLoad().filter(function(e){return _normMun(e.municipio)===norm;}).sort(function(a,b){return a.criadoEm<b.criadoEm?-1:1;});
+}
+function licNaoParticiparTarefas(mun, idPrincipal){
+  var motivo=prompt('Por que não participaremos de '+mun+'?\n(Obrigatório — descreva o motivo):','');
+  if(motivo===null) return; // cancelou
+  if(!motivo.trim()){alert('Por favor informe o motivo.');return;}
+  // Marcar todas as tarefas do município como concluídas para sumirem da aba Licitações
+  var munNorm=_normMun(mun);
+  tasks.forEach(function(t){
+    if(!t.done&&t._licMunicipio&&_normMun(t._licMunicipio)===munNorm){
+      t.done=true;t.doneAt=timeNow();
+    }
+  });
+  // Registrar no log
+  licLogRegistrar(mun,'❌ Não participamos',motivo||'Sem motivo informado');
+  // Marcar no prog
+  var KEY_PROG='gc_lic_prog_v1';
+  var data={};try{data=JSON.parse(localStorage.getItem(KEY_PROG)||'{}');}catch(e){}
+  if(!data[mun])data[mun]=[];
+  if(data[mun].indexOf('❌ Não participamos')<0) data[mun].push('❌ Não participamos');
+  localStorage.setItem(KEY_PROG,JSON.stringify(data));
+  save();render();
+  mostrarToast('📋 Não participação registrada — '+mun,false);
 }
 function licNaoParticipar(mun){
   var motivo=prompt('Motivo de não participar de '+mun+' (opcional):','');
