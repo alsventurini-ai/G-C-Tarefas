@@ -2650,7 +2650,7 @@ function licProgToggleLog(mun,step){
   }
   if(marcando) licLogRegistrar(mun, step, '');
   renderLicitacoes();
-  if(marcando) mudarAba('lic-historico');
+  if(marcando) mostrarToast('📋 Registrado: '+step+' — '+mun,false);
 }
 function licDecisaoParticipar(mun){
   var KEY_PROG='gc_lic_prog_v1';
@@ -2663,7 +2663,6 @@ function licDecisaoParticipar(mun){
     localStorage.setItem(KEY_PROG,JSON.stringify(data));
     licLogRegistrar(mun,'✅ Participamos','G&C confirmou participação nesta licitação');
     mostrarToast('✅ Participação registrada — '+mun,false);
-    mudarAba('lic-historico');
   }
   renderLicitacoes();
 }
@@ -3397,8 +3396,8 @@ function _renderLicGrupoHTML(mun, ts, etapasData, mostrarEtapas, histRegs){
       '<span class="cert-card-name">'+t.text+diasBadge+'</span>'+
       '<span style="display:flex;gap:4px;align-items:center;">'+
       (!t.done?
-        '<button onclick="licToggleTarefaHist('+tidLic+',\''+munEscGrp+'\')" style="background:#fff8e1;color:#c78a1a;border:1px solid #ffe082;border-radius:3px;padding:2px 9px;font-size:12px;cursor:pointer;font-family:sans-serif;font-weight:600;" title="Clique para concluir">⏳ Pendente</button>':
-        '<button onclick="mudarAba(\'lic-historico\')" style="background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9;border-radius:3px;padding:2px 9px;font-size:12px;cursor:pointer;font-family:sans-serif;font-weight:600;" title="Ver no histórico">✔ Concluída</button>'
+        '<span class="cert-badge" style="background:#fff8e1;color:#c78a1a;border:1px solid #ffe082;">⏳ Pendente</span>':
+        '<button onclick="licConcluirTarefa('+tidLic+',\''+munEscGrp+'\')" style="background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9;border-radius:3px;padding:2px 9px;font-size:12px;cursor:pointer;font-family:sans-serif;font-weight:600;" title="Concluir e registrar no histórico">✔ Concluída</button>'
       )+
       '<button onclick="abrirModalEdicao('+tidLic+')" style="background:none;border:1px solid #bbb;border-radius:3px;padding:2px 7px;font-size:12px;cursor:pointer;color:#555;" title="Editar">✏️</button>'+
       '<button onclick="del('+tidLic+')" style="background:none;border:1px solid #e57373;border-radius:3px;padding:2px 7px;font-size:12px;cursor:pointer;color:#c0392b;" title="Excluir">×</button>'+
@@ -3498,18 +3497,20 @@ function licStatPopover(tipo){
   document.body.appendChild(overlay);
   document.body.appendChild(pop);
 }
-function licToggleTarefaHist(id, mun){
+function licConcluirTarefa(id, mun){
   var t=tasks.find(function(x){return x.id===id;});
-  if(t&&!t.done){
+  if(!t) return;
+  // Marcar como concluída
+  if(!t.done){
     t.done=true;
     t.doneAt=timeNow();
-    licLogRegistrar(mun,'✔ '+t.text.substring(0,50),'Tarefa concluída');
     save();
-    render();
-    renderLicitacoes();
-    mostrarToast('✔ Concluído: '+t.text.substring(0,40),false);
   }
-  mudarAba('lic-historico');
+  // Registrar no Hist. Licitações
+  licLogRegistrar(mun,'✔ '+t.text.substring(0,60),'Tarefa concluída em '+t.doneAt);
+  // Remover esta tarefa da lista e permanecer na aba Licitações
+  renderLicitacoes();
+  mostrarToast('✔ Registrado no histórico: '+t.text.substring(0,35),false);
 }
 function licConcluirGrupo(mun){
   var grupos=_getLicGrupos();
@@ -3534,7 +3535,7 @@ function licConcluirGrupo(mun){
   var descLog='Licitação encerrada'+(dataDisp?' — disputa em '+fmtDate(dataDisp):'')+(labelTipo?' | '+labelTipo:'');
   licLogRegistrar(mun,'🏁 Licitação concluída',descLog);
   mostrarToast('✅ Licitação de '+mun+' concluída! Registrado no histórico.',false);
-  setTimeout(function(){mudarAba('lic-historico');},600);
+  renderLicitacoes();
 }
 function renderLicitacoes(){
   var lista=document.getElementById('lic-lista');
@@ -3585,7 +3586,10 @@ function renderLicitacoes(){
   var etapasData=licEtapasLoad();
   var histRegs=licHistLoad();
   var html='';
-  gruposPend.forEach(function(mun){html+=_renderLicGrupoHTML(mun,grupos[mun],etapasData,true,histRegs);});
+  gruposPend.forEach(function(mun){
+    var tarefasPend=grupos[mun].filter(function(t){return !t.done;});
+    html+=_renderLicGrupoHTML(mun,tarefasPend,etapasData,true,histRegs);
+  });
   lista.innerHTML=html;
 }
 function renderLicitacoesConcluidas(){
@@ -3780,12 +3784,11 @@ function licNaoParticipar(mun){
   if(motivo===null) return; // cancelou
   licLogRegistrar(mun,'❌ Não participou',motivo||'Sem motivo informado');
   mostrarToast('📋 Registrado: não participação em '+mun,false);
-  mudarAba('lic-historico');
+  renderLicitacoes();
 }
 function licRegistrarEvento(mun,tipo,descricao){
   licLogRegistrar(mun,tipo,descricao||'');
   mostrarToast('📋 Evento registrado: '+tipo+' — '+mun,false);
-  mudarAba('lic-historico');
 }
 
 function licHistPreencherQuemFazList(){
