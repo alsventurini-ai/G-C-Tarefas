@@ -293,8 +293,9 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
 .spin{display:inline-block;animation:spin 1s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
 /* ── Abas ── */
-.tab-bar{display:flex;background:var(--navy2);padding:0 30px;}
-.tab-btn{background:none;border:none;color:rgba(255,255,255,.6);padding:10px 20px;font-size:13.5px;font-family:'Segoe UI',Tahoma,sans-serif;cursor:pointer;border-bottom:3px solid transparent;transition:all .15s;display:flex;align-items:center;gap:6px;}
+.tab-bar{display:flex;background:var(--navy2);padding:0 30px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-bar::-webkit-scrollbar{display:none;}
+.tab-btn{background:none;border:none;color:rgba(255,255,255,.6);padding:10px 20px;font-size:13.5px;font-family:'Segoe UI',Tahoma,sans-serif;cursor:pointer;border-bottom:3px solid transparent;transition:all .15s;display:flex;align-items:center;gap:6px;white-space:nowrap;flex-shrink:0;}
 .tab-btn:hover{color:rgba(255,255,255,.9);}
 .tab-btn.active{color:#fff;border-bottom-color:#e8b84b;font-weight:600;}
 .tab-badge{background:#b03a2e;color:#fff;border-radius:8px;padding:1px 6px;font-size:11px;}
