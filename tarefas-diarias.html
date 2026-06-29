@@ -4873,7 +4873,7 @@ function probGerarPauta(){
   html+='<div style="padding:0 20px;">';
   // Título
   html+='<div style="text-align:center;padding:8px 0;border-top:2px solid #1a5276;border-bottom:2px solid #1a5276;margin-bottom:14px;">';
-  html+='<div style="font-size:14px;font-weight:700;color:#1a5276;text-transform:uppercase;letter-spacing:1px;">Pauta de Reunião Interna</div>';
+  html+='<div style="font-size:14px;font-weight:700;color:#1a5276;text-transform:uppercase;letter-spacing:1px;">Pauta do Dia</div>';
   html+='<div style="font-size:11px;color:#555;margin-top:2px;">'+hoje+'</div>';
   html+='</div>';
   html+=aviso||'';
@@ -4981,7 +4981,7 @@ function dashAtualizar(){
 
   // Tarefas do dia
   html+='<div style="margin-bottom:20px;">';
-  html+='<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;">📋 Tarefas de Hoje</div>';
+  html+='<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;">📋 Resumo do Dia</div>';
   if(tarefasHoje.length===0&&tarefasAtrasadas.length===0){
     html+='<div style="color:var(--muted);font-size:13px;padding:12px;background:var(--white);border-radius:4px;border:1px solid var(--border);">Nenhuma tarefa para hoje. ✅</div>';
   } else {
