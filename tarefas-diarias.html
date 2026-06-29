@@ -1093,8 +1093,9 @@ async function fbSave(t,r,a,tp){
     var licLog=localStorage.getItem('gc_lic_log_v1')||'[]';
     var licVenc=localStorage.getItem('gc_lic_vencedor_v1')||'{}';
     var licProg=localStorage.getItem('gc_lic_prog_v1')||'{}';
+    var probs=localStorage.getItem('gc_problemas_v1')||'[]';
     _fbLastSaveTs=Date.now();
-    await setDoc(REF,{tasks:JSON.stringify(t),recorrencias:JSON.stringify(r),archived:JSON.stringify(a||[]),templates:JSON.stringify(tp||[]),certidoes:cert,licHistorico:licHist,licLog:licLog,licVencedor:licVenc,licProgresso:licProg,updatedAt:new Date().toISOString()});
+    await setDoc(REF,{tasks:JSON.stringify(t),recorrencias:JSON.stringify(r),archived:JSON.stringify(a||[]),templates:JSON.stringify(tp||[]),certidoes:cert,licHistorico:licHist,licLog:licLog,licVencedor:licVenc,licProgresso:licProg,problemas:probs,updatedAt:new Date().toISOString()});
   }
   catch(e){console.warn("Firebase save:",e);}
 }
@@ -1114,6 +1115,7 @@ onSnapshot(REF, function(snap){
       if(d.licLog) localStorage.setItem('gc_lic_log_v1',d.licLog);
     if(d.licVencedor) localStorage.setItem('gc_lic_vencedor_v1',d.licVencedor);
     if(d.licProgresso) localStorage.setItem('gc_lic_prog_v1',d.licProgresso);
+    if(d.problemas) localStorage.setItem('gc_problemas_v1',d.problemas);
     // Só atualiza se os dados do Firebase forem diferentes dos locais
     var localRaw=localStorage.getItem('gc_tarefas_v3');
     var localTasks=localRaw?JSON.parse(localRaw):[];
@@ -1129,6 +1131,9 @@ onSnapshot(REF, function(snap){
     }
     var el=document.getElementById('sync-txt');
     if(el) el.textContent='Sincronizado ✅';
+    if(typeof probAtualizarBadge==='function') probAtualizarBadge();
+    var probTab=document.getElementById('tab-problemas');
+    if(probTab&&probTab.classList.contains('active')&&typeof probRender==='function') probRender();
   }catch(e){console.warn("onSnapshot parse:",e);}
 }, function(err){
   console.warn("onSnapshot error:",err);
@@ -4665,7 +4670,7 @@ function probTogglePauta(id){
   mostrarToast(p.naPauta?'📋 Adicionado à pauta!':'📋 Removido da pauta.',false);
 }
 function probLoad(){var r=localStorage.getItem(PROB_KEY);return r?JSON.parse(r):[];}
-function probSaveData(data){localStorage.setItem(PROB_KEY,JSON.stringify(data));probAtualizarBadge();}
+function probSaveData(data){localStorage.setItem(PROB_KEY,JSON.stringify(data));probAtualizarBadge();if(window._fbSave)window._fbSave(tasks,recorrencias,archived,templates);}
 function probAtualizarBadge(){
   var pend=probLoad().filter(function(p){return!p.resolvido;}).length;
   var badge=document.getElementById('tab-prob-badge');
