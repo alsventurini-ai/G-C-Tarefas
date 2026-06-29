@@ -4654,6 +4654,13 @@ function probEnviarDeTarefa(t){
   mostrarToast('⚠️ Enviado para Problemas Internos!',false);
   if(confirm('Ir para a aba Problemas Internos agora?')) mudarAba('problemas');
 }
+function probTogglePauta(id){
+  var probs=probLoad();
+  var p=probs.find(function(x){return x.id===id;});
+  if(p){p.naPauta=!p.naPauta;}
+  probSaveData(probs);probRender();
+  mostrarToast(p.naPauta?'📋 Adicionado à pauta!':'📋 Removido da pauta.',false);
+}
 function probLoad(){var r=localStorage.getItem(PROB_KEY);return r?JSON.parse(r):[];}
 function probSaveData(data){localStorage.setItem(PROB_KEY,JSON.stringify(data));probAtualizarBadge();}
 function probAtualizarBadge(){
@@ -4710,6 +4717,7 @@ function probSalvar(){
       prioridade:document.getElementById('prob-prioridade').value,
       resolvido:false,
       resolucao:'',
+      naPauta:false,
       criadoEm:new Date().toISOString()
     });
   }
@@ -4787,6 +4795,8 @@ function probRender(){
     html+='<span style="margin-left:6px;font-size:10px;background:#e8eaf6;color:#3949ab;border-radius:10px;padding:1px 8px;font-weight:600;">'+p.setor+'</span>';
     html+='</div>';
     html+='<div style="display:flex;gap:4px;white-space:nowrap;">';
+    var naPauta=p.naPauta||false;
+    if(!p.resolvido) html+='<label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;font-size:11px;font-weight:700;color:#1a5276;border:2px solid #1a5276;border-radius:3px;padding:3px 10px;background:'+(naPauta?'#e8f0fe':'#fff')+';"><input type="checkbox" '+(naPauta?'checked':'')+' onchange="probTogglePauta('+p.id+')" style="cursor:pointer;width:13px;height:13px;"> 📋 Pauta</label>';
     if(!p.resolvido) html+='<button onclick="probResolver('+p.id+')" style="background:#3a8c4a;color:#fff;border:none;border-radius:3px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;">✅ Resolvido</button>';
     html+='<button onclick="probEditarModal('+p.id+')" style="background:none;border:1px solid #bbb;border-radius:3px;padding:3px 7px;font-size:11px;cursor:pointer;">✏️</button>';
     html+='<button onclick="probExcluir('+p.id+')" style="background:none;border:1px solid #e57373;border-radius:3px;padding:3px 7px;font-size:11px;cursor:pointer;color:#c0392b;">×</button>';
@@ -4802,12 +4812,16 @@ function probRender(){
   lista.innerHTML=html;
 }
 function probGerarPauta(){
-  var probs=probLoad().filter(function(p){return!p.resolvido;});
+  var todos=probLoad().filter(function(p){return!p.resolvido;});
+  var naPauta=todos.filter(function(p){return p.naPauta;});
+  var probs=naPauta.length>0?naPauta:todos;
+  var aviso=naPauta.length>0?'':'(nenhum marcado para pauta — incluindo todos os pendentes)\n';
   if(probs.length===0){mostrarToast('Nenhum problema pendente para a pauta.',false);return;}
   var ordemPrio={alta:0,media:1,baixa:2};
   probs.sort(function(a,b){return (ordemPrio[a.prioridade]||1)-(ordemPrio[b.prioridade]||1)||a.criadoEm.localeCompare(b.criadoEm);});
   var hoje=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
   var txt='GALHARDO & CANALES — PAUTA DE REUNIÃO\n';
+  txt+=aviso||'';
   txt+='Data: '+hoje+'\n';
   txt+='━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n';
   var setores=['Administrativo','Produção'];
