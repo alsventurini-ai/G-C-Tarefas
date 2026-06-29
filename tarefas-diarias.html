@@ -3500,14 +3500,15 @@ function licStatPopover(tipo){
 }
 function licToggleTarefaHist(id, mun){
   var t=tasks.find(function(x){return x.id===id;});
-  if(!t||t.done) return;
-  t.done=true;t.doneAt=timeNow();
-  save();
-  // Registrar no log
-  licLogRegistrar(mun,'✔ '+t.text.substring(0,50),'Tarefa concluída');
-  renderLicitacoes();
-  mostrarToast('✔ Concluído: '+t.text.substring(0,40)+'…',false);
-  setTimeout(function(){mudarAba('lic-historico');},600);
+  if(t&&!t.done){
+    t.done=true;t.doneAt=timeNow();
+    save();
+    licLogRegistrar(mun,'✔ '+t.text.substring(0,50),'Tarefa concluída');
+    renderLicitacoes();
+    mostrarToast('✔ Concluído: '+t.text.substring(0,40)+'…',false);
+  }
+  // Sempre navega para Hist. Licitações
+  mudarAba('lic-historico');
 }
 function licConcluirGrupo(mun){
   var grupos=_getLicGrupos();
