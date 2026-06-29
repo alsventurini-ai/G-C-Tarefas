@@ -888,6 +888,24 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
 
       <div class="modal-row">
         <div class="modal-field">
+          <label>📋 Tipo de Pregão</label>
+          <select id="lic-tipo" class="modal-input" style="font-family:'Segoe UI',Tahoma,sans-serif;">
+            <option value="Pregão Eletrônico">Pregão Eletrônico</option>
+            <option value="Pregão Presencial">Pregão Presencial</option>
+            <option value="Dispensa Eletrônica">Dispensa Eletrônica</option>
+            <option value="Concorrência">Concorrência</option>
+            <option value="Chamamento Público">Chamamento Público</option>
+            <option value="Outro">Outro</option>
+          </select>
+        </div>
+        <div class="modal-field">
+          <label>🔢 Nº do Pregão</label>
+          <input type="text" id="lic-numero" class="modal-input" placeholder="Ex: PE 036/2026…" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="modal-row">
+        <div class="modal-field">
           <label>📅 Data da Disputa</label>
           <input type="date" id="lic-data" class="modal-input">
         </div>
@@ -909,10 +927,9 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
         <textarea id="lic-obs" class="modal-textarea" placeholder="Número do pregão, plataforma, observações…" style="min-height:60px;"></textarea>
       </div>
       <div style="background:#f5f0fa;border:1px solid #c9a8e8;border-radius:3px;padding:12px 14px;font-size:12.5px;color:#6c3483;line-height:1.7;">
-        <strong>Será criada 1 tarefa:</strong><br>
-        🏛 <strong>Licitação - Município</strong> — na data informada<br><br>
-        <span style="opacity:.8;">Após criar, clique em <strong>🚀 Participar</strong> na aba Licitações para gerar automaticamente:<br>
-        ⚠️ Impugnação · 📋 Análise de Edital · 📤 Início Proposta · ⚖️ Prazo Final de Impugnação</span>
+        <strong>Serão criadas 5 tarefas automaticamente:</strong><br>
+        🏛 Licitação · ⚠️ Impugnação · 📋 Análise de Edital · 📤 Início Proposta · ⚖️ Prazo Final de Impugnação<br>
+        <span style="opacity:.8;">O tipo e número do pregão serão registrados em todas as abas pertinentes.</span>
       </div>
     </div>
     <div class="modal-foot">
@@ -975,7 +992,7 @@ async function fbSave(t,r,a,tp){
     var licVenc=localStorage.getItem('gc_lic_vencedor_v1')||'{}';
     var licProg=localStorage.getItem('gc_lic_prog_v1')||'{}';
     _fbLastSaveTs=Date.now();
-    await setDoc(REF,{tasks:JSON.stringify(t),recorrencias:JSON.stringify(r),archived:JSON.stringify(a||[]),templates:JSON.stringify(tp||[]),certidoes:cert,licHistorico:licHist,licVencedor:licVenc,licProgresso:licProg,updatedAt:new Date().toISOString()});
+    await setDoc(REF,{tasks:JSON.stringify(t),recorrencias:JSON.stringify(r),archived:JSON.stringify(a||[]),templates:JSON.stringify(tp||[]),certidoes:cert,licHistorico:licHist,licLog:licLog,licVencedor:licVenc,licProgresso:licProg,updatedAt:new Date().toISOString()});
   }
   catch(e){console.warn("Firebase save:",e);}
 }
@@ -1976,8 +1993,21 @@ function limparTodosFiltros(){
 // ── Backup ──
 function gerarConteudoBackup(){return JSON.stringify({versao:'gc_tarefas_v3',data:new Date().toLocaleString('pt-BR'),dia:todayStr,tarefas:tasks.filter(function(t){return!t._futuro;}),recorrencias:recorrencias,archived:archived,templates:templates},null,2);}
 function backupGeral(){
-  var dados=gerarConteudoBackupGeral();
-  dados.automatico=false;
+  // Para download, usar objetos reais (não strings)
+  var dados={
+    versao:'gc_backup_geral_v1',
+    data:new Date().toISOString(),
+    automatico:false,
+    tarefas:tasks,
+    recorrencias:recorrencias,
+    archived:archived||[],
+    templates:templates||[],
+    certidoes:JSON.parse(localStorage.getItem('gc_certidoes_v2')||'[]'),
+    licHistorico:licHistLoad(),
+    licLog:licLogLoad(),
+    licVencedor:licVencedorLoad(),
+    licProgresso:JSON.parse(localStorage.getItem('gc_lic_prog_v1')||'{}')
+  };
   var blob=new Blob([JSON.stringify(dados,null,2)],{type:'application/json'});
   var url=URL.createObjectURL(blob);
   var a=document.createElement('a');a.href=url;
@@ -2041,18 +2071,20 @@ function _backupFiredSet(o){
   localStorage.setItem(BACKUP_FIRED_KEY,JSON.stringify(o));
 }
 function gerarConteudoBackupGeral(){
+  // Firestore exige strings para arrays/objetos grandes — serializar tudo
   return{
     versao:'gc_backup_geral_v1',
     data:new Date().toISOString(),
     automatico:true,
-    tarefas:tasks,
-    recorrencias:recorrencias,
-    archived:archived,
-    templates:templates,
-    certidoes:certidoes,
-    licHistorico:licHistLoad(),
-    licLog:licLogLoad(),
-    licVencedor:licVencedorLoad()
+    tasks:JSON.stringify(tasks),
+    recorrencias:JSON.stringify(recorrencias),
+    archived:JSON.stringify(archived||[]),
+    templates:JSON.stringify(templates||[]),
+    certidoes:localStorage.getItem('gc_certidoes_v2')||'[]',
+    licHistorico:localStorage.getItem('gc_lic_historico_v1')||'[]',
+    licLog:localStorage.getItem('gc_lic_log_v1')||'[]',
+    licVencedor:localStorage.getItem('gc_lic_vencedor_v1')||'{}',
+    licProgresso:localStorage.getItem('gc_lic_prog_v1')||'{}'
   };
 }
 function mostrarBackupLast(txt){
@@ -2062,15 +2094,25 @@ function mostrarBackupLast(txt){
 }
 function executarBackupAutomatico(slotId){
   var agora=new Date();
+  var hh=pad(agora.getHours())+':'+pad(agora.getMinutes());
   var docId=agora.toISOString().slice(0,10)+'_'+slotId;
-  var dados=gerarConteudoBackupGeral();
-  dados.slot=slotId;
-  if(window._fbBackup){
-    window._fbBackup(dados,docId).then(function(ok){
-      var hh=pad(agora.getHours())+':'+pad(agora.getMinutes());
-      if(ok){mostrarBackupLast('💾 Backup automático: '+hh+' ('+fmtDate(todayStr)+')');}
-      else{mostrarBackupLast('⚠️ Falha no backup automático ('+hh+')');}
-    });
+  try{
+    var dados=gerarConteudoBackupGeral();
+    dados.slot=slotId;
+    // Validar que campos essenciais existem antes de enviar
+    if(!dados.tasks){mostrarBackupLast('⚠️ Falha no backup automático ('+hh+') — dados vazios');return;}
+    if(window._fbBackup){
+      window._fbBackup(dados,docId).then(function(ok){
+        if(ok){mostrarBackupLast('💾 Backup automático: '+hh+' ('+fmtDate(todayStr)+')');}
+        else{mostrarBackupLast('⚠️ Falha no backup automático ('+hh+') — Firebase rejeitou');}
+      }).catch(function(e){
+        console.warn('Backup automático erro:',e);
+        mostrarBackupLast('⚠️ Falha no backup automático ('+hh+')');
+      });
+    }
+  }catch(e){
+    console.warn('Backup automático erro:',e);
+    mostrarBackupLast('⚠️ Falha no backup automático ('+hh+')');
   }
 }
 function verificarBackupAgendado(){
@@ -2401,6 +2443,8 @@ function abrirModalLicitacao(){
   document.getElementById('lic-data').value='';
   document.getElementById('lic-hora').value='';
   document.getElementById('lic-obs').value='';
+  var _lt=document.getElementById('lic-tipo');if(_lt)_lt.value='Pregão Eletrônico';
+  var _ln=document.getElementById('lic-numero');if(_ln)_ln.value='';
   document.getElementById('lic-modal').style.display='flex';
   setTimeout(function(){document.getElementById('lic-municipio').focus();},80);
 }
@@ -2408,8 +2452,9 @@ function fecharModalLicitacao(){
   document.getElementById('lic-modal').style.display='none';
   var p=document.getElementById('lic-hist-painel');
   if(p){p.style.display='none';p.innerHTML='';}
-  var qf=document.getElementById('lic-quemfaz');
-  if(qf) qf.value='';
+  var qf=document.getElementById('lic-quemfaz');if(qf) qf.value='';
+  var _lt=document.getElementById('lic-tipo');if(_lt)_lt.value='Pregão Eletrônico';
+  var _ln=document.getElementById('lic-numero');if(_ln)_ln.value='';
 }
 
 var _licHistTimer=null;
@@ -2508,6 +2553,8 @@ function criarLicitacao(){
   var horaDisputa=document.getElementById('lic-hora').value;
   var licLink=document.getElementById('lic-link').value.trim()||'';
   var obs=document.getElementById('lic-obs').value.trim();
+  var licTipo=(document.getElementById('lic-tipo')||{}).value||'Pregão Eletrônico';
+  var licNumero=((document.getElementById('lic-numero')||{}).value||'').trim();
   if(!municipio){alert('Informe o município.');marcarCampoObrigatorio('lic-municipio');return false;}
   if(!dataDisputa){alert('Informe a data da disputa.');marcarCampoObrigatorio('lic-data');return false;}
   if(!horaDisputa){alert('Informe o horário da disputa.');marcarCampoObrigatorio('lic-hora');return false;}
@@ -2515,18 +2562,27 @@ function criarLicitacao(){
   var dataImpug=somarDiasUteis_subtrair(dataDisputa,3);
   var dataAnalise=somarDiasCorridos(dataDisputa,-8);
   var dataInicioProposta=somarDiasUteis_subtrair(dataDisputa,3);
-  tasks.push({id:now2,text:'Licitação - '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataDisputa,alertFired:false,paraQuem:'Licitações',obs:obs,priority:'alta',tags:['licitação',municipio],pinned:false,duracao:'',link:licLink,_licMunicipio:municipio,_licDataDisputa:dataDisputa,_licHoraDisputa:horaDisputa});
-  tasks.push({id:now2+1,text:'⚠️ Impugnação — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataImpug,alertFired:false,paraQuem:'Licitações',obs:'Prazo de impugnação — '+municipio+'
-Lei nº 14.133/2021, Art. 164.',priority:'alta',tags:['licitação','impugnação',municipio],pinned:false,duracao:'',link:licLink,_licMunicipio:municipio,_licDataDisputa:dataDisputa,_licHoraDisputa:horaDisputa,_impugnacaoEnviada:null});
-  tasks.push({id:now2+2,text:'📋 Análise de Edital — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataAnalise,alertFired:false,paraQuem:'Licitações',obs:'Análise do edital — '+municipio,priority:'alta',tags:['licitação','edital',municipio],pinned:false,duracao:'',link:licLink,_licMunicipio:municipio});
-  tasks.push({id:now2+3,text:'📤 Início Inclusão da Proposta — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataInicioProposta,alertFired:false,paraQuem:'Licitações',obs:'Iniciar inclusão da proposta — '+municipio+'
-Lei nº 14.133/2021, Art. 60.',priority:'alta',tags:['licitação','proposta',municipio],pinned:false,duracao:'',link:licLink,_licMunicipio:municipio});
-  tasks.push({id:now2+4,text:'⚖️ Prazo Final de Impugnação — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataImpug,alertFired:false,paraQuem:'Licitações',obs:'ATENÇÃO: encerra hoje o prazo de impugnação — '+municipio+'
-Lei nº 14.133/2021, Art. 164.',priority:'alta',tags:['licitação','impugnação',municipio],pinned:false,duracao:'',link:licLink,_licMunicipio:municipio});
+  var labelTipo=licNumero?(licTipo+' '+licNumero):licTipo;
+  var obsBase=(obs?(obs+' | '):'')+'['+labelTipo+']';
+  // Tarefa principal
+  tasks.push({id:now2,text:'Licitação - '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataDisputa,alertFired:false,paraQuem:'Licitações',obs:obsBase,priority:'alta',tags:['licitação',municipio,licTipo],pinned:false,duracao:'',link:licLink,_licMunicipio:municipio,_licDataDisputa:dataDisputa,_licHoraDisputa:horaDisputa,_licTipo:licTipo,_licNumero:licNumero});
+  tasks.push({id:now2+1,text:'⚠️ Impugnação — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataImpug,alertFired:false,paraQuem:'Licitações',obs:'Prazo de impugnação — '+municipio+' ('+labelTipo+')
+Lei nº 14.133/2021, Art. 164.',priority:'alta',tags:['licitação','impugnação',municipio],pinned:false,duracao:'',link:licLink,_licMunicipio:municipio,_licDataDisputa:dataDisputa,_licHoraDisputa:horaDisputa,_impugnacaoEnviada:null,_licTipo:licTipo,_licNumero:licNumero});
+  tasks.push({id:now2+2,text:'📋 Análise de Edital — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataAnalise,alertFired:false,paraQuem:'Licitações',obs:'Análise do edital — '+municipio+' ('+labelTipo+')',priority:'alta',tags:['licitação','edital',municipio],pinned:false,duracao:'',link:licLink,_licMunicipio:municipio,_licTipo:licTipo,_licNumero:licNumero});
+  tasks.push({id:now2+3,text:'📤 Início Inclusão da Proposta — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataInicioProposta,alertFired:false,paraQuem:'Licitações',obs:'Iniciar inclusão da proposta — '+municipio+' ('+labelTipo+')
+Lei nº 14.133/2021, Art. 60.',priority:'alta',tags:['licitação','proposta',municipio],pinned:false,duracao:'',link:licLink,_licMunicipio:municipio,_licTipo:licTipo,_licNumero:licNumero});
+  tasks.push({id:now2+4,text:'⚖️ Prazo Final de Impugnação — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataImpug,alertFired:false,paraQuem:'Licitações',obs:'ATENÇÃO: encerra hoje o prazo de impugnação — '+municipio+' ('+labelTipo+')
+Lei nº 14.133/2021, Art. 164.',priority:'alta',tags:['licitação','impugnação',municipio],pinned:false,duracao:'',link:licLink,_licMunicipio:municipio,_licTipo:licTipo,_licNumero:licNumero});
   save();render();atualizarFiltros();
-  licLogRegistrar(municipio,'📌 Licitação cadastrada','Disputa em '+fmtDate(dataDisputa)+' às '+horaDisputa+(obs?' | '+obs:''));
+  // Registrar no log com tipo e número
+  licLogRegistrar(municipio,'📌 Licitação cadastrada','Disputa em '+fmtDate(dataDisputa)+' às '+horaDisputa+' | '+labelTipo);
+  // Salvar automaticamente no Hist. Licitações (aba hist) com tipo e número
+  var listaHist=licHistLoad();
+  listaHist.push({id:Date.now(),municipio:municipio,data:dataDisputa,pregao:labelTipo,resultado:'',vencedor:'',obs:obs||'',link:licLink,criadoEm:new Date().toISOString(),_licTipo:licTipo,_licNumero:licNumero});
+  licHistSave(listaHist);
+  // Limpar campos e fechar
   fecharModalLicitacao();
-  mostrarToast('✅ Licitação criada para '+municipio+' com 5 tarefas!',false);
+  mostrarToast('✅ Licitação criada para '+municipio+' — '+labelTipo+' | 5 tarefas!',false);
   return true;
 }
 function licParticipar(mun){
@@ -3254,8 +3310,15 @@ function _renderLicGrupoHTML(mun, ts, etapasData, mostrarEtapas, histRegs){
   var munEscGrp=mun.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
   var todasConcluidas=ts.every(function(t){return t.done;});
   var html='<div style="margin-bottom:20px;">';
+  // Tipo e número do pregão — pegar da tarefa principal
+  var _tPrinc=ts.find(function(t){return /^licita/i.test(t.text.normalize('NFD').replace(/[\u0300-\u036f]/g,''));});
+  var _licTipoLabel='';
+  if(_tPrinc&&_tPrinc._licTipo){
+    _licTipoLabel=_tPrinc._licTipo+(_tPrinc._licNumero?' '+_tPrinc._licNumero:'');
+  }
   html+='<div style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:600;padding:8px 0 6px;border-bottom:1.5px solid var(--border);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">'+
-    '<span>🏛 '+mun+' <span style="font-size:10px;color:var(--green);font-weight:400;">'+concEt+'/'+totalEt+' etapas</span></span>'+
+    '<span>🏛 '+mun+' <span style="font-size:10px;color:var(--green);font-weight:400;">'+concEt+'/'+totalEt+' etapas</span>'+(_licTipoLabel?' <span style="font-size:10px;color:#6c3483;font-weight:600;background:#f5f0fa;border:1px solid #c9a8e8;border-radius:3px;padding:1px 7px;">'+_licTipoLabel+'</span>':'')+
+    '</span>'+
     (!todasConcluidas?'<button onclick="licConcluirGrupo(\''+munEscGrp+'\')" style="background:#3a8c4a;color:#fff;border:none;border-radius:20px;padding:4px 14px;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.3px;white-space:nowrap;">✅ Concluir Licitação</button>':'')+
     '</div>';
   if(mostrarEtapas){
@@ -3406,7 +3469,7 @@ function licStatPopover(tipo){
     titulo='✅ Licitações concluídas ('+gruposConc.length+')';
     var vencData=licVencedorLoad();
     gruposConc.sort().forEach(function(mun){
-      var venc=vencData[mun]||{};
+      var venc=licVencedorGetMun(mun);
       var resIcon=venc.resultado==='ganhou'?'✅':venc.resultado==='perdeu'?'❌':venc.resultado==='deserto'?'—':venc.resultado==='nao_finalizada'?'⏳':'❓';
       var resCor=venc.resultado==='ganhou'?'#2e7d32':venc.resultado==='perdeu'?'#b03a2e':'#777';
       linhas.push('<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="document.getElementById(\'lic-stat-popover\').remove();mudarAba(\'lic-concluidas\');">'+
@@ -3440,19 +3503,25 @@ function licConcluirGrupo(mun){
   var ts=grupos[mun];
   if(!ts||ts.length===0) return;
   var pendentes=ts.filter(function(t){return !t.done;});
-  if(pendentes.length===0){mudarAba('lic-concluidas');return;}
-  var confirmMsg='Marcar todas as '+pendentes.length+' tarefa(s) de "'+mun+'" como concluídas?';
+  var confirmMsg=pendentes.length>0?
+    'Concluir licitação de "'+mun+'"?\nIsso marcará '+pendentes.length+' tarefa(s) como concluída(s) e registrará no histórico.':
+    'Registrar conclusão de "'+mun+'" no histórico?';
   if(!confirm(confirmMsg)) return;
   var now=timeNow();
+  // Marcar tarefas pendentes como concluídas
   pendentes.forEach(function(t){
     var real=tasks.find(function(x){return x.id===t.id;});
     if(real){real.done=true;real.doneAt=now;}
   });
-  save();
-  render();
-  renderLicitacoes();
-  mostrarToast('✅ Licitação de '+mun+' concluída! Redirecionando…',false);
-  setTimeout(function(){mudarAba('lic-concluidas');},900);
+  save();render();
+  // Registrar no log do Hist. Licitações
+  var tDisp=ts.find(function(t){return /^licita/i.test(t.text.normalize('NFD').replace(/[\u0300-\u036f]/g,''));});
+  var dataDisp=tDisp&&tDisp.taskDate?tDisp.taskDate:'';
+  var labelTipo=(tDisp&&tDisp._licTipo?tDisp._licTipo+(tDisp._licNumero?' '+tDisp._licNumero:''):'');
+  var descLog='Licitação encerrada'+(dataDisp?' — disputa em '+fmtDate(dataDisp):'')+(labelTipo?' | '+labelTipo:'');
+  licLogRegistrar(mun,'🏁 Licitação concluída',descLog);
+  mostrarToast('✅ Licitação de '+mun+' concluída! Registrado no histórico.',false);
+  setTimeout(function(){mudarAba('lic-historico');},600);
 }
 function renderLicitacoes(){
   var lista=document.getElementById('lic-lista');
@@ -3512,96 +3581,107 @@ function renderLicitacoesConcluidas(){
   if(!lista) return;
   var grupos=_getLicGrupos();
   var munKeys=Object.keys(grupos);
-  // Apenas grupos 100% concluídos E em que G&C participou (tem tarefa "Licitação -" com _licMunicipio ou tarefas de impugnação/proposta)
-  var gruposConc=munKeys.filter(function(m){
-    if(!grupos[m].every(function(t){return t.done;})) return false;
-    return grupos[m].some(function(t){return t._licMunicipio||/^licitaç/i.test(t.text.normalize('NFD').replace(/[\u0300-\u036f]/g,''));});
-  });
-  var vencData=licVencedorLoad();
-  // Stats por resultado
-  var nGanhou=0,nPerdeu=0,nDeserto=0,nNaoFinalizada=0,nSemRes=0;
-  gruposConc.forEach(function(m){
-    var v=vencData[m]||{};
-    if(v.resultado==='ganhou') nGanhou++;
-    else if(v.resultado==='perdeu') nPerdeu++;
-    else if(v.resultado==='deserto') nDeserto++;
-    else if(v.resultado==='nao_finalizada') nNaoFinalizada++;
-    else nSemRes++;
+  // TODOS os municípios com licitação criada, independente de concluído ou não
+  var histRegs=licHistLoad();
+  var logRegs=licLogLoad();
+  // Também incluir municípios que só existem no histórico (log ou hist)
+  var munSet={};
+  munKeys.forEach(function(m){munSet[_normMun(m)]=m;});
+  histRegs.forEach(function(r){var n=_normMun(r.municipio);if(!munSet[n])munSet[n]=r.municipio;});
+  logRegs.forEach(function(e){var n=_normMun(e.municipio);if(!munSet[n])munSet[n]=e.municipio;});
+  var todosKeys=Object.keys(munSet).map(function(k){return munSet[k];}).sort(function(a,b){return a.localeCompare(b);});
+  if(todosKeys.length===0){
+    lista.innerHTML='<div class="cert-empty">Nenhuma licitação cadastrada ainda.</div>';
+    stats.innerHTML='';return;
+  }
+  // Stats
+  var nPart=0,nNaoPart=0,nSemDec=0;
+  todosKeys.forEach(function(mun){
+    var log=logRegs.filter(function(e){return _normMun(e.municipio)===_normMun(mun);});
+    var temPart=log.some(function(e){return e.tipo.indexOf('Participamos')>=0&&e.tipo.indexOf('Não')<0;});
+    var temNao=log.some(function(e){return e.tipo.indexOf('Não participou')>=0||e.tipo.indexOf('Não participamos')>=0;});
+    if(temPart) nPart++;
+    else if(temNao) nNaoPart++;
+    else nSemDec++;
   });
   stats.innerHTML=
-    '<div class="cert-stat"><div class="cert-stat-num" style="color:var(--navy)">'+gruposConc.length+'</div><div class="cert-stat-lbl">Total</div></div>'+
-    '<div class="cert-stat"><div class="cert-stat-num" style="color:var(--green)">'+nGanhou+'</div><div class="cert-stat-lbl">Vitórias</div></div>'+
-    '<div class="cert-stat"><div class="cert-stat-num" style="color:var(--red)">'+nPerdeu+'</div><div class="cert-stat-lbl">Derrotas</div></div>'+
-    '<div class="cert-stat"><div class="cert-stat-num" style="color:var(--amber)">'+nNaoFinalizada+'</div><div class="cert-stat-lbl">Aguardando</div></div>';
-  if(gruposConc.length===0){
-    lista.innerHTML='<div class="cert-empty">Nenhuma licitação concluída ainda. Licitações em que G&C participou aparecerão aqui.</div>';
-    return;
-  }
-  var licSort=(document.getElementById('lic-conc-sort')||{}).value||'data';
-  if(licSort==='municipio'){gruposConc.sort();}
-  else if(licSort==='data'){
-    gruposConc.sort(function(a,b){
-      var dataA=grupos[a].map(function(t){return t.taskDate||'0000';}).sort().reverse()[0]||'0000';
-      var dataB=grupos[b].map(function(t){return t.taskDate||'0000';}).sort().reverse()[0]||'0000';
-      return dataB>dataA?1:dataB<dataA?-1:0;
+    '<div class="cert-stat"><div class="cert-stat-num" style="color:var(--navy)">'+todosKeys.length+'</div><div class="cert-stat-lbl">Municípios</div></div>'+
+    '<div class="cert-stat"><div class="cert-stat-num" style="color:var(--green)">'+nPart+'</div><div class="cert-stat-lbl">Participamos</div></div>'+
+    '<div class="cert-stat"><div class="cert-stat-num" style="color:var(--red)">'+nNaoPart+'</div><div class="cert-stat-lbl">Não part.</div></div>'+
+    '<div class="cert-stat"><div class="cert-stat-num" style="color:var(--muted)">'+nSemDec+'</div><div class="cert-stat-lbl">Sem decisão</div></div>';
+  var licSort=(document.getElementById('lic-conc-sort')||{}).value||'municipio';
+  if(licSort==='data'){
+    todosKeys.sort(function(a,b){
+      var ga=grupos[a]||[];var gb=grupos[b]||[];
+      var da=ga.map(function(t){return t.taskDate||'0000';}).sort().reverse()[0]||'0000';
+      var db=gb.map(function(t){return t.taskDate||'0000';}).sort().reverse()[0]||'0000';
+      return db>da?1:db<da?-1:0;
     });
   }
-  var lista_html='';
-  gruposConc.forEach(function(mun){
-    var venc=vencData[mun]||{nome:'',resultado:''};
-    var resCorMap={ganhou:'#e8f5e9',perdeu:'#fde8e8',deserto:'#f5f5f5',nao_finalizada:'#fff8e1'};
-    var resBordMap={ganhou:'var(--green)',perdeu:'var(--red)',deserto:'#aaa',nao_finalizada:'var(--amber)'};
-    var resCor=venc.resultado?resCorMap[venc.resultado]||'#f9f8f6':'#f9f8f6';
-    var resBord=venc.resultado?resBordMap[venc.resultado]||'var(--border)':'var(--border)';
-    var munEscC=mun.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    // Data da disputa — pegar da tarefa principal "Licitação -"
-    var tDisputa=grupos[mun].find(function(t){return /^licitaç/i.test(t.text.normalize('NFD').replace(/[\u0300-\u036f]/g,''));});
-    var dataDisputa=tDisputa&&tDisputa.taskDate?tDisputa.taskDate:'';
-    var horaDisputa=tDisputa&&tDisputa.schedule?tDisputa.schedule:'';
-    var dataFmt=dataDisputa?('<b>'+fmtDate(dataDisputa)+'</b>'+(horaDisputa?' às '+horaDisputa:'')):'—';
-    // Quem faz — puxar do histórico se não estiver em vencData
-    var quemFaz=venc.nome||'';
-    if(!quemFaz){
-      var histRegs=licHistLoad();
-      var munNorm=_normMun(mun);
-      var regsDoMun=histRegs.filter(function(r){return _normMun(r.municipio)===munNorm;});
-      if(regsDoMun.length>0){regsDoMun.sort(function(a,b){return b.data<a.data?-1:1;});quemFaz=regsDoMun[0].vencedor||'';}
-    }
-    var html='<div style="margin-bottom:16px;">';
-    // Cabeçalho
-    var iconeRes=venc.resultado==='ganhou'?'✅':venc.resultado==='perdeu'?'❌':venc.resultado==='deserto'?'—':venc.resultado==='nao_finalizada'?'⏳':'🏛';
-    html+='<div style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--green);font-weight:600;padding:8px 0 6px;border-bottom:1.5px solid '+resBord+';margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;">'+
-      '<span>'+iconeRes+' '+mun+'</span>'+
-      '<span style="font-size:11px;font-weight:400;color:var(--muted);">📅 '+dataFmt+'</span>'+
-      '</div>';
-    // Card único de resultado
-    html+='<div style="background:'+resCor+';border:1.5px solid '+resBord+';border-radius:5px;padding:10px 14px;">';
-    // Quem faz
-    html+='<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">';
-    html+='<span style="font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap;">👤 Quem Faz:</span>';
-    html+='<input type="text" id="qf-'+munEscC+'" value="'+((quemFaz).replace(/"/g,'&quot;'))+'" placeholder="Empresa executora…" '
-      +'style="flex:1;min-width:140px;border:1px solid var(--border);background:#fff;padding:5px 10px;font-size:13px;border-radius:3px;font-family:\'Segoe UI\',Tahoma,sans-serif;color:var(--ink);outline:none;" '
-      +'list="lic-quemfaz-list">';
-    html+='<button onclick="licVencedorSalvar(\''+munEscC+'\',\'nome\',document.getElementById(\'qf-'+munEscC+'\').value)" '
-      +'style="background:#1a5276;color:#fff;border:none;padding:5px 14px;border-radius:3px;font-size:12px;font-weight:600;cursor:pointer;">💾 Salvar</button>';
-    html+='</div>';
-    // Botões resultado
-    html+='<div style="display:flex;gap:6px;flex-wrap:wrap;">';
-    html+='<button onclick="licVencedorSalvar(\''+munEscC+'\',\'resultado\',\'ganhou\')" style="padding:5px 14px;border-radius:20px;border:2px solid #3a8c4a;font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif;'+(venc.resultado==='ganhou'?'background:#3a8c4a;color:#fff;':'background:#fff;color:#3a8c4a;')+'">✅ Ganhamos</button>';
-    html+='<button onclick="licVencedorSalvar(\''+munEscC+'\',\'resultado\',\'perdeu\')" style="padding:5px 14px;border-radius:20px;border:2px solid #b03a2e;font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif;'+(venc.resultado==='perdeu'?'background:#b03a2e;color:#fff;':'background:#fff;color:#b03a2e;')+'">❌ Perdemos</button>';
-    html+='<button onclick="licVencedorSalvar(\''+munEscC+'\',\'resultado\',\'deserto\')" style="padding:5px 14px;border-radius:20px;border:2px solid #aaa;font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif;'+(venc.resultado==='deserto'?'background:#aaa;color:#fff;':'background:#fff;color:#777;')+'">— Deserto</button>';
-    html+='<button onclick="licVencedorSalvar(\''+munEscC+'\',\'resultado\',\'nao_finalizada\')" style="padding:5px 14px;border-radius:20px;border:2px solid var(--amber);font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif;'+(venc.resultado==='nao_finalizada'?'background:var(--amber);color:#fff;':'background:#fff;color:#c78a1a;')+'">⏳ Não Finalizada</button>';
-    html+='</div>';
-    html+='</div></div>';
-    lista_html+=html;
-  });
-  // datalist para autocomplete de quem faz
+  // Autocomplete empresas
   var todasEmpresas=[];
   var vd=licVencedorLoad();
   Object.keys(vd).forEach(function(m){if(vd[m].nome)todasEmpresas.push(vd[m].nome);});
-  licHistLoad().forEach(function(r){if(r.vencedor)todasEmpresas.push(r.vencedor);});
+  histRegs.forEach(function(r){if(r.vencedor)todasEmpresas.push(r.vencedor);});
   todasEmpresas=todasEmpresas.filter(function(v,i,a){return v&&a.indexOf(v)===i;}).sort();
-  lista_html+='<datalist id="lic-quemfaz-list">'+todasEmpresas.map(function(e){return'<option value="'+e.replace(/"/g,'&quot;')+'">'+e+'</option>';}).join('')+'</datalist>';
+
+  var lista_html='<datalist id="lic-quemfaz-list">'+todasEmpresas.map(function(e){return'<option value="'+e.replace(/"/g,'&quot;')+'">'+e+'</option>';}).join('')+'</datalist>';
+
+  todosKeys.forEach(function(mun){
+    var munNorm=_normMun(mun);
+    var venc=licVencedorGetMun(mun);
+    var munLog=logRegs.filter(function(e){return _normMun(e.municipio)===munNorm;});
+    var munHist=histRegs.filter(function(r){return _normMun(r.municipio)===munNorm;});
+    var munTasks=grupos[mun]||[];
+    // Decisão de participação
+    var temPart=munLog.some(function(e){return e.tipo.indexOf('Participamos')>=0&&e.tipo.indexOf('Não')<0;});
+    var temNao=munLog.some(function(e){return e.tipo.indexOf('Não participou')>=0||e.tipo.indexOf('Não participamos')>=0;});
+    var todasConc=munTasks.length>0&&munTasks.every(function(t){return t.done;});
+    // Quem faz — prioridade: vencedor salvo > tarefa principal > histórico
+    var quemFaz=venc.nome||'';
+    if(!quemFaz){
+      var tPrinc=munTasks.find(function(t){return /^licita/i.test(t.text.normalize('NFD').replace(/[\u0300-\u036f]/g,''));});
+      if(tPrinc&&tPrinc._licQuemFaz) quemFaz=tPrinc._licQuemFaz;
+    }
+    if(!quemFaz&&munHist.length>0){
+      var hr=munHist.slice().sort(function(a,b){return b.data<a.data?-1:1;});
+      quemFaz=hr[0].vencedor||'';
+    }
+    // Data da disputa
+    var tDisp=munTasks.find(function(t){return /^licita/i.test(t.text.normalize('NFD').replace(/[\u0300-\u036f]/g,''));});
+    var dataDisp=tDisp&&tDisp.taskDate?tDisp.taskDate:(munHist.length>0?munHist[0].data:'');
+    var labelTipo=tDisp&&tDisp._licTipo?(tDisp._licTipo+(tDisp._licNumero?' '+tDisp._licNumero:'')):
+      (munHist.length>0&&munHist[0].pregao?munHist[0].pregao:'');
+    // Cores por estado
+    var bordCor=temPart?'var(--green)':temNao?'var(--red)':todasConc?'var(--amber)':'var(--border)';
+    var bgCor=temPart?'#f0faf0':temNao?'#fdf0f0':'#f9f8f6';
+    var iconeMun=temPart?'✅':temNao?'❌':todasConc?'🏁':'🏛';
+    var munEscC=mun.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+
+    var html='<div class="cert-card" style="border-left-color:'+bordCor+';background:'+bgCor+';padding:10px 14px;margin-bottom:10px;">';
+    // Linha principal: ícone + nome + data + tipo
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:8px;">';
+    html+='<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">';
+    html+='<span style="font-size:14px;font-weight:700;color:var(--navy);">'+iconeMun+' '+mun+'</span>';
+    if(labelTipo) html+='<span style="font-size:10px;color:#6c3483;background:#f5f0fa;border:1px solid #c9a8e8;border-radius:3px;padding:1px 6px;font-weight:600;">'+labelTipo+'</span>';
+    if(dataDisp) html+='<span style="font-size:11px;color:var(--muted);">📅 '+fmtDate(dataDisp)+'</span>';
+    html+='</div>';
+    // Botão ver histórico
+    html+='<button onclick="mudarAba(\'lic-historico\')" style="background:none;border:1px solid var(--border);border-radius:3px;padding:3px 10px;font-size:11px;cursor:pointer;color:var(--navy);">📋 Ver histórico</button>';
+    html+='</div>';
+    // Quem faz — linha inline editável
+    html+='<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">';
+    html+='<span style="font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap;">👤 Quem Faz:</span>';
+    html+='<input type="text" id="qf-'+munEscC+'" value="'+(quemFaz.replace(/"/g,'&quot;'))+'" placeholder="Empresa executora…" '
+      +'style="flex:1;min-width:140px;border:1px solid var(--border);background:#fff;padding:4px 9px;font-size:12px;border-radius:3px;font-family:\'Segoe UI\',Tahoma,sans-serif;color:var(--ink);outline:none;" '
+      +'list="lic-quemfaz-list" '
+      +'onchange="licVencedorSalvar(\''+munEscC+'\',\'nome\',this.value)">';
+    html+='<button onclick="licVencedorSalvar(\''+munEscC+'\',\'nome\',document.getElementById(\'qf-'+munEscC+'\').value)" '
+      +'style="background:#1a5276;color:#fff;border:none;padding:4px 12px;border-radius:3px;font-size:11px;font-weight:600;cursor:pointer;">💾</button>';
+    html+='</div>';
+    html+='</div>';
+    lista_html+=html;
+  });
   lista.innerHTML=lista_html;
 }
 function imprimirLicitacoesConcluidas(){
@@ -3616,6 +3696,14 @@ function imprimirLicitacoesConcluidas(){
 // ── Vencedor por município (aba Lic. Concluídas) ──
 var LIC_VENCEDOR_KEY='gc_lic_vencedor_v1';
 function licVencedorLoad(){var raw=localStorage.getItem(LIC_VENCEDOR_KEY);return raw?JSON.parse(raw):{};}
+function licVencedorGetMun(mun){
+  // Lookup tolerante a variações de grafia/acento
+  var data=licVencedorLoad();
+  if(data[mun]) return data[mun];
+  var norm=_normMun(mun);
+  var chave=Object.keys(data).find(function(k){return _normMun(k)===norm;});
+  return chave?data[chave]:{nome:'',resultado:''};
+}
 function licVencedorSave(data){
   localStorage.setItem(LIC_VENCEDOR_KEY,JSON.stringify(data));
   if(window._fbSave){
@@ -3629,11 +3717,12 @@ function licVencedorSave(data){
 
 function licVencedorSalvar(mun,campo,valor){
   var data=licVencedorLoad();
-  if(!data[mun])data[mun]={nome:'',resultado:''};
-  data[mun][campo]=valor;
+  // Encontrar chave existente (tolerante a variações)
+  var norm=_normMun(mun);
+  var chaveReal=Object.keys(data).find(function(k){return _normMun(k)===norm;})||mun;
+  if(!data[chaveReal])data[chaveReal]={nome:'',resultado:''};
+  data[chaveReal][campo]=valor;
   licVencedorSave(data);
-  // Rerender suave sem fechar inputs (só atualiza cor do painel)
-  var licSort=(document.getElementById('lic-conc-sort')||{}).value||'municipio';
   renderLicitacoesConcluidas();
 }
 
