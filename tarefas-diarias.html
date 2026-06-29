@@ -429,6 +429,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
     <button class="tab-btn" id="tab-btn-lic-historico" onclick="mudarAba('lic-historico')">📊 Hist. Licitações</button>
     <button class="tab-btn" id="tab-btn-certidoes" onclick="mudarAba('certidoes')">📜 Certidões <span class="tab-badge" id="tab-cert-badge" style="display:none;">!</span></button>
     <button class="tab-btn" id="tab-btn-historico" onclick="mudarAba('historico')">📅 Histórico</button>
+    <button class="tab-btn" id="tab-btn-problemas" onclick="mudarAba('problemas')">⚠️ Problemas <span class="tab-badge" id="tab-prob-badge" style="display:none;background:#b03a2e;">0</span></button>
     <button class="tab-btn" id="tab-btn-busca" onclick="abrirBuscaGlobal()" style="margin-left:auto;">🔍</button>
   </div>
 
@@ -744,6 +745,105 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   </div>
 
   <!-- Aba Histórico -->
+  <!-- Aba Problemas Internos -->
+  <div id="tab-problemas" class="tab-content">
+    <div style="padding:18px 30px 8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:1px;">⚠️ Problemas Internos</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">Registro de ocorrências para pauta de reuniões</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button onclick="probGerarPauta()" style="background:#1a5276;color:#fff;border:none;border-radius:4px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;">📋 Gerar Pauta</button>
+        <button onclick="probNovoModal()" style="background:var(--green);color:#fff;border:none;border-radius:4px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;">+ Novo Problema</button>
+      </div>
+    </div>
+    <!-- Filtros -->
+    <div style="padding:0 30px 12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <select id="prob-filtro-setor" class="filter-select" onchange="probRender()" style="font-size:12px;">
+        <option value="">Todos os setores</option>
+        <option value="Administrativo">Administrativo</option>
+        <option value="Produção">Produção</option>
+      </select>
+      <select id="prob-filtro-status" class="filter-select" onchange="probRender()" style="font-size:12px;">
+        <option value="pendente">Pendentes</option>
+        <option value="resolvido">Resolvidos</option>
+        <option value="">Todos</option>
+      </select>
+      <select id="prob-filtro-prio" class="filter-select" onchange="probRender()" style="font-size:12px;">
+        <option value="">Todas as prioridades</option>
+        <option value="alta">🔴 Alta</option>
+        <option value="media">🟡 Média</option>
+        <option value="baixa">🟢 Baixa</option>
+      </select>
+    </div>
+    <div id="prob-stats-row" style="display:flex;gap:12px;padding:0 30px 14px;flex-wrap:wrap;"></div>
+    <div id="prob-lista" style="padding:0 30px 24px;background:var(--cream);"></div>
+  </div>
+
+  <!-- Modal Novo Problema -->
+  <div id="prob-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-box" style="max-width:520px;">
+      <div class="modal-header">
+        <span id="prob-modal-titulo">⚠️ Novo Problema Interno</span>
+        <button class="modal-close" onclick="probFecharModal()">×</button>
+      </div>
+      <div style="padding:18px 20px;">
+        <div class="modal-field" style="margin-bottom:12px;">
+          <label>📌 Título do Problema</label>
+          <input type="text" id="prob-titulo" class="modal-input" placeholder="Descreva o problema resumidamente…">
+        </div>
+        <div class="modal-row" style="margin-bottom:12px;">
+          <div class="modal-field">
+            <label>🏢 Setor</label>
+            <select id="prob-setor" class="modal-input">
+              <option value="Administrativo">Administrativo</option>
+              <option value="Produção">Produção</option>
+            </select>
+          </div>
+          <div class="modal-field">
+            <label>🎯 Prioridade</label>
+            <select id="prob-prioridade" class="modal-input">
+              <option value="alta">🔴 Alta</option>
+              <option value="media">🟡 Média</option>
+              <option value="baixa">🟢 Baixa</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-field" style="margin-bottom:12px;">
+          <label>📝 Descrição detalhada</label>
+          <textarea id="prob-descricao" class="modal-textarea" placeholder="Detalhe o problema, quando ocorreu, impacto…" style="min-height:80px;"></textarea>
+        </div>
+        <div id="prob-resolucao-area" style="display:none;">
+          <div class="modal-field" style="margin-bottom:12px;">
+            <label>✅ Decisão/Resolução tomada</label>
+            <textarea id="prob-resolucao" class="modal-textarea" placeholder="O que foi decidido na reunião…" style="min-height:60px;"></textarea>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+          <button onclick="probFecharModal()" class="btn-modal-cancel">Cancelar</button>
+          <button id="prob-btn-salvar" onclick="probSalvar()" style="background:var(--green);color:#fff;border:none;padding:8px 22px;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer;">💾 Salvar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Pauta -->
+  <div id="prob-pauta-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-box" style="max-width:600px;">
+      <div class="modal-header">
+        <span>📋 Pauta da Reunião</span>
+        <button class="modal-close" onclick="document.getElementById('prob-pauta-modal').style.display='none'">×</button>
+      </div>
+      <div style="padding:18px 20px;">
+        <div id="prob-pauta-conteudo" style="font-size:13px;line-height:1.8;white-space:pre-wrap;background:#f9f8f6;border:1px solid var(--border);border-radius:4px;padding:14px;max-height:400px;overflow-y:auto;font-family:'Segoe UI',Tahoma,sans-serif;"></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">
+          <button onclick="probCopiarPauta()" style="background:#1a5276;color:#fff;border:none;padding:8px 18px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;">📋 Copiar</button>
+          <button onclick="window.print()" style="background:var(--navy);color:#fff;border:none;padding:8px 18px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;">🖨️ Imprimir</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="tab-historico" class="tab-content">
   <div class="action-bar" style="justify-content:space-between;flex-wrap:wrap;gap:8px;">
     <span style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.3px;color:var(--muted);font-weight:600;">📅 Histórico</span>
@@ -2391,7 +2491,9 @@ function makeEl(t){
   ba.onclick=(function(id){return function(){arquivarTarefa(id);};})(t.id);
   var bd=document.createElement('button');bd.className='btn-icon del';bd.textContent='×';bd.title='Remover';bd.style.fontSize='20px';
   bd.onclick=(function(id){return function(){del(id);};})(t.id);
-  acts.appendChild(be);acts.appendChild(bdup);acts.appendChild(bo);acts.appendChild(bpin);acts.appendChild(ba);acts.appendChild(bd);
+  var bprob=document.createElement('button');bprob.className='btn-icon';bprob.textContent='⚠️';bprob.title='Enviar para Problemas Internos';bprob.style.fontSize='13px';
+  bprob.onclick=(function(task){return function(){probEnviarDeTarefa(task);};})(t);
+  acts.appendChild(be);acts.appendChild(bdup);acts.appendChild(bo);acts.appendChild(bpin);acts.appendChild(ba);acts.appendChild(bprob);acts.appendChild(bd);
   div.appendChild(chk);div.appendChild(body);div.appendChild(tm);div.appendChild(acts);
   // ── Swipe mobile (touch) ──
   if(!t._futuro){
@@ -3257,7 +3359,7 @@ function certExportCSV(){
   a.click();
 }
 function mudarAba(aba){
-  ['tarefas','licitacoes','lic-concluidas','lic-historico','certidoes','historico'].forEach(function(a){
+  ['tarefas','licitacoes','lic-concluidas','lic-historico','certidoes','historico','problemas'].forEach(function(a){
     var tabEl=document.getElementById('tab-'+a);
     if(tabEl) tabEl.classList.toggle('active', a===aba);
     var btn=document.getElementById('tab-btn-'+a);
@@ -3271,6 +3373,7 @@ function mudarAba(aba){
   if(aba==='lic-concluidas') renderLicitacoesConcluidas();
   if(aba==='lic-historico') licHistRender();
   if(aba==='historico'){histPeriodo(7);}
+  if(aba==='problemas'){probRender();}
 }
 
 function imprimirLicitacoes(){
@@ -4526,6 +4629,211 @@ document.addEventListener('firebase-ready', function(){
   var el=document.getElementById('sync-txt');
   if(el) el.textContent='Conectado ✅';
 });
+// ── Problemas Internos ──
+var PROB_KEY='gc_problemas_v1';
+function probEnviarDeTarefa(t){
+  // Pedir setor e prioridade
+  var setor=confirm('Setor:\nOK = Administrativo\nCancelar = Produção')?'Administrativo':'Produção';
+  var prioOpts=['alta','media','baixa'];
+  var prioResposta=prompt('Prioridade:\n1 = 🔴 Alta\n2 = 🟡 Média\n3 = 🟢 Baixa','1');
+  if(prioResposta===null) return;
+  var prio=prioOpts[(parseInt(prioResposta)||1)-1]||'alta';
+  var probs=probLoad();
+  probs.push({
+    id:Date.now(),
+    titulo:t.text,
+    descricao:t.obs||'',
+    setor:setor,
+    prioridade:prio,
+    resolvido:false,
+    resolucao:'',
+    criadoEm:new Date().toISOString(),
+    origemTarefaId:t.id
+  });
+  probSaveData(probs);
+  mostrarToast('⚠️ Enviado para Problemas Internos!',false);
+  if(confirm('Ir para a aba Problemas Internos agora?')) mudarAba('problemas');
+}
+function probLoad(){var r=localStorage.getItem(PROB_KEY);return r?JSON.parse(r):[];}
+function probSaveData(data){localStorage.setItem(PROB_KEY,JSON.stringify(data));probAtualizarBadge();}
+function probAtualizarBadge(){
+  var pend=probLoad().filter(function(p){return!p.resolvido;}).length;
+  var badge=document.getElementById('tab-prob-badge');
+  if(badge){badge.style.display=pend>0?'':'none';badge.textContent=pend;}
+}
+var _probEditId=null;
+function probNovoModal(){
+  _probEditId=null;
+  document.getElementById('prob-titulo').value='';
+  document.getElementById('prob-descricao').value='';
+  document.getElementById('prob-setor').value='Administrativo';
+  document.getElementById('prob-prioridade').value='alta';
+  document.getElementById('prob-resolucao-area').style.display='none';
+  document.getElementById('prob-modal-titulo').textContent='⚠️ Novo Problema Interno';
+  document.getElementById('prob-modal').style.display='flex';
+  setTimeout(function(){document.getElementById('prob-titulo').focus();},80);
+}
+function probEditarModal(id){
+  var probs=probLoad();
+  var p=probs.find(function(x){return x.id===id;});
+  if(!p) return;
+  _probEditId=id;
+  document.getElementById('prob-titulo').value=p.titulo||'';
+  document.getElementById('prob-descricao').value=p.descricao||'';
+  document.getElementById('prob-setor').value=p.setor||'Administrativo';
+  document.getElementById('prob-prioridade').value=p.prioridade||'alta';
+  document.getElementById('prob-resolucao-area').style.display=p.resolvido?'block':'none';
+  document.getElementById('prob-resolucao').value=p.resolucao||'';
+  document.getElementById('prob-modal-titulo').textContent='✏️ Editar Problema';
+  document.getElementById('prob-modal').style.display='flex';
+}
+function probFecharModal(){document.getElementById('prob-modal').style.display='none';_probEditId=null;}
+function probSalvar(){
+  var titulo=document.getElementById('prob-titulo').value.trim();
+  if(!titulo){alert('Informe o título do problema.');return;}
+  var probs=probLoad();
+  if(_probEditId){
+    var p=probs.find(function(x){return x.id===_probEditId;});
+    if(p){
+      p.titulo=titulo;
+      p.descricao=document.getElementById('prob-descricao').value.trim();
+      p.setor=document.getElementById('prob-setor').value;
+      p.prioridade=document.getElementById('prob-prioridade').value;
+      if(p.resolvido) p.resolucao=document.getElementById('prob-resolucao').value.trim();
+    }
+  } else {
+    probs.push({
+      id:Date.now(),
+      titulo:titulo,
+      descricao:document.getElementById('prob-descricao').value.trim(),
+      setor:document.getElementById('prob-setor').value,
+      prioridade:document.getElementById('prob-prioridade').value,
+      resolvido:false,
+      resolucao:'',
+      criadoEm:new Date().toISOString()
+    });
+  }
+  probSaveData(probs);probFecharModal();probRender();
+  mostrarToast('✅ Problema salvo!',false);
+}
+function probResolver(id){
+  var resolucao=prompt('Decisão/resolução tomada nesta reunião:','');
+  if(resolucao===null) return;
+  var probs=probLoad();
+  var p=probs.find(function(x){return x.id===id;});
+  if(p){p.resolvido=true;p.resolucao=resolucao||'Resolvido sem anotação';p.resolvidoEm=new Date().toISOString();}
+  probSaveData(probs);probRender();
+  mostrarToast('✅ Problema marcado como resolvido!',false);
+}
+function probExcluir(id){
+  if(!confirm('Excluir este problema?')) return;
+  var probs=probLoad().filter(function(x){return x.id!==id;});
+  probSaveData(probs);probRender();
+}
+function probRender(){
+  var lista=document.getElementById('prob-lista');
+  var stats=document.getElementById('prob-stats-row');
+  if(!lista) return;
+  var probs=probLoad();
+  var filtroSetor=(document.getElementById('prob-filtro-setor')||{}).value||'';
+  var filtroStatus=(document.getElementById('prob-filtro-status')||{}).value||'pendente';
+  var filtroPrio=(document.getElementById('prob-filtro-prio')||{}).value||'';
+  // Stats
+  var total=probs.length;
+  var pend=probs.filter(function(p){return!p.resolvido;}).length;
+  var resol=probs.filter(function(p){return p.resolvido;}).length;
+  var alta=probs.filter(function(p){return!p.resolvido&&p.prioridade==='alta';}).length;
+  stats.innerHTML=
+    '<div class="cert-stat"><div class="cert-stat-num" style="color:var(--navy)">'+total+'</div><div class="cert-stat-lbl">Total</div></div>'+
+    '<div class="cert-stat"><div class="cert-stat-num" style="color:var(--amber)">'+pend+'</div><div class="cert-stat-lbl">Pendentes</div></div>'+
+    '<div class="cert-stat"><div class="cert-stat-num" style="color:var(--red)">'+alta+'</div><div class="cert-stat-lbl">Alta prior.</div></div>'+
+    '<div class="cert-stat"><div class="cert-stat-num" style="color:var(--green)">'+resol+'</div><div class="cert-stat-lbl">Resolvidos</div></div>';
+  // Filtrar
+  var filtrados=probs.filter(function(p){
+    if(filtroSetor&&p.setor!==filtroSetor) return false;
+    if(filtroStatus==='pendente'&&p.resolvido) return false;
+    if(filtroStatus==='resolvido'&&!p.resolvido) return false;
+    if(filtroPrio&&p.prioridade!==filtroPrio) return false;
+    return true;
+  });
+  // Ordenar: alta primeiro, depois data
+  var ordemPrio={alta:0,media:1,baixa:2};
+  filtrados.sort(function(a,b){
+    if(!a.resolvido&&b.resolvido) return -1;
+    if(a.resolvido&&!b.resolvido) return 1;
+    var op=(ordemPrio[a.prioridade]||1)-(ordemPrio[b.prioridade]||1);
+    if(op!==0) return op;
+    return a.criadoEm<b.criadoEm?-1:1;
+  });
+  if(filtrados.length===0){
+    lista.innerHTML='<div class="cert-empty">Nenhum problema encontrado.</div>';
+    return;
+  }
+  var prioCor={alta:'#b03a2e',media:'#c78a1a',baixa:'#2e7d32'};
+  var prioLabel={alta:'🔴 Alta',media:'🟡 Média',baixa:'🟢 Baixa'};
+  var prioBg={alta:'#fde8e8',media:'#fff8e1',baixa:'#e8f5e9'};
+  var html='';
+  filtrados.forEach(function(p){
+    var cor=prioCor[p.prioridade]||'#555';
+    var bg=p.resolvido?'#f0faf0':prioBg[p.prioridade]||'#f9f8f6';
+    var bord=p.resolvido?'var(--green)':cor;
+    var dt=new Date(p.criadoEm).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+    html+='<div class="cert-card" style="border-left-color:'+bord+';background:'+bg+';padding:12px 14px;margin-bottom:10px;">';
+    // Cabeçalho
+    html+='<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px;">';
+    html+='<div>';
+    html+='<span style="font-size:13px;font-weight:700;color:var(--navy);">'+(p.resolvido?'✅ ':'⚠️ ')+p.titulo+'</span>';
+    html+='<span style="margin-left:8px;font-size:10px;background:'+cor+';color:#fff;border-radius:10px;padding:1px 8px;font-weight:700;">'+prioLabel[p.prioridade]+'</span>';
+    html+='<span style="margin-left:6px;font-size:10px;background:#e8eaf6;color:#3949ab;border-radius:10px;padding:1px 8px;font-weight:600;">'+p.setor+'</span>';
+    html+='</div>';
+    html+='<div style="display:flex;gap:4px;white-space:nowrap;">';
+    if(!p.resolvido) html+='<button onclick="probResolver('+p.id+')" style="background:#3a8c4a;color:#fff;border:none;border-radius:3px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;">✅ Resolvido</button>';
+    html+='<button onclick="probEditarModal('+p.id+')" style="background:none;border:1px solid #bbb;border-radius:3px;padding:3px 7px;font-size:11px;cursor:pointer;">✏️</button>';
+    html+='<button onclick="probExcluir('+p.id+')" style="background:none;border:1px solid #e57373;border-radius:3px;padding:3px 7px;font-size:11px;cursor:pointer;color:#c0392b;">×</button>';
+    html+='</div></div>';
+    // Descrição
+    if(p.descricao) html+='<div style="font-size:12px;color:var(--ink);margin-bottom:4px;">'+p.descricao+'</div>';
+    // Resolução
+    if(p.resolvido&&p.resolucao) html+='<div style="font-size:11px;color:#2e7d32;font-style:italic;margin-top:4px;">📌 Decisão: '+p.resolucao+'</div>';
+    // Data
+    html+='<div style="font-size:10px;color:var(--muted);margin-top:6px;">Registrado em '+dt+(p.resolvido?' · Resolvido em '+new Date(p.resolvidoEm).toLocaleDateString('pt-BR'):'')+'</div>';
+    html+='</div>';
+  });
+  lista.innerHTML=html;
+}
+function probGerarPauta(){
+  var probs=probLoad().filter(function(p){return!p.resolvido;});
+  if(probs.length===0){mostrarToast('Nenhum problema pendente para a pauta.',false);return;}
+  var ordemPrio={alta:0,media:1,baixa:2};
+  probs.sort(function(a,b){return (ordemPrio[a.prioridade]||1)-(ordemPrio[b.prioridade]||1)||a.criadoEm.localeCompare(b.criadoEm);});
+  var hoje=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+  var txt='GALHARDO & CANALES — PAUTA DE REUNIÃO\n';
+  txt+='Data: '+hoje+'\n';
+  txt+='━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n';
+  var setores=['Administrativo','Produção'];
+  setores.forEach(function(setor){
+    var doSetor=probs.filter(function(p){return p.setor===setor;});
+    if(doSetor.length===0) return;
+    txt+='▌ '+setor.toUpperCase()+'\n';
+    txt+='─────────────────────────────────────────\n';
+    doSetor.forEach(function(p,i){
+      var prio={alta:'[ALTA]',media:'[MÉDIA]',baixa:'[BAIXA]'}[p.prioridade]||'';
+      txt+=(i+1)+'. '+prio+' '+p.titulo+'\n';
+      if(p.descricao) txt+'   '+p.descricao+'\n';
+      txt+='\n';
+    });
+  });
+  txt+='━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n';
+  txt+='Total: '+probs.length+' item(ns) na pauta';
+  document.getElementById('prob-pauta-conteudo').textContent=txt;
+  document.getElementById('prob-pauta-modal').style.display='flex';
+}
+function probCopiarPauta(){
+  var txt=document.getElementById('prob-pauta-conteudo').textContent;
+  navigator.clipboard.writeText(txt).then(function(){mostrarToast('📋 Pauta copiada!',false);});
+}
+(function(){probAtualizarBadge();})();
+
 </script>
 </body>
 </html>
