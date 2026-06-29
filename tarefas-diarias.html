@@ -3396,7 +3396,10 @@ function _renderLicGrupoHTML(mun, ts, etapasData, mostrarEtapas, histRegs){
       '<div class="cert-card-top">'+
       '<span class="cert-card-name">'+t.text+diasBadge+'</span>'+
       '<span style="display:flex;gap:4px;align-items:center;">'+
-      '<span class="cert-badge" style="background:'+(t.done?'#e8f5e9':'#fff8e1')+';color:'+(t.done?'#2e7d32':'#c78a1a')+';border:1px solid '+(t.done?'#c8e6c9':'#ffe082')+';">'+statusTxt+'</span>'+
+      (!t.done?
+        '<button onclick="licToggleTarefaHist('+tidLic+',\''+munEscGrp+'\')" style="background:#fff8e1;color:#c78a1a;border:1px solid #ffe082;border-radius:3px;padding:2px 9px;font-size:12px;cursor:pointer;font-family:sans-serif;font-weight:600;" title="Clique para concluir">⏳ Pendente</button>':
+        '<button onclick="mudarAba(\'lic-historico\')" style="background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9;border-radius:3px;padding:2px 9px;font-size:12px;cursor:pointer;font-family:sans-serif;font-weight:600;" title="Ver no histórico">✔ Concluída</button>'
+      )+
       '<button onclick="abrirModalEdicao('+tidLic+')" style="background:none;border:1px solid #bbb;border-radius:3px;padding:2px 7px;font-size:12px;cursor:pointer;color:#555;" title="Editar">✏️</button>'+
       '<button onclick="del('+tidLic+')" style="background:none;border:1px solid #e57373;border-radius:3px;padding:2px 7px;font-size:12px;cursor:pointer;color:#c0392b;" title="Excluir">×</button>'+
       '</span>'+
@@ -3494,6 +3497,17 @@ function licStatPopover(tipo){
   overlay.onclick=function(){pop.remove();overlay.remove();};
   document.body.appendChild(overlay);
   document.body.appendChild(pop);
+}
+function licToggleTarefaHist(id, mun){
+  var t=tasks.find(function(x){return x.id===id;});
+  if(!t||t.done) return;
+  t.done=true;t.doneAt=timeNow();
+  save();
+  // Registrar no log
+  licLogRegistrar(mun,'✔ '+t.text.substring(0,50),'Tarefa concluída');
+  renderLicitacoes();
+  mostrarToast('✔ Concluído: '+t.text.substring(0,40)+'…',false);
+  setTimeout(function(){mudarAba('lic-historico');},600);
 }
 function licConcluirGrupo(mun){
   var grupos=_getLicGrupos();
