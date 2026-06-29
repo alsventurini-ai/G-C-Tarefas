@@ -3501,13 +3501,14 @@ function licStatPopover(tipo){
 function licToggleTarefaHist(id, mun){
   var t=tasks.find(function(x){return x.id===id;});
   if(t&&!t.done){
-    t.done=true;t.doneAt=timeNow();
-    save();
+    t.done=true;
+    t.doneAt=timeNow();
     licLogRegistrar(mun,'✔ '+t.text.substring(0,50),'Tarefa concluída');
+    save();
+    render();
     renderLicitacoes();
-    mostrarToast('✔ Concluído: '+t.text.substring(0,40)+'…',false);
+    mostrarToast('✔ Concluído: '+t.text.substring(0,40),false);
   }
-  // Sempre navega para Hist. Licitações
   mudarAba('lic-historico');
 }
 function licConcluirGrupo(mun){
