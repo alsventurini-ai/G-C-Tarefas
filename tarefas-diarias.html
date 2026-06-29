@@ -423,7 +423,6 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
 
   <!-- Abas -->
   <div class="tab-bar">
-    <button class="tab-btn" id="tab-btn-dashboard" onclick="mudarAba('dashboard')">🏠 Dashboard</button>
     <button class="tab-btn active" id="tab-btn-tarefas" onclick="mudarAba('tarefas')">📋 Tarefas</button>
     <button class="tab-btn" id="tab-btn-licitacoes" onclick="mudarAba('licitacoes')">🏛 Licitações <span class="tab-badge" id="tab-lic-badge" style="display:none;">0</span></button>
     <button class="tab-btn" id="tab-btn-lic-concluidas" onclick="mudarAba('lic-concluidas')">✅ Lic. Concluídas <span class="tab-badge" id="tab-lic-conc-badge" style="display:none;background:#3a8c4a;">0</span></button>
@@ -432,46 +431,6 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
     <button class="tab-btn" id="tab-btn-historico" onclick="mudarAba('historico')">📅 Histórico</button>
     <button class="tab-btn" id="tab-btn-problemas" onclick="mudarAba('problemas')">⚠️ Problemas <span class="tab-badge" id="tab-prob-badge" style="display:none;background:#b03a2e;">0</span></button>
     <button class="tab-btn" id="tab-btn-busca" onclick="abrirBuscaGlobal()" style="margin-left:auto;">🔍</button>
-  </div>
-
-  <!-- Aba Dashboard -->
-  <div id="tab-dashboard" class="tab-content">
-    <div style="padding:18px 30px 8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-      <div>
-        <div style="font-size:13px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:1px;">🏠 Dashboard</div>
-        <div id="dash-data-hoje" style="font-size:11px;color:var(--muted);margin-top:2px;"></div>
-      </div>
-      <div style="display:flex;gap:8px;">
-        <button onclick="dashGerarRelatorio()" style="background:#1a5276;color:#fff;border:none;border-radius:4px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;">📄 Relatório Mensal</button>
-        <button onclick="dashAtualizar()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:7px 12px;font-size:12px;cursor:pointer;color:var(--navy);">🔄 Atualizar</button>
-      </div>
-    </div>
-    <div id="dash-conteudo" style="padding:8px 30px 24px;"></div>
-  </div>
-
-  <!-- Modal Relatório Mensal -->
-  <div id="relatorio-modal" class="modal-overlay" style="display:none;">
-    <div class="modal-box" style="max-width:700px;max-height:90vh;display:flex;flex-direction:column;">
-      <div class="modal-header">
-        <span>📄 Relatório Mensal</span>
-        <button class="modal-close" onclick="document.getElementById('relatorio-modal').style.display='none'">×</button>
-      </div>
-      <div style="padding:12px 20px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--border);">
-        <label style="font-size:12px;font-weight:600;color:var(--navy);">Período:</label>
-        <select id="rel-mes" style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:3px;">
-          <option value="0">Janeiro</option><option value="1">Fevereiro</option><option value="2">Março</option>
-          <option value="3">Abril</option><option value="4">Maio</option><option value="5">Junho</option>
-          <option value="6">Julho</option><option value="7">Agosto</option><option value="8">Setembro</option>
-          <option value="9">Outubro</option><option value="10">Novembro</option><option value="11">Dezembro</option>
-        </select>
-        <select id="rel-ano" style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:3px;">
-        </select>
-        <button onclick="relGerar()" style="background:#1a5276;color:#fff;border:none;padding:5px 14px;border-radius:3px;font-size:12px;font-weight:700;cursor:pointer;">Gerar</button>
-        <button onclick="relImprimir()" style="background:#2c3e50;color:#fff;border:none;padding:5px 14px;border-radius:3px;font-size:12px;font-weight:700;cursor:pointer;">🖨️ Imprimir / PDF</button>
-        <button onclick="document.getElementById('relatorio-modal').style.display='none'" style="background:#5d6d7e;color:#fff;border:none;padding:5px 14px;border-radius:3px;font-size:12px;font-weight:700;cursor:pointer;">✕ Fechar</button>
-      </div>
-      <div id="relatorio-preview" style="flex:1;overflow-y:auto;padding:16px 20px;background:#f5f5f5;"></div>
-    </div>
   </div>
 
   <!-- Aba Tarefas -->
@@ -1217,9 +1176,6 @@ document.dispatchEvent(new Event('firebase-ready'));
 </script>
 
 <script>
-// ── Imagens do cabeçalho/rodapé G&C ──
-var GC_HEADER_IMG='';
-var GC_FOOTER_IMG='';
 
 var tasks=[],recorrencias=[],archived=[],templates=[];
 var KEY='gc_tarefas_v3',RECORR_KEY='gc_recorrencias',DATE_KEY='gc_last_date',ARCH_KEY='gc_archived',TPL_KEY='gc_templates';
@@ -3405,7 +3361,7 @@ function certExportCSV(){
   a.click();
 }
 function mudarAba(aba){
-  ['dashboard','tarefas','licitacoes','lic-concluidas','lic-historico','certidoes','historico','problemas'].forEach(function(a){
+  ['tarefas','licitacoes','lic-concluidas','lic-historico','certidoes','historico','problemas'].forEach(function(a){
     var tabEl=document.getElementById('tab-'+a);
     if(tabEl) tabEl.classList.toggle('active', a===aba);
     var btn=document.getElementById('tab-btn-'+a);
@@ -3420,7 +3376,6 @@ function mudarAba(aba){
   if(aba==='lic-historico') licHistRender();
   if(aba==='historico'){histPeriodo(7);}
   if(aba==='problemas'){probRender();}
-  if(aba==='dashboard'){dashAtualizar();}
 }
 
 function imprimirLicitacoes(){
@@ -4922,259 +4877,7 @@ function probImprimirPauta(){
 }
 (function(){probAtualizarBadge();})();
 
-// ── Dashboard ──
-function dashAtualizar(){
-  var el=document.getElementById('dash-conteudo');
-  var dtEl=document.getElementById('dash-data-hoje');
-  if(!el) return;
-  var hoje=new Date();hoje.setHours(0,0,0,0);
-  var hojeStr=hoje.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
-  if(dtEl) dtEl.textContent=hojeStr;
-  // Tarefas do dia
-  var tarefasHoje=tasks.filter(function(t){return !t.done&&!t._futuro&&t.taskDate===todayStr;});
-  var tarefasAtrasadas=tasks.filter(function(t){
-    if(t.done||t._futuro||!t.taskDate) return false;
-    return new Date(t.taskDate+'T00:00:00')<hoje;
-  });
-  var tarefasSemana=tasks.filter(function(t){
-    if(t.done||t._futuro||!t.taskDate) return false;
-    var d=new Date(t.taskDate+'T00:00:00');
-    var diff=Math.round((d-hoje)/86400000);
-    return diff>0&&diff<=7;
-  });
-  // Licitações da semana
-  var grupos=_getLicGrupos();
-  var licsSemanaMuns=Object.keys(grupos).filter(function(mun){
-    return grupos[mun].some(function(t){
-      if(t.done||!t.taskDate) return false;
-      var d=new Date(t.taskDate+'T00:00:00');
-      var diff=Math.round((d-hoje)/86400000);
-      return diff>=0&&diff<=7;
-    });
-  });
-  // Certidões vencendo
-  var certVenc=certidoes.filter(function(c){
-    if(!c.validade) return false;
-    var d=new Date(c.validade+'T00:00:00');
-    var diff=Math.round((d-hoje)/86400000);
-    return diff>=0&&diff<=30;
-  });
-  var certVenc7=certidoes.filter(function(c){
-    if(!c.validade) return false;
-    var d=new Date(c.validade+'T00:00:00');
-    var diff=Math.round((d-hoje)/86400000);
-    return diff>=0&&diff<=7;
-  });
-  // Problemas pendentes
-  var probPend=probLoad().filter(function(p){return !p.resolvido;});
-  var probAlta=probPend.filter(function(p){return p.prioridade==='alta';});
 
-  var html='';
-  // Cards de resumo
-  html+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px;">';
-  html+=dashCard('📋','Tarefas Hoje',tarefasHoje.length,tarefasAtrasadas.length>0?'⚠️ '+tarefasAtrasadas.length+' atrasada(s)':'','var(--navy)','tarefas');
-  html+=dashCard('⏳','Esta Semana',tarefasSemana.length,'próximos 7 dias','var(--amber)','tarefas');
-  html+=dashCard('🏛','Licitações',licsSemanaMuns.length,'com prazo esta semana','#6c3483','licitacoes');
-  html+=dashCard('📜','Certidões',certVenc7.length,'vencendo em 7 dias',certVenc7.length>0?'var(--red)':'var(--green)','certidoes');
-  html+=dashCard('⚠️','Problemas',probPend.length,probAlta.length+' alta prioridade',probAlta.length>0?'var(--red)':'var(--amber)','problemas');
-  html+='</div>';
-
-  // Tarefas do dia
-  html+='<div style="margin-bottom:20px;">';
-  html+='<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;">📋 Resumo do Dia</div>';
-  if(tarefasHoje.length===0&&tarefasAtrasadas.length===0){
-    html+='<div style="color:var(--muted);font-size:13px;padding:12px;background:var(--white);border-radius:4px;border:1px solid var(--border);">Nenhuma tarefa para hoje. ✅</div>';
-  } else {
-    var todasHoje=tarefasAtrasadas.concat(tarefasHoje).slice(0,8);
-    todasHoje.forEach(function(t){
-      var atrasada=new Date(t.taskDate+'T00:00:00')<hoje;
-      html+='<div style="display:flex;align-items:center;gap:8px;padding:7px 12px;background:var(--white);border-radius:4px;border:1px solid '+(atrasada?'var(--red)':'var(--border)')+';margin-bottom:4px;">';
-      html+='<span style="font-size:11px;font-weight:700;color:'+(atrasada?'var(--red)':'var(--muted)')+';">'+(atrasada?'⚠️ ATRASADA':'HOJE')+'</span>';
-      html+='<span style="font-size:12px;flex:1;color:var(--navy);">'+t.text+'</span>';
-      if(t.schedule) html+='<span style="font-size:11px;color:var(--muted);">'+t.schedule+'</span>';
-      html+='</div>';
-    });
-    if(tarefasHoje.length+tarefasAtrasadas.length>8) html+='<div style="font-size:11px;color:var(--muted);padding:4px 0;">...e mais '+(tarefasHoje.length+tarefasAtrasadas.length-8)+' tarefa(s)</div>';
-  }
-  html+='</div>';
-
-  // Licitações da semana
-  html+='<div style="margin-bottom:20px;">';
-  html+='<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;">🏛 Licitações desta Semana</div>';
-  if(licsSemanaMuns.length===0){
-    html+='<div style="color:var(--muted);font-size:13px;padding:12px;background:var(--white);border-radius:4px;border:1px solid var(--border);">Nenhuma licitação esta semana.</div>';
-  } else {
-    licsSemanaMuns.forEach(function(mun){
-      var tDisp=grupos[mun].find(function(t){return /^licita/i.test(t.text.normalize('NFD').replace(/[\u0300-\u036f]/g,''));});
-      var dataDisp=tDisp&&tDisp.taskDate?fmtDate(tDisp.taskDate):'';
-      var hora=tDisp&&tDisp.schedule?tDisp.schedule:'';
-      var tipo=tDisp&&tDisp._licTipo?(tDisp._licTipo+(tDisp._licNumero?' '+tDisp._licNumero:'')):'';
-      var diff=tDisp&&tDisp.taskDate?Math.round((new Date(tDisp.taskDate+'T00:00:00')-hoje)/86400000):99;
-      var urgCor=diff===0?'var(--red)':diff<=2?'var(--red)':diff<=5?'var(--amber)':'var(--navy)';
-      html+='<div style="display:flex;align-items:center;gap:8px;padding:7px 12px;background:var(--white);border-radius:4px;border:1px solid var(--border);margin-bottom:4px;">';
-      html+='<span style="font-size:12px;font-weight:700;flex:1;color:var(--navy);">🏛 '+mun+'</span>';
-      if(tipo) html+='<span style="font-size:10px;color:#6c3483;background:#f5f0fa;border:1px solid #c9a8e8;border-radius:3px;padding:1px 6px;">'+tipo+'</span>';
-      html+='<span style="font-size:11px;font-weight:700;color:'+urgCor+';">'+dataDisp+(hora?' '+hora:'')+'</span>';
-      html+='</div>';
-    });
-  }
-  html+='</div>';
-
-  // Problemas pendentes alta prioridade
-  if(probAlta.length>0){
-    html+='<div style="margin-bottom:20px;">';
-    html+='<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;">⚠️ Problemas Alta Prioridade</div>';
-    probAlta.slice(0,5).forEach(function(p){
-      html+='<div style="display:flex;align-items:center;gap:8px;padding:7px 12px;background:#fde8e8;border-radius:4px;border:1px solid var(--red);margin-bottom:4px;">';
-      html+='<span style="font-size:11px;font-weight:700;color:var(--red);">🔴 '+p.setor+'</span>';
-      html+='<span style="font-size:12px;flex:1;color:#8b2018;">'+p.titulo+'</span>';
-      html+='</div>';
-    });
-    html+='</div>';
-  }
-
-  el.innerHTML=html;
-}
-function dashCard(ico,label,num,sub,cor,aba){
-  return '<div onclick="mudarAba(''+aba+'')" style="background:var(--white);border:1px solid var(--border);border-radius:6px;padding:14px;cursor:pointer;transition:box-shadow .15s;" onmouseover="this.style.boxShadow='0 2px 10px rgba(0,0,0,.1)'" onmouseout="this.style.boxShadow='none'">'
-    +'<div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px;">'+ico+' '+label+'</div>'
-    +'<div style="font-size:28px;font-weight:700;color:'+cor+';line-height:1;">'+num+'</div>'
-    +'<div style="font-size:10px;color:var(--muted);margin-top:4px;">'+sub+'</div>'
-    +'</div>';
-}
-
-// ── Relatório Mensal ──
-function dashGerarRelatorio(){
-  var d=new Date();
-  var sel=document.getElementById('rel-mes');
-  var selAno=document.getElementById('rel-ano');
-  if(!sel) return;
-  sel.value=d.getMonth();
-  // Popular anos
-  if(selAno&&selAno.options.length===0){
-    for(var y=d.getFullYear();y>=d.getFullYear()-2;y--){
-      var op=document.createElement('option');op.value=y;op.textContent=y;selAno.appendChild(op);
-    }
-  }
-  document.getElementById('relatorio-modal').style.display='flex';
-  relGerar();
-}
-function relGerar(){
-  var mes=parseInt(document.getElementById('rel-mes').value);
-  var ano=parseInt(document.getElementById('rel-ano').value)||new Date().getFullYear();
-  var MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-  var ini=new Date(ano,mes,1);
-  var fim=new Date(ano,mes+1,0);
-  var iniStr=ini.toISOString().slice(0,10);
-  var fimStr=fim.toISOString().slice(0,10);
-  // Tarefas concluídas no mês
-  var tarefasConc=tasks.filter(function(t){
-    if(!t.done||!t.doneAt) return false;
-    var dt=t.doneAt.slice(0,10);
-    return dt>=iniStr&&dt<=fimStr&&!/^licita/i.test(t.text.normalize('NFD').replace(/[\u0300-\u036f]/g,''));
-  });
-  // Licitações do mês (pelo log)
-  var logMes=licLogLoad().filter(function(e){
-    return e.criadoEm&&e.criadoEm.slice(0,10)>=iniStr&&e.criadoEm.slice(0,10)<=fimStr;
-  });
-  // Agrupar log por município
-  var munLog={};
-  logMes.forEach(function(e){
-    if(!munLog[e.municipio])munLog[e.municipio]=[];
-    munLog[e.municipio].push(e);
-  });
-  // Problemas resolvidos no mês
-  var probResol=probLoad().filter(function(p){
-    return p.resolvido&&p.resolvidoEm&&p.resolvidoEm.slice(0,10)>=iniStr&&p.resolvidoEm.slice(0,10)<=fimStr;
-  });
-  // Gerar HTML do relatório
-  var html='<div id="rel-doc" style="background:#fff;max-width:210mm;margin:0 auto;padding:0;font-family:'Segoe UI',Tahoma,sans-serif;font-size:11px;color:#222;">';
-  // Cabeçalho
-    html+='<div style="text-align:center;padding:8px 0;border-bottom:2px solid #1a5276;margin-bottom:14px;"><div style="font-size:18px;font-weight:700;color:#1a5276;">GALHARDO &amp; CANALES</div></div>';
-  // Título
-  html+='<div style="text-align:center;padding:8px 20px;border-top:2px solid #1a5276;border-bottom:2px solid #1a5276;margin-bottom:16px;">';
-  html+='<div style="font-size:14px;font-weight:700;color:#1a5276;text-transform:uppercase;letter-spacing:1px;">Relatório Mensal de Atividades</div>';
-  html+='<div style="font-size:12px;color:#555;margin-top:2px;">'+MESES[mes]+' / '+ano+'</div>';
-  html+='</div>';
-  html+='<div style="padding:0 20px;">';
-  // Seção Licitações
-  html+='<div style="margin-bottom:16px;">';
-  html+='<div style="font-size:12px;font-weight:700;color:#1a5276;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid #1a5276;padding-bottom:4px;margin-bottom:8px;">🏛 Licitações</div>';
-  var munKeys=Object.keys(munLog);
-  if(munKeys.length===0){
-    html+='<div style="color:#777;font-size:11px;">Nenhuma movimentação de licitação registrada no período.</div>';
-  } else {
-    munKeys.sort().forEach(function(mun){
-      var evts=munLog[mun];
-      html+='<div style="margin-bottom:8px;">';
-      html+='<div style="font-weight:700;color:#1a5276;font-size:11px;margin-bottom:3px;">'+mun+'</div>';
-      evts.forEach(function(e){
-        var dt=new Date(e.criadoEm).toLocaleDateString('pt-BR');
-        var hr=new Date(e.criadoEm).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-        html+='<div style="padding:2px 0 2px 12px;color:#333;">• <span style="color:#555;">['+dt+' '+hr+']</span> '+e.tipo+(e.descricao?' — '+e.descricao:'')+'</div>';
-      });
-      html+='</div>';
-    });
-  }
-  html+='</div>';
-  // Seção Tarefas
-  html+='<div style="margin-bottom:16px;">';
-  html+='<div style="font-size:12px;font-weight:700;color:#1a5276;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid #1a5276;padding-bottom:4px;margin-bottom:8px;">✅ Tarefas Concluídas ('+tarefasConc.length+')</div>';
-  if(tarefasConc.length===0){
-    html+='<div style="color:#777;font-size:11px;">Nenhuma tarefa concluída no período.</div>';
-  } else {
-    // Agrupar por data
-    var porData={};
-    tarefasConc.forEach(function(t){var d=t.doneAt.slice(0,10);if(!porData[d])porData[d]=[];porData[d].push(t);});
-    Object.keys(porData).sort().forEach(function(dt){
-      var dtFmt=new Date(dt+'T00:00:00').toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit'});
-      html+='<div style="margin-bottom:6px;"><div style="font-weight:700;color:#555;font-size:10px;text-transform:uppercase;">'+dtFmt+'</div>';
-      porData[dt].forEach(function(t){
-        html+='<div style="padding:1px 0 1px 12px;color:#333;">• '+t.text+(t.paraQuem&&t.paraQuem!=='Geral'?' <span style="color:#888;">['+t.paraQuem+']</span>':'')+'</div>';
-      });
-      html+='</div>';
-    });
-  }
-  html+='</div>';
-  // Seção Problemas
-  if(probResol.length>0){
-    html+='<div style="margin-bottom:16px;">';
-    html+='<div style="font-size:12px;font-weight:700;color:#1a5276;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid #1a5276;padding-bottom:4px;margin-bottom:8px;">⚠️ Problemas Resolvidos</div>';
-    probResol.forEach(function(p){
-      html+='<div style="margin-bottom:6px;padding:6px 8px;background:#f9f8f6;border-left:3px solid #3a8c4a;">';
-      html+='<div style="font-weight:700;color:#1a5276;">'+p.titulo+' <span style="color:#777;font-weight:400;font-size:10px;">['+p.setor+']</span></div>';
-      if(p.resolucao) html+='<div style="color:#2e7d32;font-size:10px;margin-top:2px;">✅ '+p.resolucao+'</div>';
-      html+='</div>';
-    });
-    html+='</div>';
-  }
-  html+='</div>';
-  // Rodapé
-  html+='<div style="text-align:center;font-size:9px;color:#aaa;padding:4px 0;">Gerado em '+new Date().toLocaleString('pt-BR')+'</div>';
-  html+='</div>';
-  document.getElementById('relatorio-preview').innerHTML=html;
-}
-function relImprimir(){
-  var doc=document.getElementById('rel-doc');
-  if(!doc){mostrarToast('Gere o relatório primeiro.',false);return;}
-  var w=window.open('','_blank','width=800,height=900');
-  w.document.write('<html><head><title>Relatório G&C</title><style>body{margin:0;padding:0;font-family:Segoe UI,Tahoma,sans-serif;}@media print{@page{size:A4 portrait;margin:0;}}</style></head><body>');
-  w.document.write(doc.outerHTML);
-  w.document.write('</body></html>');
-  w.document.close();
-  w.focus();
-  setTimeout(function(){w.print();},500);
-}
-// Inicializar dashboard ao carregar
-(function(){
-  var selAno=document.getElementById('rel-ano');
-  if(selAno){
-    var d=new Date();
-    for(var y=d.getFullYear();y>=d.getFullYear()-2;y--){
-      var op=document.createElement('option');op.value=y;op.textContent=y;selAno.appendChild(op);
-    }
-  }
-})();
 
 </script>
 </body>
