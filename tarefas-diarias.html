@@ -130,6 +130,9 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
 .task-item{display:flex;align-items:flex-start;gap:12px;padding:11px 0;border-bottom:1px dashed var(--border);position:relative;}
 .task-item.pinned{background:linear-gradient(to right,rgba(199,138,26,.06),transparent);border-left:3px solid var(--amber);padding-left:8px;margin-left:-11px;}
 .task-item.futuro{opacity:.75;background:repeating-linear-gradient(45deg,transparent,transparent 10px,rgba(26,39,68,.02) 10px,rgba(26,39,68,.02) 20px);}
+.task-item.atrasada{border-left:3px solid var(--red);padding-left:8px;margin-left:-11px;background:linear-gradient(to right,rgba(176,58,46,.05),transparent);}
+.task-item.atrasada .task-text{color:#8b2018;}
+.task-atrasada-badge{display:inline-block;font-size:10px;font-weight:700;color:#b03a2e;background:#fde8e8;border:1px solid #f5c6c6;border-radius:10px;padding:1px 7px;margin-left:6px;vertical-align:middle;}
 .chk{width:22px;height:22px;border:2px solid var(--border);border-radius:2px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;background:var(--white);transition:border-color .12s,background .12s;user-select:none;font-size:13px;font-weight:700;}
 .chk:hover{border-color:var(--navy);}
 .chk.done{background:var(--green);border-color:var(--green);color:#fff;}
@@ -968,6 +971,7 @@ async function fbSave(t,r,a,tp){
   try{
     var cert=localStorage.getItem('gc_certidoes_v2')||'[]';
     var licHist=localStorage.getItem('gc_lic_historico_v1')||'[]';
+    var licLog=localStorage.getItem('gc_lic_log_v1')||'[]';
     var licVenc=localStorage.getItem('gc_lic_vencedor_v1')||'{}';
     var licProg=localStorage.getItem('gc_lic_prog_v1')||'{}';
     _fbLastSaveTs=Date.now();
@@ -988,6 +992,7 @@ onSnapshot(REF, function(snap){
     var fbTpl=d.templates?JSON.parse(d.templates):[];
     if(d.certidoes) localStorage.setItem('gc_certidoes_v2',d.certidoes);
     if(d.licHistorico) localStorage.setItem('gc_lic_historico_v1',d.licHistorico);
+      if(d.licLog) localStorage.setItem('gc_lic_log_v1',d.licLog);
     if(d.licVencedor) localStorage.setItem('gc_lic_vencedor_v1',d.licVencedor);
     if(d.licProgresso) localStorage.setItem('gc_lic_prog_v1',d.licProgresso);
     // Só atualiza se os dados do Firebase forem diferentes dos locais
@@ -1971,21 +1976,16 @@ function limparTodosFiltros(){
 // ── Backup ──
 function gerarConteudoBackup(){return JSON.stringify({versao:'gc_tarefas_v3',data:new Date().toLocaleString('pt-BR'),dia:todayStr,tarefas:tasks.filter(function(t){return!t._futuro;}),recorrencias:recorrencias,archived:archived,templates:templates},null,2);}
 function backupGeral(){
-  var dados={
-    versao:'gc_backup_geral_v1',
-    data:new Date().toISOString(),
-    tarefas:tasks,
-    recorrencias:recorrencias,
-    archived:archived,
-    templates:templates,
-    certidoes:certidoes
-  };
+  var dados=gerarConteudoBackupGeral();
+  dados.automatico=false;
   var blob=new Blob([JSON.stringify(dados,null,2)],{type:'application/json'});
-  var a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');a.href=url;
   a.download='gc_backup_geral_'+new Date().toISOString().slice(0,10)+'.json';
-  a.click();
-  mostrarToast('✅ Backup Geral salvo!',true);
+  a.click();URL.revokeObjectURL(url);
+  var hh=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  mostrarBackupLast('💾 Backup Geral manual: '+hh);
+  mostrarToast('✅ Backup Geral salvo!',false);
 }
 function fazerBackupManual(){
   var blob=new Blob([gerarConteudoBackup()],{type:'application/json'});
@@ -2049,7 +2049,10 @@ function gerarConteudoBackupGeral(){
     recorrencias:recorrencias,
     archived:archived,
     templates:templates,
-    certidoes:certidoes
+    certidoes:certidoes,
+    licHistorico:licHistLoad(),
+    licLog:licLogLoad(),
+    licVencedor:licVencedorLoad()
   };
 }
 function mostrarBackupLast(txt){
@@ -2274,7 +2277,9 @@ function sortTasks(lista, forConcluidas){
 }
 function makeEl(t){
   var div=document.createElement('div');
-  div.className='task-item'+(t.done?' done':'')+(t.pinned?' pinned':'')+(t._futuro?' futuro':'');
+  var _hoje=new Date();_hoje.setHours(0,0,0,0);
+  var _atrasada=!t.done&&!t._futuro&&t.taskDate&&new Date(t.taskDate+'T00:00:00')<_hoje;
+  div.className='task-item'+(t.done?' done':'')+(t.pinned?' pinned':'')+(t._futuro?' futuro':'')+(_atrasada?' atrasada':'');
   div.id='task-'+t.id;
   var chk=document.createElement('div');
   chk.className='chk'+(t.done?' done':'');chk.textContent=t.done?'✕':'';
@@ -2285,7 +2290,14 @@ function makeEl(t){
   if(t.pinned){var pi=document.createElement('span');pi.style.cssText='font-size:11px;color:var(--amber);margin-right:4px;';pi.textContent='📌';body.appendChild(pi);}
   if(t.paraQuem){var pq=document.createElement('div');pq.className='task-para-quem';pq.textContent='👤 '+t.paraQuem;body.appendChild(pq);}
   if(t.priority&&PRIORITY_LABELS[t.priority]){var pb=document.createElement('span');pb.className='priority-badge '+(PRIORITY_CLASS[t.priority]||'');pb.textContent=PRIORITY_LABELS[t.priority];body.appendChild(pb);}
-  var txt=document.createElement('div');txt.className='task-text';txt.textContent=t.text;body.appendChild(txt);
+  var txt=document.createElement('div');txt.className='task-text';
+  if(_atrasada){
+    var _atrasoEl=document.createElement('span');_atrasoEl.className='task-atrasada-badge';
+    var _diasAtr=Math.round((_hoje-new Date(t.taskDate+'T00:00:00'))/86400000);
+    _atrasoEl.textContent='⚠ Atrasada '+_diasAtr+'d';
+    txt.textContent=t.text;txt.appendChild(_atrasoEl);
+  } else {txt.textContent=t.text;}
+  body.appendChild(txt);
   if(t.taskDate){var dd=document.createElement('div');dd.style.cssText='font-size:11.5px;color:var(--navy);margin-top:3px;';dd.textContent='📅 '+fmtDate(t.taskDate);body.appendChild(dd);}
   if(t.schedule){
     var sc=document.createElement('div');var ov=!t.done&&!t.alertFired&&!t._futuro&&t.schedule<timeNow();
@@ -2500,22 +2512,21 @@ function criarLicitacao(){
   if(!dataDisputa){alert('Informe a data da disputa.');marcarCampoObrigatorio('lic-data');return false;}
   if(!horaDisputa){alert('Informe o horário da disputa.');marcarCampoObrigatorio('lic-hora');return false;}
   var now2=Date.now();
-  // Apenas tarefa principal
+  var dataImpug=somarDiasUteis_subtrair(dataDisputa,3);
+  var dataAnalise=somarDiasCorridos(dataDisputa,-8);
+  var dataInicioProposta=somarDiasUteis_subtrair(dataDisputa,3);
   tasks.push({id:now2,text:'Licitação - '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataDisputa,alertFired:false,paraQuem:'Licitações',obs:obs,priority:'alta',tags:['licitação',municipio],pinned:false,duracao:'',link:licLink,_licMunicipio:municipio,_licDataDisputa:dataDisputa,_licHoraDisputa:horaDisputa});
+  tasks.push({id:now2+1,text:'⚠️ Impugnação — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataImpug,alertFired:false,paraQuem:'Licitações',obs:'Prazo de impugnação — '+municipio+'
+Lei nº 14.133/2021, Art. 164.',priority:'alta',tags:['licitação','impugnação',municipio],pinned:false,duracao:'',link:licLink,_licMunicipio:municipio,_licDataDisputa:dataDisputa,_licHoraDisputa:horaDisputa,_impugnacaoEnviada:null});
+  tasks.push({id:now2+2,text:'📋 Análise de Edital — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataAnalise,alertFired:false,paraQuem:'Licitações',obs:'Análise do edital — '+municipio,priority:'alta',tags:['licitação','edital',municipio],pinned:false,duracao:'',link:licLink,_licMunicipio:municipio});
+  tasks.push({id:now2+3,text:'📤 Início Inclusão da Proposta — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataInicioProposta,alertFired:false,paraQuem:'Licitações',obs:'Iniciar inclusão da proposta — '+municipio+'
+Lei nº 14.133/2021, Art. 60.',priority:'alta',tags:['licitação','proposta',municipio],pinned:false,duracao:'',link:licLink,_licMunicipio:municipio});
+  tasks.push({id:now2+4,text:'⚖️ Prazo Final de Impugnação — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataImpug,alertFired:false,paraQuem:'Licitações',obs:'ATENÇÃO: encerra hoje o prazo de impugnação — '+municipio+'
+Lei nº 14.133/2021, Art. 164.',priority:'alta',tags:['licitação','impugnação',municipio],pinned:false,duracao:'',link:licLink,_licMunicipio:municipio});
   save();render();atualizarFiltros();
-  // Salvar no histórico se houver Quem Faz preenchido
-  var quemFazFixo=document.getElementById('lic-quemfaz').value.trim();
-  var quemFazEl=document.getElementById('lic-novo-quemfaz');
-  var resultadoEl=document.getElementById('lic-novo-resultado');
-  var quemFazFinal=quemFazFixo||(quemFazEl?quemFazEl.value.trim():'');
-  var resultadoFinal=resultadoEl?resultadoEl.value:'';
-  if(quemFazFinal||resultadoFinal){
-    var listaHist=licHistLoad();
-    listaHist.push({id:Date.now(),municipio:municipio,data:dataDisputa,pregao:obs||'',resultado:resultadoFinal,vencedor:quemFazFinal,obs:'Criado automaticamente ao cadastrar licitação',link:licLink,criadoEm:new Date().toISOString()});
-    licHistSave(listaHist);
-  }
+  licLogRegistrar(municipio,'📌 Licitação cadastrada','Disputa em '+fmtDate(dataDisputa)+' às '+horaDisputa+(obs?' | '+obs:''));
   fecharModalLicitacao();
-  mostrarToast('✅ Licitação criada para '+municipio+'! Clique em 🚀 Participar para gerar as demais tarefas.',false);
+  mostrarToast('✅ Licitação criada para '+municipio+' com 5 tarefas!',false);
   return true;
 }
 function licParticipar(mun){
@@ -2564,6 +2575,42 @@ function licProgToggle(mun,step){
     var a=JSON.parse(localStorage.getItem('gc_archived')||'[]');
     var tp=JSON.parse(localStorage.getItem('gc_templates')||'[]');
     window._fbSave(t,r,a,tp);
+  }
+  renderLicitacoes();
+}
+function licProgToggleLog(mun,step){
+  // Igual ao licProgToggle mas também registra no log e navega para Hist.
+  var KEY_PROG='gc_lic_prog_v1';
+  var data={};try{data=JSON.parse(localStorage.getItem(KEY_PROG)||'{}');}catch(e){}
+  if(!data[mun]) data[mun]=[];
+  var idx=data[mun].indexOf(step);
+  var marcando=idx<0;
+  if(idx>=0) data[mun].splice(idx,1);
+  else data[mun].push(step);
+  localStorage.setItem(KEY_PROG,JSON.stringify(data));
+  if(window._fbSave){
+    var t=JSON.parse(localStorage.getItem('gc_tarefas_v3')||'[]');
+    var r=JSON.parse(localStorage.getItem('gc_recorrencias')||'[]');
+    var a=JSON.parse(localStorage.getItem('gc_archived')||'[]');
+    var tp=JSON.parse(localStorage.getItem('gc_templates')||'[]');
+    window._fbSave(t,r,a,tp);
+  }
+  if(marcando) licLogRegistrar(mun, step, '');
+  renderLicitacoes();
+  if(marcando) mudarAba('lic-historico');
+}
+function licDecisaoParticipar(mun){
+  var KEY_PROG='gc_lic_prog_v1';
+  var data={};try{data=JSON.parse(localStorage.getItem(KEY_PROG)||'{}');}catch(e){}
+  if(!data[mun]) data[mun]=[];
+  var jatem=data[mun].indexOf('✅ Participamos')>=0;
+  if(!jatem){
+    data[mun]=data[mun].filter(function(s){return s!=='❌ Não participamos';});
+    data[mun].push('✅ Participamos');
+    localStorage.setItem(KEY_PROG,JSON.stringify(data));
+    licLogRegistrar(mun,'✅ Participamos','G&C confirmou participação nesta licitação');
+    mostrarToast('✅ Participação registrada — '+mun,false);
+    mudarAba('lic-historico');
   }
   renderLicitacoes();
 }
@@ -3246,24 +3293,44 @@ function _renderLicGrupoHTML(mun, ts, etapasData, mostrarEtapas, histRegs){
     var tidLic=t.id;
     // Verificar se já participou (tem tarefas de impugnação etc.)
     var jaParticipa=tasks.some(function(jt){return /^(⚠️|📋 Análise|📤 Início|⚖️ Prazo)/i.test(jt.text)&&_normMun(jt.text.replace(/^.*?[-—]\s*/,''))===_normMun(mun);});
-    // Linha de progresso — só na tarefa de Disputa/Licitação
+    // Botões de situação — só na tarefa principal de Disputa/Licitação
     var progHtml='';
     if(isDisputa){
       var KEY_PROG='gc_lic_prog_v1';
       var progData={};try{progData=JSON.parse(localStorage.getItem(KEY_PROG)||'{}');}catch(e){}
       var munProg=progData[mun]||[];
-      var LIC_PROG_STEPS=['Checklist','Declarações','Juntada','Conf. Habilitação','Envio Proposta','Resposta Impugnação','Suspensão'];
       var munEscProg=mun.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-      var checkboxes=LIC_PROG_STEPS.map(function(step){
-        var feito=munProg.indexOf(step)>=0;
-        var bg=feito?'#1a5276':'#fff';
-        var cor=feito?'#fff':'#1a5276';
-        var bord=feito?'#1a5276':'#c8d0e8';
-        return '<button onclick="licProgToggle(\''+munEscProg+'\',\''+step+'\')" '
+      // Checklist de situação — cada botão registra no log e navega para Hist.
+      var STEPS=[
+        {k:'Análise do Edital',     ico:'📋', cor:'#1a5276'},
+        {k:'Impugnação',            ico:'⚖️', cor:'#6c3483'},
+        {k:'Checklist',             ico:'☑️', cor:'#1a5276'},
+        {k:'Declarações',           ico:'📄', cor:'#1a5276'},
+        {k:'Juntada',               ico:'📁', cor:'#1a5276'},
+        {k:'Conf. Habilitação',     ico:'🔍', cor:'#1a5276'},
+        {k:'Envio Proposta',        ico:'📤', cor:'#1a5276'},
+        {k:'Resposta Impugnação',   ico:'📩', cor:'#6c3483'},
+        {k:'Suspensão',             ico:'⛔', cor:'#b03a2e'}
+      ];
+      var checkboxes=STEPS.map(function(step){
+        var feito=munProg.indexOf(step.k)>=0;
+        var bg=feito?step.cor:'#fff';
+        var cor=feito?'#fff':step.cor;
+        var bord=feito?step.cor:'#c8d0e8';
+        return '<button onclick="licProgToggleLog(\''+munEscProg+'\',\''+step.k+'\')" '
           +'style="background:'+bg+';color:'+cor+';border:1.5px solid '+bord+';border-radius:14px;padding:3px 10px;font-size:11px;cursor:pointer;font-family:sans-serif;transition:all .15s;white-space:nowrap;">'
-          +(feito?'✔ ':'')+step+'</button>';
+          +(feito?'✔ ':step.ico+' ')+step.k+'</button>';
       }).join('');
-      progHtml='<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;">'+checkboxes+'</div>';
+      // Botões de decisão principais
+      var jaParticipou=munProg.indexOf('✅ Participamos')>=0;
+      var naoParticipou=munProg.indexOf('❌ Não participamos')>=0;
+      var btnParticipar='<button onclick="licDecisaoParticipar(\''+munEscProg+'\')" style="padding:5px 16px;border-radius:20px;border:2px solid #3a8c4a;font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif;'+(jaParticipou?'background:#3a8c4a;color:#fff;':'background:#fff;color:#3a8c4a;')+'">✅ Participamos</button>';
+      var btnNaoParticipar='<button onclick="licNaoParticipar(\''+munEscProg+'\')" style="padding:5px 16px;border-radius:20px;border:2px solid #b03a2e;font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif;'+(naoParticipou?'background:#b03a2e;color:#fff;':'background:#fff;color:#b03a2e;')+'">❌ Não participamos</button>';
+      progHtml='<div style="margin-top:10px;border-top:1px solid var(--border);padding-top:8px;">'
+        +'<div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">📋 Etapas — clique para registrar no histórico</div>'
+        +'<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;">'+checkboxes+'</div>'
+        +'<div style="display:flex;gap:6px;flex-wrap:wrap;">'+btnParticipar+btnNaoParticipar+'</div>'
+        +'</div>';
     }
     html+='<div class="cert-card" style="border-left-color:'+statusCor+';">'+
       '<div class="cert-card-top">'+
@@ -3276,7 +3343,6 @@ function _renderLicGrupoHTML(mun, ts, etapasData, mostrarEtapas, histRegs){
       '</div>'+
       '<div class="cert-dates"><span class="cert-date">Data:'+dataStr+horaStr+'</span>'+(t.paraQuem?'<span class="cert-date">Para: <b>'+t.paraQuem+'</b></span>':'')+'</div>'+
       (isDisputa&&quemFazNome?'<div style="margin-top:5px;"><span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;'+(/galhardo/i.test(quemFazNome)?'background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;':'background:#fff3e0;color:#e65100;border:1px solid #ffcc80;')+'">🏢 '+quemFazNome+'</span></div>':'')+
-      (isDisputa&&!jaParticipa?'<div style="margin-top:6px;"><button onclick="licParticipar(\''+mun.replace(/'/g,"\\'")+'\')" style="background:#1a5276;color:#fff;border:none;border-radius:20px;padding:5px 16px;font-size:12px;font-weight:700;cursor:pointer;">🚀 Participar</button></div>':'')+
       progHtml+
       (t.obs?'<div class="cert-file-name" style="white-space:normal;font-style:italic;color:var(--muted);margin-top:4px;">'+t.obs.substring(0,120)+(t.obs.length>120?'…':'')+'</div>':'')+
       '</div>';
@@ -3585,6 +3651,41 @@ function licHistSave(data){
     window._fbSave(t,r,a,tp);
   }
 }
+// ── Log de Eventos por Licitação ──
+var LIC_LOG_KEY='gc_lic_log_v1';
+function licLogLoad(){var raw=localStorage.getItem(LIC_LOG_KEY);return raw?JSON.parse(raw):[];}
+function licLogSave(data){
+  localStorage.setItem(LIC_LOG_KEY,JSON.stringify(data));
+  if(window._fbSave){
+    var t=JSON.parse(localStorage.getItem(KEY)||'[]');
+    var r=JSON.parse(localStorage.getItem(RECORR_KEY)||'[]');
+    var a=JSON.parse(localStorage.getItem(ARCH_KEY)||'[]');
+    var tp=JSON.parse(localStorage.getItem(TPL_KEY)||'[]');
+    window._fbSave(t,r,a,tp);
+  }
+}
+function licLogRegistrar(municipio,tipo,descricao){
+  var log=licLogLoad();
+  log.push({id:Date.now(),municipio:municipio,tipo:tipo,descricao:descricao||'',criadoEm:new Date().toISOString()});
+  licLogSave(log);
+}
+function licLogDoMunicipio(municipio){
+  var norm=_normMun(municipio);
+  return licLogLoad().filter(function(e){return _normMun(e.municipio)===norm;}).sort(function(a,b){return a.criadoEm<b.criadoEm?-1:1;});
+}
+function licNaoParticipar(mun){
+  var motivo=prompt('Motivo de não participar de '+mun+' (opcional):','');
+  if(motivo===null) return; // cancelou
+  licLogRegistrar(mun,'❌ Não participou',motivo||'Sem motivo informado');
+  mostrarToast('📋 Registrado: não participação em '+mun,false);
+  mudarAba('lic-historico');
+}
+function licRegistrarEvento(mun,tipo,descricao){
+  licLogRegistrar(mun,tipo,descricao||'');
+  mostrarToast('📋 Evento registrado: '+tipo+' — '+mun,false);
+  mudarAba('lic-historico');
+}
+
 function licHistPreencherQuemFazList(){
   var dl=document.getElementById('lh-vencedor-list');
   if(!dl) return;
@@ -3665,57 +3766,120 @@ function licHistRender(){
   var lista=document.getElementById('lic-hist-lista');
   var stats=document.getElementById('lic-hist-stats-row');
   if(!lista)return;
-  var regs=licHistLoad();
+  // Log de eventos (novo sistema)
+  var log=licLogLoad();
+  // Registros do sistema antigo (pregão completo)
+  var regsAntigos=licHistLoad();
   // Filtros
   var q=(document.getElementById('lic-hist-search')||{}).value||'';
   var filtroRes=(document.getElementById('lic-hist-filtro-resultado')||{}).value||'';
-  var sort=(document.getElementById('lic-hist-sort')||{}).value||'data_desc';
-  if(q){var ql=q.toLowerCase();regs=regs.filter(function(r){return(r.municipio+r.vencedor+r.pregao+r.obs).toLowerCase().indexOf(ql)>=0;});}
-  if(filtroRes)regs=regs.filter(function(r){return r.resultado===filtroRes;});
-  if(sort==='data_desc')regs.sort(function(a,b){return b.data<a.data?-1:b.data>a.data?1:0;});
-  else if(sort==='data_asc')regs.sort(function(a,b){return a.data<b.data?-1:a.data>b.data?1:0;});
-  else if(sort==='municipio')regs.sort(function(a,b){return a.municipio.localeCompare(b.municipio);});
-  else if(sort==='quemfaz')regs.sort(function(a,b){return(a.vencedor||'').localeCompare(b.vencedor||'');});
+  var sort=(document.getElementById('lic-hist-sort')||{}).value||'municipio';
+  // Agrupar tudo por município
+  var munMap={};
+  // Do log de eventos
+  log.forEach(function(e){
+    var norm=_normMun(e.municipio);
+    if(!munMap[norm]){munMap[norm]={nome:e.municipio,eventos:[],regs:[]};}
+    if(e.municipio.length>munMap[norm].nome.length) munMap[norm].nome=e.municipio;
+    munMap[norm].eventos.push(e);
+  });
+  // Dos registros antigos do histórico
+  regsAntigos.forEach(function(r){
+    var norm=_normMun(r.municipio);
+    if(!munMap[norm]){munMap[norm]={nome:r.municipio,eventos:[],regs:[]};}
+    if(r.municipio.length>munMap[norm].nome.length) munMap[norm].nome=r.municipio;
+    munMap[norm].regs.push(r);
+  });
+  // Filtrar por busca
+  var munKeys=Object.keys(munMap);
+  if(q){var ql=q.toLowerCase();munKeys=munKeys.filter(function(k){return munMap[k].nome.toLowerCase().indexOf(ql)>=0||munMap[k].eventos.some(function(e){return(e.tipo+e.descricao).toLowerCase().indexOf(ql)>=0;})||munMap[k].regs.some(function(r){return(r.municipio+r.vencedor+r.pregao+r.obs).toLowerCase().indexOf(ql)>=0;});});}
+  if(filtroRes){munKeys=munKeys.filter(function(k){return munMap[k].regs.some(function(r){return r.resultado===filtroRes;})||munMap[k].eventos.some(function(e){return e.tipo.indexOf(filtroRes)>=0;});});}
+  // Ordenar municípios
+  if(sort==='municipio'||sort==='quemfaz'){munKeys.sort(function(a,b){return munMap[a].nome.localeCompare(munMap[b].nome);});}
+  else{munKeys.sort(function(a,b){
+    var da=(munMap[a].eventos[0]||{}).criadoEm||(munMap[a].regs[0]||{}).criadoEm||'';
+    var db=(munMap[b].eventos[0]||{}).criadoEm||(munMap[b].regs[0]||{}).criadoEm||'';
+    return sort==='data_asc'?(da<db?-1:1):(db<da?-1:1);
+  });}
   // Stats
-  var total=regs.length;
-  var ganhou=regs.filter(function(r){return r.resultado==='ganhou';}).length;
-  var perdeu=regs.filter(function(r){return r.resultado==='perdeu';}).length;
-  var txVit=total>0?Math.round(ganhou/total*100):0;
-  stats.innerHTML='<div class="cert-stat"><div class="cert-stat-num" style="color:var(--navy)">'+total+'</div><div class="cert-stat-lbl">Registros</div></div>'+
-    '<div class="cert-stat"><div class="cert-stat-num" style="color:var(--green)">'+ganhou+'</div><div class="cert-stat-lbl">Vitórias</div></div>'+
-    '<div class="cert-stat"><div class="cert-stat-num" style="color:var(--red)">'+perdeu+'</div><div class="cert-stat-lbl">Derrotas</div></div>'+
-    '<div class="cert-stat"><div class="cert-stat-num" style="color:var(--amber)">'+txVit+'%</div><div class="cert-stat-lbl">Taxa vitória</div></div>';
-  if(regs.length===0){lista.innerHTML='<div class="cert-empty">Nenhum registro encontrado. Clique em <strong>+ Nova entrada</strong> para começar.</div>';return;}
-  var resCorMap={ganhou:'#e8f5e9',perdeu:'#fde8e8',deserto:'#f5f5f5'};
-  var resLblMap={ganhou:'✅ Ganhamos',perdeu:'❌ Perdemos',deserto:'— Deserto'};
-  var resBordMap={ganhou:'var(--green)',perdeu:'var(--red)',deserto:'var(--muted)'};
+  var totalMun=munKeys.length;
+  var totalEventos=log.length;
+  var participamos=log.filter(function(e){return e.tipo.indexOf('Participamos')>=0;}).length;
+  var ganhou=regsAntigos.filter(function(r){return r.resultado==='ganhou';}).length;
+  stats.innerHTML='<div class="cert-stat"><div class="cert-stat-num" style="color:var(--navy)">'+totalMun+'</div><div class="cert-stat-lbl">Municípios</div></div>'+
+    '<div class="cert-stat"><div class="cert-stat-num" style="color:var(--amber)">'+totalEventos+'</div><div class="cert-stat-lbl">Eventos</div></div>'+
+    '<div class="cert-stat"><div class="cert-stat-num" style="color:var(--green)">'+participamos+'</div><div class="cert-stat-lbl">Participamos</div></div>'+
+    '<div class="cert-stat"><div class="cert-stat-num" style="color:var(--green)">'+ganhou+'</div><div class="cert-stat-lbl">Vitórias</div></div>';
+  if(munKeys.length===0){lista.innerHTML='<div class="cert-empty">Nenhum registro. Os eventos das licitações aparecem aqui automaticamente.</div>';return;}
   var html='';
-  regs.forEach(function(r){
-    var resCor=r.resultado?resCorMap[r.resultado]||'#fff':'#fff';
-    var resBord=r.resultado?resBordMap[r.resultado]||'var(--border)':'var(--border)';
-    var resLbl=r.resultado?resLblMap[r.resultado]||'':'';
-    var dataFmt=r.data?fmtDate(r.data):'—';
-    var diff='';
-    if(r.data){var hoje=new Date();hoje.setHours(0,0,0,0);var alvo=new Date(r.data+'T00:00:00');var d=Math.round((hoje-alvo)/86400000);diff='há '+d+' dia'+(d!==1?'s':'');}
-    html+='<div class="cert-card" style="border-left-color:'+resBord+';background:'+resCor+';">'+
-      '<div class="cert-card-top">'+
-      '<span class="cert-card-name" style="font-size:15px;font-weight:600;">🏙 '+r.municipio+(r.pregao?' <span style="font-size:12px;color:var(--muted);font-weight:400;">'+r.pregao+'</span>':'')+'</span>'+
-      '<span style="display:flex;gap:4px;align-items:center;">'+
-      (resLbl?'<span class="cert-badge" style="background:'+resCor+';color:'+(r.resultado==='ganhou'?'#2e7d32':r.resultado==='perdeu'?'#b03a2e':'#777')+';border:1px solid '+resBord+';">'+resLbl+'</span>':'')+
-      '<button onclick="licHistEditarModal('+r.id+')" style="background:none;border:1px solid #bbb;border-radius:3px;padding:2px 7px;font-size:12px;cursor:pointer;color:#555;">✏️</button>'+
-      '<button onclick="licHistExcluir('+r.id+')" style="background:none;border:1px solid #e57373;border-radius:3px;padding:2px 7px;font-size:12px;cursor:pointer;color:#c0392b;">×</button>'+
-      '</span>'+
-      '</div>'+
-      '<div class="cert-dates">'+
-        '<span class="cert-date">📅 <b>'+fmtDate(r.data)+'</b>'+(diff?' ('+diff+')':'')+'</span>'+
-        (r.vencedor?'<span class="cert-date">👤 Quem faz: <b>'+r.vencedor+'</b></span>':'')+
-        (r.link?'<span class="cert-date"><a href="'+r.link+'" target="_blank" style="color:var(--navy2);">🔗 Link</a></span>':'')+
-      '</div>'+
-      (r.obs?'<div class="cert-file-name" style="white-space:normal;font-style:italic;color:var(--muted);margin-top:4px;">'+r.obs+'</div>':'')+
-      '</div>';
+  munKeys.forEach(function(norm){
+    var mun=munMap[norm];
+    // Cor do card — se tem participação, verde; não participou, vermelho; sem decisão, neutro
+    var temPartic=mun.eventos.some(function(e){return e.tipo.indexOf('Participamos')>=0&&e.tipo.indexOf('Não')<0;});
+    var temNaoPartic=mun.eventos.some(function(e){return e.tipo.indexOf('Não participou')>=0||e.tipo.indexOf('Não participamos')>=0;});
+    var bordCor=temPartic?'var(--green)':temNaoPartic?'var(--red)':'var(--border)';
+    var munEsc=mun.nome.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    html+='<div class="cert-card" style="border-left-color:'+bordCor+';padding:0;overflow:hidden;margin-bottom:14px;">';
+    // Cabeçalho do município
+    html+='<div style="background:var(--cream);padding:8px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;">';
+    html+='<span style="font-size:13px;font-weight:700;color:var(--navy);">🏙 '+mun.nome+'</span>';
+    html+='<span style="display:flex;gap:4px;">';
+    html+='<button onclick="licLogAdicionarManual(\''+munEsc+'\')" style="background:none;border:1px solid var(--border);border-radius:3px;padding:2px 8px;font-size:11px;cursor:pointer;color:var(--navy);">+ Anotar</button>';
+    html+='</span>';
+    html+='</div>';
+    // Log de eventos cronológico
+    html+='<div style="padding:6px 14px 10px;">';
+    var eventos=mun.eventos.slice().sort(function(a,b){return a.criadoEm<b.criadoEm?-1:1;});
+    if(eventos.length===0&&mun.regs.length===0){html+='<div style="color:var(--muted);font-size:12px;padding:6px 0;">Nenhum evento registrado.</div>';}
+    eventos.forEach(function(e){
+      var dt=new Date(e.criadoEm);
+      var dStr=dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+      var hStr=dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+      var isConclusao=e.tipo.indexOf('Participamos')>=0||e.tipo.indexOf('participou')>=0;
+      var cor=isConclusao?(e.tipo.indexOf('Não')>=0?'var(--red)':'var(--green)'):'var(--navy)';
+      html+='<div style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid #f0ede8;align-items:flex-start;">';
+      html+='<span style="font-size:10px;color:var(--muted);white-space:nowrap;min-width:80px;padding-top:2px;">'+dStr+' '+hStr+'</span>';
+      html+='<div style="flex:1;">';
+      html+='<span style="font-size:12px;font-weight:700;color:'+cor+';">'+e.tipo+'</span>';
+      if(e.descricao) html+='<span style="font-size:11px;color:var(--muted);margin-left:6px;">— '+e.descricao+'</span>';
+      html+='</div>';
+      html+='<button onclick="licLogExcluir('+e.id+')" style="background:none;border:none;font-size:13px;cursor:pointer;color:#ccc;padding:0;" title="Excluir">×</button>';
+      html+='</div>';
+    });
+    // Registros antigos do histórico (pregão completo) — exibir como evento especial
+    mun.regs.forEach(function(r){
+      var resLbl={ganhou:'✅ Ganhamos',perdeu:'❌ Perdemos',deserto:'— Deserto',nao_finalizada:'⏳ Aguardando'}[r.resultado]||'';
+      var dt=new Date(r.criadoEm||r.data);
+      var dStr=r.data?fmtDate(r.data):dt.toLocaleDateString('pt-BR');
+      html+='<div style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid #f0ede8;align-items:flex-start;">';
+      html+='<span style="font-size:10px;color:var(--muted);white-space:nowrap;min-width:80px;padding-top:2px;">'+dStr+'</span>';
+      html+='<div style="flex:1;">';
+      html+='<span style="font-size:12px;font-weight:700;color:var(--navy);">📊 Pregão'+(r.pregao?' '+r.pregao:'')+'</span>';
+      if(resLbl) html+=' <span style="font-size:11px;font-weight:700;color:'+(r.resultado==='ganhou'?'#2e7d32':r.resultado==='perdeu'?'#b03a2e':'#777')+';">'+resLbl+'</span>';
+      if(r.vencedor) html+='<span style="font-size:11px;color:var(--muted);margin-left:4px;">| 👤 '+r.vencedor+'</span>';
+      if(r.obs) html+='<div style="font-size:11px;color:var(--muted);font-style:italic;">'+r.obs+'</div>';
+      html+='</div>';
+      html+='<button onclick="licHistEditarModal('+r.id+')" style="background:none;border:1px solid #ddd;border-radius:3px;padding:1px 6px;font-size:11px;cursor:pointer;color:#555;">✏️</button>';
+      html+='<button onclick="licHistExcluir('+r.id+')" style="background:none;border:none;font-size:13px;cursor:pointer;color:#ccc;padding:0 2px;" title="Excluir">×</button>';
+      html+='</div>';
+    });
+    html+='</div></div>';
   });
   lista.innerHTML=html;
 }
+function licLogExcluir(id){
+  if(!confirm('Excluir este evento do histórico?')) return;
+  var log=licLogLoad().filter(function(e){return e.id!==id;});
+  licLogSave(log);licHistRender();
+}
+function licLogAdicionarManual(mun){
+  var texto=prompt('Anotação para '+mun+':','');
+  if(!texto||!texto.trim()) return;
+  licLogRegistrar(mun,'📝 Anotação',texto.trim());
+  licHistRender();
+  mostrarToast('📝 Anotação registrada.',false);
+}
+
 function licHistExportCSV(){
   var regs=licHistLoad();
   if(regs.length===0){mostrarToast('Nenhum registro para exportar.',false);return;}
