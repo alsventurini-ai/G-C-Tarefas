@@ -583,12 +583,12 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
       <span>Pendentes</span>
       <span class="section-count" id="cnt-p">0</span>
     </div>
-    <div id="list-p"></div>
+    <div id="list-p" style="border-left:3px solid var(--border);padding-left:9px;margin-left:-12px;"></div>
     <div class="section-head" style="margin-top:6px;">
       <span>Concluídas</span>
       <span class="section-count green" id="cnt-d">0</span>
     </div>
-    <div id="list-d"></div>
+    <div id="list-d" style="border-left:3px solid var(--border);padding-left:9px;margin-left:-12px;"></div>
   </div>
 
   <!-- Aba Licitações -->
@@ -2747,7 +2747,7 @@ function render(){
     p.forEach(function(t){
       if(t._licGrupoMun&&t._licGrupoInicio){
         _grupoAtual=document.createElement('div');
-        _grupoAtual.style.cssText='box-shadow:inset 3px 0 0 #6c3483;background:linear-gradient(to right,rgba(108,52,131,.06),transparent);';
+        _grupoAtual.style.cssText='background:linear-gradient(to right,rgba(108,52,131,.06),transparent);';
         var grpHdr=document.createElement('div');
         grpHdr.className='lic-grupo-hdr';
         grpHdr.style.padding='8px 0 2px 12px';
@@ -2815,11 +2815,9 @@ function agruparTarefasLicitacao(lista){
         var ha=a.schedule||'99:99',hb=b.schedule||'99:99';
         return ha<hb?-1:(ha>hb?1:a.id-b.id);
       });
-      if(membros.length>1){
-        membros[0]._licGrupoInicio=true;
-        membros[membros.length-1]._licGrupoFim=true;
-        membros.forEach(function(m){m._licGrupoMun=mun;});
-      }
+      membros[0]._licGrupoInicio=true;
+      membros[membros.length-1]._licGrupoFim=true;
+      membros.forEach(function(m){m._licGrupoMun=mun;});
       membros.forEach(function(m){resultado.push(m);});
     } else {
       resultado.push(t);
