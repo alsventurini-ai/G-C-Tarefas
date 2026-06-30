@@ -133,7 +133,7 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
 .task-item.atrasada{border-left:3px solid var(--red);padding-left:8px;margin-left:-11px;background:linear-gradient(to right,rgba(176,58,46,.05),transparent);}
 .task-item.atrasada .task-text{color:#8b2018;}
 .task-item.lic-grupo{border-left:3px solid #6c3483;padding-left:8px;margin-left:-11px;background:linear-gradient(to right,rgba(108,52,131,.06),transparent);}
-.lic-grupo-hdr{font-size:10px;font-weight:700;color:#6c3483;text-transform:uppercase;letter-spacing:.5px;border-left:3px solid #6c3483;padding:6px 0 2px 42px;margin-left:-11px;}
+.lic-grupo-hdr{font-size:10px;font-weight:700;color:#6c3483;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
 .task-atrasada-badge{display:inline-block;font-size:10px;font-weight:700;color:#b03a2e;background:#fde8e8;border:1px solid #f5c6c6;border-radius:10px;padding:1px 7px;margin-left:6px;vertical-align:middle;}
 .chk{width:22px;height:22px;border:2px solid var(--border);border-radius:2px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;background:var(--white);transition:border-color .12s,background .12s;user-select:none;font-size:13px;font-weight:700;}
 .chk:hover{border-color:var(--navy);}
@@ -2614,25 +2614,23 @@ function sortTasks(lista, forConcluidas){
   });
 }
 function makeEl(t){
-  var wrapper=null;
   var div=document.createElement('div');
   var _hoje=new Date();_hoje.setHours(0,0,0,0);
   var _atrasada=!t.done&&!t._futuro&&t.taskDate&&new Date(t.taskDate+'T00:00:00')<_hoje;
   div.className='task-item'+(t.done?' done':'')+(t.pinned?' pinned':'')+(t._futuro?' futuro':'')+(_atrasada?' atrasada':'')+(t._licGrupoMun?' lic-grupo':'');
   div.id='task-'+t.id;
-  if(t._licGrupoMun&&t._licGrupoInicio){
-    wrapper=document.createElement('div');
-    var grpHdr=document.createElement('div');
-    grpHdr.className='lic-grupo-hdr';
-    grpHdr.textContent='🏛 Licitação — '+t._licGrupoMun;
-    wrapper.appendChild(grpHdr);
-  }
   var chk=document.createElement('div');
   chk.className='chk'+(t.done?' done':'');chk.textContent=t.done?'✕':'';
   chk.title=t._futuro?'Tarefa futura':(t.done?'Marcar como pendente':'Marcar como concluída');
   if(!t._futuro)chk.onclick=(function(id){return function(){toggle(id);};})(t.id);
   else chk.style.cursor='default';
   var body=document.createElement('div');body.className='task-body';
+  if(t._licGrupoMun&&t._licGrupoInicio){
+    var grpHdr=document.createElement('div');
+    grpHdr.className='lic-grupo-hdr';
+    grpHdr.textContent='🏛 Licitação — '+t._licGrupoMun;
+    body.appendChild(grpHdr);
+  }
   if(t.pinned){var pi=document.createElement('span');pi.style.cssText='font-size:11px;color:var(--amber);margin-right:4px;';pi.textContent='📌';body.appendChild(pi);}
   if(t.paraQuem){var pq=document.createElement('div');pq.className='task-para-quem';pq.textContent='👤 '+t.paraQuem;body.appendChild(pq);}
   if(t.priority&&PRIORITY_LABELS[t.priority]){var pb=document.createElement('span');pb.className='priority-badge '+(PRIORITY_CLASS[t.priority]||'');pb.textContent=PRIORITY_LABELS[t.priority];body.appendChild(pb);}
@@ -2714,7 +2712,6 @@ function makeEl(t){
       else if(dx<-60&&!t.done){_swipeLocked=true;arquivarTarefa(t.id);}// swipe esquerda → arquivar
     });
   }
-  if(wrapper){wrapper.appendChild(div);return wrapper;}
   return div;
 }
 function abrirObsInline(id,task){
