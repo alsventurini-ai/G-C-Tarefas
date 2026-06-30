@@ -156,8 +156,8 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
 .task-duracao{font-size:11px;color:var(--muted);margin-top:3px;}
 .task-repeat-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--green);border:1px solid var(--green);border-radius:2px;padding:1px 7px;margin-top:3px;margin-right:6px;opacity:.85;}
 .task-item.done .task-repeat-badge{opacity:.4;}
-.task-obs{font-size:12px;color:var(--purple);font-style:italic;margin-top:4px;line-height:1.4;border-left:2px solid #c9a8e8;padding-left:8px;}
-.task-item.done .task-obs{color:#bbb;border-color:#ddd;}
+.task-obs{font-size:12px;color:var(--purple);font-style:italic;margin-top:4px;line-height:1.4;}
+.task-item.done .task-obs{color:#bbb;}
 .futuro-badge{font-size:11px;color:var(--navy2);background:#edf0f7;border:1px solid #c8d0e8;border-radius:2px;padding:1px 7px;margin-top:3px;display:inline-block;}
 .task-time{font-size:11px;color:#aaa;flex-shrink:0;padding-top:3px;white-space:nowrap;}
 .task-item.done .task-time{color:var(--green);}
@@ -2471,7 +2471,7 @@ function abrirJanelaImpressao(lista,de,ate,pq,agruparPQ,incPend,incConc){
   function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
   function rowHtml(t){
     var rs=t.done?'text-decoration:line-through;color:#aaa;':'';
-    var obsHtml=t.obs?('<div style="font-size:11px;color:#7b4fa0;font-style:italic;margin-top:2px;padding-left:4px;border-left:2px solid #c9a8e8;">'+esc(t.obs)+'</div>'):'';
+    var obsHtml=t.obs?('<div style="font-size:11px;color:#7b4fa0;font-style:italic;margin-top:2px;">'+esc(t.obs)+'</div>'):'';
     var priorHtml=t.priority?('<span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:2px;margin-right:4px;'+(t.priority==='alta'?'background:#fde8e8;color:#b03a2e;':t.priority==='media'?'background:#e8f5e9;color:#2e7d32;':'background:#fff8e1;color:#c78a1a;')+'">'+esc(PRIORITY_LABELS[t.priority]||'')+'</span>'):'';
     return'<tr>'
       +'<td style="'+rs+'padding:8px 10px;border-bottom:1px solid #e8e4dc;font-size:13px;line-height:1.4;">'+priorHtml+esc(t.text)+obsHtml+'</td>'
