@@ -128,9 +128,9 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
 .section-count{background:var(--navy);color:#fff;padding:2px 9px;border-radius:10px;font-size:11px;letter-spacing:0;text-transform:none;}
 .section-count.green{background:var(--green);}
 .task-item{display:flex;align-items:flex-start;gap:12px;padding:11px 0;border-bottom:1px dashed var(--border);position:relative;}
-.task-item.pinned{background:linear-gradient(to right,rgba(199,138,26,.06),transparent);border-left:3px solid var(--amber);padding-left:8px;margin-left:-11px;}
+.task-item.pinned{background:linear-gradient(to right,rgba(199,138,26,.06),transparent);box-shadow:inset 3px 0 0 var(--amber);}
 .task-item.futuro{opacity:.75;background:repeating-linear-gradient(45deg,transparent,transparent 10px,rgba(26,39,68,.02) 10px,rgba(26,39,68,.02) 20px);}
-.task-item.atrasada{border-left:3px solid var(--red);padding-left:8px;margin-left:-11px;background:linear-gradient(to right,rgba(176,58,46,.05),transparent);}
+.task-item.atrasada{box-shadow:inset 3px 0 0 var(--red);background:linear-gradient(to right,rgba(176,58,46,.05),transparent);}
 .task-item.atrasada .task-text{color:#8b2018;}
 .task-item.lic-grupo{background:linear-gradient(to right,rgba(108,52,131,.06),transparent);box-shadow:inset 3px 0 0 #6c3483;}
 .lic-grupo-hdr{font-size:10px;font-weight:700;color:#6c3483;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
