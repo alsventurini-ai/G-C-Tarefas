@@ -4172,8 +4172,9 @@ function renderLicitacoesConcluidas(){
     if(plataforma) html+='<span style="font-size:10px;color:#1a6b8a;background:#eef5fb;border:1px solid #a8c8e8;border-radius:3px;padding:1px 6px;font-weight:600;">🌐 '+plataforma+'</span>';
     if(dataDisp) html+='<span style="font-size:11px;color:var(--muted);">📅 '+fmtDate(dataDisp)+'</span>';
     html+='</div>';
-    // Botões ver histórico, editar e excluir
-    html+='<div style="display:flex;gap:4px;">';
+    // Botões ver histórico, concluído, editar e excluir
+    html+='<div style="display:flex;gap:4px;flex-wrap:wrap;">';
+    html+='<button onclick="licParticConcluir(\''+munEscC+'\')" style="background:#3a8c4a;color:#fff;border:none;border-radius:3px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;">✅ Concluído</button>';
     html+='<button onclick="mudarAba(\'lic-historico\')" style="background:none;border:1px solid var(--border);border-radius:3px;padding:3px 10px;font-size:11px;cursor:pointer;color:var(--navy);">📋 Histórico</button>';
     html+='<button onclick="licConcEditarModal(\''+munEscC+'\')" style="background:none;border:1px solid #ddd;border-radius:3px;padding:3px 8px;font-size:11px;cursor:pointer;color:#555;">✏️ Editar</button>';
     html+='<button onclick="licConcExcluir(\''+munEscC+'\')" style="background:none;border:1px solid #ffcccc;border-radius:3px;padding:3px 8px;font-size:11px;cursor:pointer;color:#c0392b;">× Excluir</button>';
@@ -4207,6 +4208,69 @@ function renderLicitacoesConcluidas(){
     lista_html+=html;
   });
   lista.innerHTML=lista_html;
+}
+function licParticConcluir(mun){
+  var venc=licVencedorGetMun(mun);
+  var grupos=_getLicGrupos();
+  var ts=grupos[mun]||[];
+  var tDisp=ts.find(function(t){return /^licita/i.test(t.text.normalize('NFD').replace(/[\u0300-\u036f]/g,''));});
+  var dataDisp=tDisp&&tDisp.taskDate?tDisp.taskDate:'';
+  var overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML='<div style="background:#fff;border-radius:8px;padding:24px;max-width:420px;width:90%;font-family:Segoe UI,Tahoma,sans-serif;">'
+    +'<div style="font-size:14px;font-weight:700;color:#1a5276;margin-bottom:16px;">✅ Concluir — '+mun+'</div>'
+    +'<div style="margin-bottom:12px;">'
+    +'<label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px;">🎯 Resultado</label>'
+    +'<select id="pc-resultado" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;">'
+    +'<option value="">— Não definido</option>'
+    +'<option value="ganhou"'+(venc.resultado==='ganhou'?' selected':'')+'>✅ Ganhamos</option>'
+    +'<option value="perdeu"'+(venc.resultado==='perdeu'?' selected':'')+'>❌ Perdemos</option>'
+    +'<option value="deserto"'+(venc.resultado==='deserto'?' selected':'')+'>— Deserto/Cancelado</option>'
+    +'</select></div>'
+    +'<div style="margin-bottom:12px;">'
+    +'<label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px;">👤 Quem Faz</label>'
+    +'<input id="pc-quemfaz" type="text" value="'+(venc.nome||'').replace(/"/g,'&quot;')+'" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;"></div>'
+    +'<div style="margin-bottom:16px;">'
+    +'<label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px;">🏆 Quem Venceu</label>'
+    +'<input id="pc-vencedor" type="text" value="'+(venc.quemVenceu||'').replace(/"/g,'&quot;')+'" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;"></div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end;">'
+    +'<button id="pc-cancelar" style="padding:7px 16px;border:1px solid #ccc;border-radius:4px;background:#fff;font-size:12px;cursor:pointer;">Cancelar</button>'
+    +'<button id="pc-salvar" style="padding:7px 16px;border:none;border-radius:4px;background:#3a8c4a;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">✅ Concluir</button>'
+    +'</div></div>';
+  document.body.appendChild(overlay);
+  document.getElementById('pc-cancelar').onclick=function(){document.body.removeChild(overlay);};
+  document.getElementById('pc-salvar').onclick=function(){
+    var resultado=document.getElementById('pc-resultado').value;
+    var quemFaz=document.getElementById('pc-quemfaz').value.trim();
+    var quemVenceu=document.getElementById('pc-vencedor').value.trim();
+    document.body.removeChild(overlay);
+    var norm=_normMun(mun);
+    // Salvar no licVencedor
+    var vd=licVencedorLoad();
+    var chaveReal=Object.keys(vd).find(function(k){return _normMun(k)===norm;})||mun;
+    if(!vd[chaveReal])vd[chaveReal]={};
+    if(quemFaz) vd[chaveReal].nome=quemFaz;
+    if(resultado) vd[chaveReal].resultado=resultado;
+    if(quemVenceu) vd[chaveReal].quemVenceu=quemVenceu;
+    licVencedorSave(vd);
+    // Atualizar/alimentar Hist. Licitações
+    var listaHist=licHistLoad();
+    var jaExiste=listaHist.find(function(r){return _normMun(r.municipio)===norm&&r.data===dataDisp;});
+    if(jaExiste){
+      if(resultado) jaExiste.resultado=resultado;
+      if(quemFaz) jaExiste.quemFaz=quemFaz;
+      if(quemVenceu) jaExiste.vencedor=quemVenceu;
+      jaExiste.participou='sim';
+    } else {
+      var numPregao=tDisp&&tDisp._licNumero?tDisp._licNumero:'';
+      var pregaoLabel=(tDisp&&tDisp._licTipo?tDisp._licTipo+(numPregao?' '+numPregao:''):'');
+      listaHist.push({id:Date.now(),municipio:mun,data:dataDisp,pregao:pregaoLabel,resultado:resultado,quemFaz:quemFaz,vencedor:quemVenceu,participou:'sim',obs:'',link:(tDisp&&tDisp.link?tDisp.link:''),criadoEm:new Date().toISOString(),_licTipo:tDisp&&tDisp._licTipo?tDisp._licTipo:'',_licNumero:numPregao});
+    }
+    licHistSave(listaHist);
+    licLogRegistrar(mun,'🏁 Concluído em Participando','Resultado: '+(resultado||'não definido')+(quemVenceu?' | Vencedor: '+quemVenceu:''));
+    mostrarToast('✅ '+mun+' concluído — enviado ao histórico!',false);
+    mudarAba('lic-historico');
+  };
 }
 function licConcEditarModal(mun){
   var venc=licVencedorGetMun(mun);
