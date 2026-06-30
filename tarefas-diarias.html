@@ -832,6 +832,17 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
             </select>
           </div>
         </div>
+        <div class="modal-row" style="margin-bottom:12px;">
+          <div class="modal-field">
+            <label>👤 Quem Relatou/Trouxe o Problema</label>
+            <input type="text" id="prob-relatou" class="modal-input" placeholder="André (padrão se você mesmo registrar)" list="prob-pessoas-list">
+          </div>
+          <div class="modal-field">
+            <label>🛠 Responsável pela Execução</label>
+            <input type="text" id="prob-responsavel" class="modal-input" placeholder="Quem vai resolver…" list="prob-pessoas-list">
+          </div>
+        </div>
+        <datalist id="prob-pessoas-list"></datalist>
         <div class="modal-field" style="margin-bottom:12px;">
           <label>📝 Descrição detalhada</label>
           <textarea id="prob-descricao" class="modal-textarea" placeholder="Detalhe o problema, quando ocorreu, impacto…" style="min-height:80px;"></textarea>
@@ -5163,10 +5174,24 @@ function probNovoModal(){
   document.getElementById('prob-descricao').value='';
   document.getElementById('prob-setor').value='Administrativo';
   document.getElementById('prob-prioridade').value='alta';
-  document.getElementById('prob-resolucao-area').style.display='none';
+  document.getElementById('prob-relatou').value='André';
+  document.getElementById('prob-responsavel').value='';
+  probPreencherPessoasList();
   document.getElementById('prob-modal-titulo').textContent='⚠️ Novo Problema Interno';
   document.getElementById('prob-modal').style.display='flex';
   setTimeout(function(){document.getElementById('prob-titulo').focus();},80);
+}
+function probPreencherPessoasList(){
+  var dl=document.getElementById('prob-pessoas-list');
+  if(!dl) return;
+  var pessoas=['André'];
+  // Puxar nomes usados em "Para Quem" das tarefas
+  if(typeof tasks!=='undefined'){
+    tasks.forEach(function(t){if(t.paraQuem&&t.paraQuem!=='Licitações'&&t.paraQuem!=='Geral')pessoas.push(t.paraQuem);});
+  }
+  probLoad().forEach(function(p){if(p.relatou)pessoas.push(p.relatou);if(p.responsavel)pessoas.push(p.responsavel);});
+  pessoas=pessoas.filter(function(v,i,a){return v&&a.indexOf(v)===i;}).sort();
+  dl.innerHTML=pessoas.map(function(n){return '<option value="'+n.replace(/"/g,'&quot;')+'">'+n+'</option>';}).join('');
 }
 function probEditarModal(id){
   var probs=probLoad();
@@ -5177,8 +5202,9 @@ function probEditarModal(id){
   document.getElementById('prob-descricao').value=p.descricao||'';
   document.getElementById('prob-setor').value=p.setor||'Administrativo';
   document.getElementById('prob-prioridade').value=p.prioridade||'alta';
-  document.getElementById('prob-resolucao-area').style.display=p.resolvido?'block':'none';
-  document.getElementById('prob-resolucao').value=p.resolucao||'';
+  document.getElementById('prob-relatou').value=p.relatou||'André';
+  document.getElementById('prob-responsavel').value=p.responsavel||'';
+  probPreencherPessoasList();
   document.getElementById('prob-modal-titulo').textContent='✏️ Editar Problema';
   document.getElementById('prob-modal').style.display='flex';
 }
@@ -5194,7 +5220,8 @@ function probSalvar(){
       p.descricao=document.getElementById('prob-descricao').value.trim();
       p.setor=document.getElementById('prob-setor').value;
       p.prioridade=document.getElementById('prob-prioridade').value;
-      if(p.resolvido) p.resolucao=document.getElementById('prob-resolucao').value.trim();
+      p.relatou=document.getElementById('prob-relatou').value.trim()||'André';
+      p.responsavel=document.getElementById('prob-responsavel').value.trim();
     }
   } else {
     probs.push({
@@ -5203,8 +5230,14 @@ function probSalvar(){
       descricao:document.getElementById('prob-descricao').value.trim(),
       setor:document.getElementById('prob-setor').value,
       prioridade:document.getElementById('prob-prioridade').value,
+      relatou:document.getElementById('prob-relatou').value.trim()||'André',
+      responsavel:document.getElementById('prob-responsavel').value.trim(),
       resolvido:false,
       resolucao:'',
+      discussoes:'',
+      analise:'',
+      plano:'',
+      prazo:'',
       naPauta:false,
       criadoEm:new Date().toISOString()
     });
@@ -5213,13 +5246,58 @@ function probSalvar(){
   mostrarToast('✅ Problema salvo!',false);
 }
 function probResolver(id){
-  var resolucao=prompt('Decisão/resolução tomada nesta reunião:','');
-  if(resolucao===null) return;
   var probs=probLoad();
   var p=probs.find(function(x){return x.id===id;});
-  if(p){p.resolvido=true;p.resolucao=resolucao||'Resolvido sem anotação';p.resolvidoEm=new Date().toISOString();}
-  probSaveData(probs);probRender();
-  mostrarToast('✅ Problema marcado como resolvido!',false);
+  if(!p) return;
+  var overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  overlay.innerHTML='<div style="background:#fff;border-radius:8px;padding:24px;max-width:480px;width:100%;font-family:Segoe UI,Tahoma,sans-serif;max-height:90vh;overflow-y:auto;">'
+    +'<div style="font-size:14px;font-weight:700;color:#1a5276;margin-bottom:4px;">✅ Resolver — '+p.titulo+'</div>'
+    +'<div style="font-size:11px;color:#888;margin-bottom:16px;">Preencha os campos da ata de reunião</div>'
+    +'<div style="margin-bottom:12px;"><label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px;">💬 Discussões Realizadas</label>'
+    +'<textarea id="res-discussoes" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;min-height:55px;"></textarea></div>'
+    +'<div style="margin-bottom:12px;"><label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px;">🔍 Análise da Equipe</label>'
+    +'<textarea id="res-analise" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;min-height:55px;"></textarea></div>'
+    +'<div style="margin-bottom:12px;"><label style="font-size:11px;font-weight:700;color:#2e7d32;display:block;margin-bottom:4px;">✅ Decisão Tomada *</label>'
+    +'<textarea id="res-decisao" style="width:100%;padding:7px;border:1px solid #3a8c4a;border-radius:4px;font-size:13px;box-sizing:border-box;min-height:55px;"></textarea></div>'
+    +'<div style="margin-bottom:12px;"><label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px;">📌 Plano de Ação</label>'
+    +'<textarea id="res-plano" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;min-height:55px;"></textarea></div>'
+    +'<div class="modal-row" style="display:flex;gap:8px;margin-bottom:16px;">'
+    +'<div style="flex:1;"><label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px;">🛠 Responsável pela Execução</label>'
+    +'<input id="res-responsavel" type="text" value="'+(p.responsavel||'').replace(/"/g,'&quot;')+'" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;"></div>'
+    +'<div style="flex:0 0 140px;"><label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px;">📅 Prazo</label>'
+    +'<input id="res-prazo" type="date" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;"></div>'
+    +'</div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end;">'
+    +'<button id="res-cancelar" style="padding:7px 16px;border:1px solid #ccc;border-radius:4px;background:#fff;font-size:12px;cursor:pointer;">Cancelar</button>'
+    +'<button id="res-salvar" style="padding:7px 16px;border:none;border-radius:4px;background:#3a8c4a;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">✅ Marcar como Resolvido</button>'
+    +'</div></div>';
+  document.body.appendChild(overlay);
+  document.getElementById('res-cancelar').onclick=function(){document.body.removeChild(overlay);};
+  document.getElementById('res-salvar').onclick=function(){
+    var decisao=document.getElementById('res-decisao').value.trim();
+    if(!decisao){alert('Informe a decisão tomada.');return;}
+    var discussoes=document.getElementById('res-discussoes').value.trim();
+    var analise=document.getElementById('res-analise').value.trim();
+    var plano=document.getElementById('res-plano').value.trim();
+    var responsavel=document.getElementById('res-responsavel').value.trim();
+    var prazo=document.getElementById('res-prazo').value;
+    document.body.removeChild(overlay);
+    var probs2=probLoad();
+    var p2=probs2.find(function(x){return x.id===id;});
+    if(p2){
+      p2.resolvido=true;
+      p2.resolucao=decisao;
+      p2.discussoes=discussoes;
+      p2.analise=analise;
+      p2.plano=plano;
+      p2.responsavel=responsavel;
+      p2.prazo=prazo;
+      p2.resolvidoEm=new Date().toISOString();
+    }
+    probSaveData(probs2);probRender();
+    mostrarToast('✅ Problema marcado como resolvido!',false);
+  };
 }
 function probExcluir(id){
   if(!confirm('Excluir este problema?')) return;
@@ -5291,8 +5369,21 @@ function probRender(){
     html+='</div></div>';
     // Descrição
     if(p.descricao) html+='<div style="font-size:12px;color:var(--ink);margin-bottom:4px;">'+p.descricao+'</div>';
-    // Resolução
-    if(p.resolvido&&p.resolucao) html+='<div style="font-size:11px;color:#2e7d32;font-style:italic;margin-top:4px;">📌 Decisão: '+p.resolucao+'</div>';
+    // Quem relatou / responsável
+    if(p.relatou||p.responsavel){
+      html+='<div style="display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:#555;margin-bottom:4px;">';
+      if(p.relatou) html+='<span>👤 <strong>Relatado por:</strong> '+p.relatou+'</span>';
+      if(p.responsavel) html+='<span>🛠 <strong>Responsável:</strong> '+p.responsavel+'</span>';
+      html+='</div>';
+    }
+    // Resolução completa
+    if(p.resolvido){
+      if(p.discussoes) html+='<div style="font-size:11px;color:#555;margin-top:4px;">💬 <strong>Discussões:</strong> '+p.discussoes+'</div>';
+      if(p.analise) html+='<div style="font-size:11px;color:#555;margin-top:2px;">🔍 <strong>Análise:</strong> '+p.analise+'</div>';
+      if(p.resolucao) html+='<div style="font-size:11px;color:#2e7d32;font-style:italic;margin-top:4px;">✅ <strong>Decisão:</strong> '+p.resolucao+'</div>';
+      if(p.plano) html+='<div style="font-size:11px;color:#555;margin-top:2px;">📌 <strong>Plano de Ação:</strong> '+p.plano+'</div>';
+      if(p.prazo) html+='<div style="font-size:11px;color:#b8860b;margin-top:2px;">📅 <strong>Prazo:</strong> '+fmtDate(p.prazo)+'</div>';
+    }
     // Data
     html+='<div style="font-size:10px;color:var(--muted);margin-top:6px;">Registrado em '+dt+(p.resolvido?' · Resolvido em '+new Date(p.resolvidoEm).toLocaleDateString('pt-BR'):'')+'</div>';
     html+='</div>';
@@ -5328,13 +5419,25 @@ function probGerarPauta(){
     doSetor.forEach(function(p,i){
       var prioCor={alta:'#b03a2e',media:'#c78a1a',baixa:'#2e7d32'}[p.prioridade]||'#555';
       var prioLabel={alta:'ALTA',media:'MÉDIA',baixa:'BAIXA'}[p.prioridade]||'';
-      html+='<div style="margin-bottom:8px;padding:6px 10px;border-left:3px solid '+prioCor+';background:#f9f8f6;">';
-      html+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">';
+      html+='<div style="margin-bottom:14px;padding:8px 10px;border-left:3px solid '+prioCor+';background:#f9f8f6;">';
+      html+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">';
       html+='<span style="font-size:10px;font-weight:700;background:'+prioCor+';color:#fff;padding:1px 6px;border-radius:2px;">'+prioLabel+'</span>';
       html+='<span style="font-weight:700;color:#1a5276;">'+(i+1)+'. '+p.titulo+'</span>';
       html+='</div>';
-      if(p.descricao) html+='<div style="font-size:11px;color:#444;padding-left:4px;">'+p.descricao+'</div>';
-      html+='<div style="font-size:10px;color:#999;margin-top:4px;border-top:1px solid #eee;padding-top:4px;">Decisão: _______________________________________________</div>';
+      if(p.relatou||p.responsavel){
+        html+='<div style="display:flex;gap:16px;flex-wrap:wrap;font-size:10px;color:#666;margin-bottom:5px;padding-left:4px;">';
+        if(p.relatou) html+='<span>👤 Relatado por: <strong>'+p.relatou+'</strong></span>';
+        if(p.responsavel) html+='<span>🛠 Responsável: <strong>'+p.responsavel+'</strong></span>';
+        html+='</div>';
+      }
+      if(p.descricao) html+='<div style="font-size:11px;color:#444;padding-left:4px;margin-bottom:6px;"><strong>Descrição:</strong> '+p.descricao+'</div>';
+      html+='<div style="font-size:10px;color:#555;border-top:1px solid #e8e5dd;padding-top:6px;margin-top:4px;">'
+        +'<div style="margin-bottom:5px;"><strong>Discussões realizadas:</strong><br><span style="display:inline-block;border-bottom:1px solid #ccc;width:100%;min-height:14px;">&nbsp;</span></div>'
+        +'<div style="margin-bottom:5px;"><strong>Análise da equipe:</strong><br><span style="display:inline-block;border-bottom:1px solid #ccc;width:100%;min-height:14px;">&nbsp;</span></div>'
+        +'<div style="margin-bottom:5px;"><strong>Decisão tomada:</strong><br><span style="display:inline-block;border-bottom:1px solid #ccc;width:100%;min-height:14px;">&nbsp;</span></div>'
+        +'<div style="margin-bottom:5px;"><strong>Plano de ação:</strong><br><span style="display:inline-block;border-bottom:1px solid #ccc;width:100%;min-height:14px;">&nbsp;</span></div>'
+        +'<div style="display:flex;gap:16px;"><span style="flex:1;"><strong>Responsável pela execução:</strong> '+(p.responsavel||'_______________')+'</span><span><strong>Prazo:</strong> ___/___/_____</span></div>'
+        +'</div>';
       html+='</div>';
     });
     html+='</div>';
