@@ -2617,7 +2617,7 @@ function makeEl(t){
   var div=document.createElement('div');
   var _hoje=new Date();_hoje.setHours(0,0,0,0);
   var _atrasada=!t.done&&!t._futuro&&t.taskDate&&new Date(t.taskDate+'T00:00:00')<_hoje;
-  div.className='task-item'+(t.done?' done':'')+(t.pinned?' pinned':'')+(t._futuro?' futuro':'')+(_atrasada?' atrasada':'')+(t._licGrupoMun?' lic-grupo':'');
+  div.className='task-item'+(t.done?' done':'')+(t.pinned?' pinned':'')+(t._futuro?' futuro':'')+(_atrasada?' atrasada':'');
   div.id='task-'+t.id;
   var chk=document.createElement('div');
   chk.className='chk'+(t.done?' done':'');chk.textContent=t.done?'✕':'';
@@ -2625,12 +2625,6 @@ function makeEl(t){
   if(!t._futuro)chk.onclick=(function(id){return function(){toggle(id);};})(t.id);
   else chk.style.cursor='default';
   var body=document.createElement('div');body.className='task-body';
-  if(t._licGrupoMun&&t._licGrupoInicio){
-    var grpHdr=document.createElement('div');
-    grpHdr.className='lic-grupo-hdr';
-    grpHdr.textContent='🏛 Licitação — '+t._licGrupoMun;
-    body.appendChild(grpHdr);
-  }
   if(t.pinned){var pi=document.createElement('span');pi.style.cssText='font-size:11px;color:var(--amber);margin-right:4px;';pi.textContent='📌';body.appendChild(pi);}
   if(t.paraQuem){var pq=document.createElement('div');pq.className='task-para-quem';pq.textContent='👤 '+t.paraQuem;body.appendChild(pq);}
   if(t.priority&&PRIORITY_LABELS[t.priority]){var pb=document.createElement('span');pb.className='priority-badge '+(PRIORITY_CLASS[t.priority]||'');pb.textContent=PRIORITY_LABELS[t.priority];body.appendChild(pb);}
@@ -2748,7 +2742,27 @@ function render(){
   var lp=document.getElementById('list-p'),ld=document.getElementById('list-d');
   lp.innerHTML='';ld.innerHTML='';
   if(p.length===0){var e=document.createElement('div');e.className='empty';e.textContent=todos.length===0?'Nenhuma tarefa ainda.':'Nenhuma tarefa corresponde ao filtro.';lp.appendChild(e);}
-  else p.forEach(function(t){lp.appendChild(makeEl(t));});
+  else {
+    var _grupoAtual=null;
+    p.forEach(function(t){
+      if(t._licGrupoMun&&t._licGrupoInicio){
+        _grupoAtual=document.createElement('div');
+        _grupoAtual.style.cssText='box-shadow:inset 3px 0 0 #6c3483;background:linear-gradient(to right,rgba(108,52,131,.06),transparent);';
+        var grpHdr=document.createElement('div');
+        grpHdr.className='lic-grupo-hdr';
+        grpHdr.style.padding='8px 0 2px 12px';
+        grpHdr.textContent='🏛 Licitação — '+t._licGrupoMun;
+        _grupoAtual.appendChild(grpHdr);
+        lp.appendChild(_grupoAtual);
+      }
+      if(t._licGrupoMun&&_grupoAtual){
+        _grupoAtual.appendChild(makeEl(t));
+        if(t._licGrupoFim) _grupoAtual=null;
+      } else {
+        lp.appendChild(makeEl(t));
+      }
+    });
+  }
   if(d.length===0){var e2=document.createElement('div');e2.className='empty';e2.textContent='Nenhuma concluída ainda.';ld.appendChild(e2);}
   else d.forEach(function(t){ld.appendChild(makeEl(t));});
   var semFuturo=todos.filter(function(t){return!t._futuro;});
