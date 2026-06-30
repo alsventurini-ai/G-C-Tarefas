@@ -777,6 +777,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button onclick="probGerarPauta()" style="background:#1a5276;color:#fff;border:none;border-radius:4px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;">📋 Gerar Pauta</button>
+        <button onclick="probGerarAta()" style="background:#6c3483;color:#fff;border:none;border-radius:4px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;">📝 Gerar Ata</button>
         <button onclick="probNovoModal()" style="background:var(--green);color:#fff;border:none;border-radius:4px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;">+ Novo Problema</button>
       </div>
     </div>
@@ -874,6 +875,27 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
           <button onclick="probCopiarPauta()" style="background:#1a5276;color:#fff;border:none;padding:8px 18px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;">📋 Copiar</button>
           <button onclick="probImprimirPauta()" style="background:#2c3e50;color:#fff;border:none;padding:8px 18px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;">🖨️ Imprimir</button>
           <button onclick="document.getElementById('prob-pauta-modal').style.display='none';document.getElementById('prob-pauta-overlay').remove();" style="background:#5d6d7e;color:#fff;border:none;padding:8px 18px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;">✕ Fechar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Ata da Reunião -->
+  <div id="prob-ata-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-box" style="max-width:600px;">
+      <div class="modal-header">
+        <span>📝 Ata da Reunião</span>
+        <button class="modal-close" onclick="document.getElementById('prob-ata-modal').style.display='none'">×</button>
+      </div>
+      <div style="padding:18px 20px;">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
+          <button onclick="probAtaNovoItem()" style="background:var(--green);color:#fff;border:none;border-radius:4px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;">+ Item trazido na reunião</button>
+        </div>
+        <div id="prob-ata-conteudo" style="font-size:13px;line-height:1.8;white-space:pre-wrap;background:#f9f8f6;border:1px solid var(--border);border-radius:4px;padding:14px;height:340px;overflow-y:auto;font-family:'Segoe UI',Tahoma,sans-serif;"></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);">
+          <button onclick="probCopiarAta()" style="background:#1a5276;color:#fff;border:none;padding:8px 18px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;">📋 Copiar</button>
+          <button onclick="probImprimirAta()" style="background:#2c3e50;color:#fff;border:none;padding:8px 18px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;">🖨️ Imprimir</button>
+          <button onclick="document.getElementById('prob-ata-modal').style.display='none';">✕ Fechar</button>
         </div>
       </div>
     </div>
@@ -5459,6 +5481,149 @@ function probImprimirPauta(){
   if(!doc){mostrarToast('Gere a pauta primeiro.',false);return;}
   var w=window.open('','_blank','width=800,height=900');
   w.document.write('<html><head><title>Pauta G&C</title><style>body{margin:0;padding:0;font-family:Segoe UI,Tahoma,sans-serif;}@media print{@page{size:A4 portrait;margin:0;}}</style></head><body>');
+  w.document.write(doc.outerHTML);
+  w.document.write('</body></html>');
+  w.document.close();w.focus();
+  setTimeout(function(){w.print();},500);
+}
+// ── Ata da Reunião ──
+function probAtaNovoItem(){
+  var overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;';
+  overlay.innerHTML='<div style="background:#fff;border-radius:8px;padding:24px;max-width:480px;width:100%;font-family:Segoe UI,Tahoma,sans-serif;max-height:90vh;overflow-y:auto;">'
+    +'<div style="font-size:14px;font-weight:700;color:#6c3483;margin-bottom:4px;">+ Item Trazido na Reunião</div>'
+    +'<div style="font-size:11px;color:#888;margin-bottom:16px;">Será salvo automaticamente já como resolvido</div>'
+    +'<div class="modal-row" style="display:flex;gap:8px;margin-bottom:10px;">'
+    +'<div style="flex:1;"><label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px;">🏢 Setor</label>'
+    +'<select id="ai-setor" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;"><option value="Administrativo">Administrativo</option><option value="Produção">Produção</option></select></div>'
+    +'<div style="flex:1;"><label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px;">🎯 Prioridade</label>'
+    +'<select id="ai-prioridade" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;"><option value="alta">🔴 Alta</option><option value="media">🟡 Média</option><option value="baixa">🟢 Baixa</option></select></div>'
+    +'</div>'
+    +'<div style="margin-bottom:10px;"><label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px;">👤 Trazido por (quem relatou na reunião)</label>'
+    +'<input id="ai-relatou" type="text" placeholder="Nome de quem trouxe o assunto…" list="prob-pessoas-list" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;"></div>'
+    +'<div style="margin-bottom:10px;"><label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px;">📌 Título do Problema/Assunto</label>'
+    +'<input id="ai-titulo" type="text" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;"></div>'
+    +'<div style="margin-bottom:10px;"><label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px;">📝 Descrição</label>'
+    +'<textarea id="ai-descricao" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;min-height:50px;"></textarea></div>'
+    +'<div style="margin-bottom:10px;"><label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px;">💬 Discussões Realizadas</label>'
+    +'<textarea id="ai-discussoes" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;min-height:50px;"></textarea></div>'
+    +'<div style="margin-bottom:10px;"><label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px;">🔍 Análise da Equipe</label>'
+    +'<textarea id="ai-analise" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;min-height:50px;"></textarea></div>'
+    +'<div style="margin-bottom:10px;"><label style="font-size:11px;font-weight:700;color:#2e7d32;display:block;margin-bottom:4px;">✅ Decisão Tomada *</label>'
+    +'<textarea id="ai-decisao" style="width:100%;padding:7px;border:1px solid #3a8c4a;border-radius:4px;font-size:13px;box-sizing:border-box;min-height:50px;"></textarea></div>'
+    +'<div style="margin-bottom:10px;"><label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px;">📌 Plano de Ação</label>'
+    +'<textarea id="ai-plano" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;min-height:50px;"></textarea></div>'
+    +'<div class="modal-row" style="display:flex;gap:8px;margin-bottom:16px;">'
+    +'<div style="flex:1;"><label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px;">🛠 Responsável pela Execução</label>'
+    +'<input id="ai-responsavel" type="text" list="prob-pessoas-list" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;"></div>'
+    +'<div style="flex:0 0 140px;"><label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px;">📅 Prazo</label>'
+    +'<input id="ai-prazo" type="date" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;"></div>'
+    +'</div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end;">'
+    +'<button id="ai-cancelar" style="padding:7px 16px;border:1px solid #ccc;border-radius:4px;background:#fff;font-size:12px;cursor:pointer;">Cancelar</button>'
+    +'<button id="ai-salvar" style="padding:7px 16px;border:none;border-radius:4px;background:#6c3483;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">✅ Salvar na Ata</button>'
+    +'</div></div>';
+  document.body.appendChild(overlay);
+  probPreencherPessoasList();
+  document.getElementById('ai-cancelar').onclick=function(){document.body.removeChild(overlay);};
+  document.getElementById('ai-salvar').onclick=function(){
+    var titulo=document.getElementById('ai-titulo').value.trim();
+    var decisao=document.getElementById('ai-decisao').value.trim();
+    if(!titulo){alert('Informe o título do problema/assunto.');return;}
+    if(!decisao){alert('Informe a decisão tomada.');return;}
+    var novo={
+      id:Date.now(),
+      titulo:titulo,
+      descricao:document.getElementById('ai-descricao').value.trim(),
+      setor:document.getElementById('ai-setor').value,
+      prioridade:document.getElementById('ai-prioridade').value,
+      relatou:document.getElementById('ai-relatou').value.trim()||'Não informado',
+      responsavel:document.getElementById('ai-responsavel').value.trim(),
+      resolvido:true,
+      resolucao:decisao,
+      discussoes:document.getElementById('ai-discussoes').value.trim(),
+      analise:document.getElementById('ai-analise').value.trim(),
+      plano:document.getElementById('ai-plano').value.trim(),
+      prazo:document.getElementById('ai-prazo').value,
+      naPauta:true,
+      criadoEm:new Date().toISOString(),
+      resolvidoEm:new Date().toISOString()
+    };
+    var probs=probLoad();
+    probs.push(novo);
+    probSaveData(probs);
+    document.body.removeChild(overlay);
+    mostrarToast('✅ Item adicionado à ata e salvo em Problemas!',false);
+    probGerarAta();
+  };
+}
+function probGerarAta(){
+  var todos=probLoad();
+  // Puxa os que estavam marcados na pauta (naPauta=true), independente de já estarem resolvidos ou não
+  var doAta=todos.filter(function(p){return p.naPauta;});
+  if(doAta.length===0){
+    mostrarToast('Nenhum problema marcado para pauta. Marque ☑ Pauta antes de gerar a ata.',false);
+    return;
+  }
+  var hoje=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+  var ordemPrio={alta:0,media:1,baixa:2};
+  doAta.sort(function(a,b){return (ordemPrio[a.prioridade]||1)-(ordemPrio[b.prioridade]||1)||a.criadoEm.localeCompare(b.criadoEm);});
+  var html='<div id="prob-ata-doc" style="background:#fff;font-family:\'Segoe UI\',Tahoma,sans-serif;font-size:12px;color:#222;padding:0;">';
+  html+='<div style="text-align:center;padding:8px 0;border-bottom:2px solid #1a5276;margin-bottom:14px;"><div style="font-size:18px;font-weight:700;color:#1a5276;">GALHARDO &amp; CANALES</div></div>';
+  html+='<div style="padding:0 20px;">';
+  html+='<div style="text-align:center;padding:8px 0;border-top:2px solid #1a5276;border-bottom:2px solid #1a5276;margin-bottom:14px;">';
+  html+='<div style="font-size:14px;font-weight:700;color:#1a5276;text-transform:uppercase;letter-spacing:1px;">Ata de Reunião</div>';
+  html+='<div style="font-size:11px;color:#555;margin-top:2px;">'+hoje+'</div>';
+  html+='</div>';
+  var setores=['Administrativo','Produção'];
+  setores.forEach(function(setor){
+    var doSetor=doAta.filter(function(p){return p.setor===setor;});
+    if(doSetor.length===0) return;
+    html+='<div style="margin-bottom:14px;">';
+    html+='<div style="font-size:12px;font-weight:700;color:#1a5276;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid #1a5276;padding-bottom:4px;margin-bottom:8px;">▌ '+setor+'</div>';
+    doSetor.forEach(function(p,i){
+      var prioCor={alta:'#b03a2e',media:'#c78a1a',baixa:'#2e7d32'}[p.prioridade]||'#555';
+      var prioLabel={alta:'ALTA',media:'MÉDIA',baixa:'BAIXA'}[p.prioridade]||'';
+      var statusLbl=p.resolvido?'<span style="font-size:9px;font-weight:700;background:#2e7d32;color:#fff;padding:1px 7px;border-radius:10px;margin-left:6px;">RESOLVIDO</span>':'<span style="font-size:9px;font-weight:700;background:#c78a1a;color:#fff;padding:1px 7px;border-radius:10px;margin-left:6px;">PENDENTE</span>';
+      html+='<div style="margin-bottom:12px;padding:8px 10px;border-left:3px solid '+prioCor+';background:#f9f8f6;">';
+      html+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap;">';
+      html+='<span style="font-size:10px;font-weight:700;background:'+prioCor+';color:#fff;padding:1px 6px;border-radius:2px;">'+prioLabel+'</span>';
+      html+='<span style="font-weight:700;color:#1a5276;">'+(i+1)+'. '+p.titulo+'</span>';
+      html+=statusLbl;
+      html+='</div>';
+      if(p.relatou||p.responsavel){
+        html+='<div style="display:flex;gap:16px;flex-wrap:wrap;font-size:10px;color:#666;margin-bottom:5px;padding-left:4px;">';
+        if(p.relatou) html+='<span>👤 Relatado por: <strong>'+p.relatou+'</strong></span>';
+        if(p.responsavel) html+='<span>🛠 Responsável: <strong>'+p.responsavel+'</strong></span>';
+        html+='</div>';
+      }
+      if(p.descricao) html+='<div style="font-size:11px;color:#444;padding-left:4px;margin-bottom:6px;"><strong>Descrição:</strong> '+p.descricao+'</div>';
+      html+='<div style="font-size:11px;color:#333;border-top:1px solid #e8e5dd;padding-top:6px;margin-top:4px;">';
+      html+='<div style="margin-bottom:5px;"><strong>Discussões realizadas:</strong> '+(p.discussoes||'<span style="color:#aaa;">— não preenchido —</span>')+'</div>';
+      html+='<div style="margin-bottom:5px;"><strong>Análise da equipe:</strong> '+(p.analise||'<span style="color:#aaa;">— não preenchido —</span>')+'</div>';
+      html+='<div style="margin-bottom:5px;color:#2e7d32;"><strong>Decisão tomada:</strong> '+(p.resolucao||'<span style="color:#aaa;">— pendente de resolução —</span>')+'</div>';
+      html+='<div style="margin-bottom:5px;"><strong>Plano de ação:</strong> '+(p.plano||'<span style="color:#aaa;">— não preenchido —</span>')+'</div>';
+      html+='<div style="display:flex;gap:16px;flex-wrap:wrap;"><span><strong>Responsável pela execução:</strong> '+(p.responsavel||'—')+'</span><span><strong>Prazo:</strong> '+(p.prazo?fmtDate(p.prazo):'—')+'</span></div>';
+      html+='</div>';
+      html+='</div>';
+    });
+    html+='</div>';
+  });
+  html+='<div style="margin-top:10px;font-size:10px;color:#777;text-align:right;">Total: '+doAta.length+' item(ns) na ata</div>';
+  html+='</div></div>';
+  document.getElementById('prob-ata-conteudo').innerHTML=html;
+  document.getElementById('prob-ata-modal').style.display='flex';
+}
+function probCopiarAta(){
+  var el=document.getElementById('prob-ata-conteudo');
+  var txt=el?el.innerText||el.textContent:'';
+  navigator.clipboard.writeText(txt).then(function(){mostrarToast('📋 Ata copiada!',false);});
+}
+function probImprimirAta(){
+  var doc=document.getElementById('prob-ata-doc');
+  if(!doc){mostrarToast('Gere a ata primeiro.',false);return;}
+  var w=window.open('','_blank','width=800,height=900');
+  w.document.write('<html><head><title>Ata G&C</title><style>body{margin:0;padding:0;font-family:Segoe UI,Tahoma,sans-serif;}@media print{@page{size:A4 portrait;margin:0;}}</style></head><body>');
   w.document.write(doc.outerHTML);
   w.document.write('</body></html>');
   w.document.close();w.focus();
