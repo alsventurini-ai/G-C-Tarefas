@@ -296,6 +296,8 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
 .tab-bar{display:flex;background:var(--navy2);padding:0 30px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
 .tab-bar::-webkit-scrollbar{display:none;}
 .tab-btn{background:none;border:none;color:rgba(255,255,255,.6);padding:10px 20px;font-size:13.5px;font-family:'Segoe UI',Tahoma,sans-serif;cursor:pointer;border-bottom:3px solid transparent;transition:all .15s;display:flex;align-items:center;gap:6px;white-space:nowrap;flex-shrink:0;}
+.subtab-btn{transition:all .15s;}
+.subtab-btn:hover{color:#1a5276!important;}
 .tab-btn:hover{color:rgba(255,255,255,.9);}
 .tab-btn.active{color:#fff;border-bottom-color:#e8b84b;font-weight:600;}
 .tab-badge{background:#b03a2e;color:#fff;border-radius:8px;padding:1px 6px;font-size:11px;}
@@ -770,38 +772,61 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <!-- Aba Histórico -->
   <!-- Aba Problemas Internos -->
   <div id="tab-problemas" class="tab-content">
-    <div style="padding:18px 30px 8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+    <div style="padding:18px 30px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
       <div>
         <div style="font-size:13px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:1px;">⚠️ Problemas Internos</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px;">Registro de ocorrências para pauta de reuniões</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">Registro, pauta e atas de reuniões</div>
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button onclick="probGerarPauta()" style="background:#1a5276;color:#fff;border:none;border-radius:4px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;">📋 Gerar Pauta</button>
-        <button onclick="probGerarAta()" style="background:#6c3483;color:#fff;border:none;border-radius:4px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;">📝 Gerar Ata</button>
+    </div>
+    <!-- Sub-abas -->
+    <div style="display:flex;gap:4px;padding:14px 30px 0;border-bottom:1px solid var(--border);">
+      <button class="subtab-btn active" id="subtab-btn-registrar" onclick="probMudarSubAba('registrar')" style="background:none;border:none;border-bottom:3px solid #1a5276;color:#1a5276;font-weight:700;padding:8px 16px;font-size:12.5px;cursor:pointer;">📝 Registrar</button>
+      <button class="subtab-btn" id="subtab-btn-pauta" onclick="probMudarSubAba('pauta')" style="background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);font-weight:600;padding:8px 16px;font-size:12.5px;cursor:pointer;">📋 Pauta</button>
+      <button class="subtab-btn" id="subtab-btn-atas" onclick="probMudarSubAba('atas')" style="background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);font-weight:600;padding:8px 16px;font-size:12.5px;cursor:pointer;">📄 Atas</button>
+    </div>
+
+    <!-- Sub-aba: Registrar -->
+    <div id="subtab-registrar" class="prob-subtab" style="display:block;">
+      <div style="padding:14px 30px 0;display:flex;justify-content:flex-end;">
         <button onclick="probNovoModal()" style="background:var(--green);color:#fff;border:none;border-radius:4px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;">+ Novo Problema</button>
       </div>
+      <div style="padding:10px 30px 12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <select id="prob-filtro-setor" class="filter-select" onchange="probRender()" style="font-size:12px;">
+          <option value="">Todos os setores</option>
+          <option value="Administrativo">Administrativo</option>
+          <option value="Produção">Produção</option>
+        </select>
+        <select id="prob-filtro-status" class="filter-select" onchange="probRender()" style="font-size:12px;">
+          <option value="pendente">Pendentes</option>
+          <option value="resolvido">Resolvidos</option>
+          <option value="">Todos</option>
+        </select>
+        <select id="prob-filtro-prio" class="filter-select" onchange="probRender()" style="font-size:12px;">
+          <option value="">Todas as prioridades</option>
+          <option value="alta">🔴 Alta</option>
+          <option value="media">🟡 Média</option>
+          <option value="baixa">🟢 Baixa</option>
+        </select>
+      </div>
+      <div id="prob-stats-row" style="display:flex;gap:12px;padding:0 30px 14px;flex-wrap:wrap;"></div>
+      <div id="prob-lista" style="padding:0 30px 24px;background:var(--cream);"></div>
     </div>
-    <!-- Filtros -->
-    <div style="padding:0 30px 12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-      <select id="prob-filtro-setor" class="filter-select" onchange="probRender()" style="font-size:12px;">
-        <option value="">Todos os setores</option>
-        <option value="Administrativo">Administrativo</option>
-        <option value="Produção">Produção</option>
-      </select>
-      <select id="prob-filtro-status" class="filter-select" onchange="probRender()" style="font-size:12px;">
-        <option value="pendente">Pendentes</option>
-        <option value="resolvido">Resolvidos</option>
-        <option value="">Todos</option>
-      </select>
-      <select id="prob-filtro-prio" class="filter-select" onchange="probRender()" style="font-size:12px;">
-        <option value="">Todas as prioridades</option>
-        <option value="alta">🔴 Alta</option>
-        <option value="media">🟡 Média</option>
-        <option value="baixa">🟢 Baixa</option>
-      </select>
+
+    <!-- Sub-aba: Pauta -->
+    <div id="subtab-pauta" class="prob-subtab" style="display:none;">
+      <div style="padding:14px 30px 0;display:flex;justify-content:flex-end;">
+        <button onclick="pautaNovaModal()" style="background:#1a5276;color:#fff;border:none;border-radius:4px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;">📋 Definir Reunião</button>
+      </div>
+      <div id="prob-pauta-tab-conteudo" style="padding:14px 30px 24px;"></div>
     </div>
-    <div id="prob-stats-row" style="display:flex;gap:12px;padding:0 30px 14px;flex-wrap:wrap;"></div>
-    <div id="prob-lista" style="padding:0 30px 24px;background:var(--cream);"></div>
+
+    <!-- Sub-aba: Atas -->
+    <div id="subtab-atas" class="prob-subtab" style="display:none;">
+      <div style="padding:14px 30px 0;display:flex;justify-content:flex-end;gap:8px;">
+        <button onclick="ataNovaModal()" style="background:#6c3483;color:#fff;border:none;border-radius:4px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;">+ Nova Ata</button>
+      </div>
+      <div id="atas-lista" style="padding:14px 30px 24px;"></div>
+    </div>
   </div>
 
   <!-- Modal Novo Problema -->
@@ -880,22 +905,108 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
     </div>
   </div>
 
-  <!-- Modal Ata da Reunião -->
-  <div id="prob-ata-modal" class="modal-overlay" style="display:none;">
-    <div class="modal-box" style="max-width:600px;">
+  <!-- Modal Definir Reunião (Pauta) -->
+  <div id="pauta-nova-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-box" style="max-width:520px;">
       <div class="modal-header">
-        <span>📝 Ata da Reunião</span>
-        <button class="modal-close" onclick="document.getElementById('prob-ata-modal').style.display='none'">×</button>
+        <span>📋 Definir Reunião — Pauta</span>
+        <button class="modal-close" onclick="document.getElementById('pauta-nova-modal').style.display='none'">×</button>
       </div>
       <div style="padding:18px 20px;">
-        <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
+        <div class="modal-row" style="margin-bottom:12px;">
+          <div class="modal-field">
+            <label>📅 Data</label>
+            <input type="date" id="pauta-data" class="modal-input">
+          </div>
+          <div class="modal-field">
+            <label>🕐 Início</label>
+            <input type="time" id="pauta-hora-inicio" class="modal-input">
+          </div>
+          <div class="modal-field">
+            <label>🕐 Término</label>
+            <input type="time" id="pauta-hora-fim" class="modal-input">
+          </div>
+        </div>
+        <div class="modal-field" style="margin-bottom:10px;">
+          <label>👥 Participantes</label>
+          <div id="pauta-participantes-fixos" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;"></div>
+          <div style="display:flex;gap:6px;">
+            <input type="text" id="pauta-novo-participante" placeholder="Outro colaborador…" style="flex:1;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;">
+            <select id="pauta-novo-participante-setor" style="padding:7px;border:1px solid #ccc;border-radius:4px;font-size:12px;">
+              <option value="Administrativo">Administrativo</option>
+              <option value="Produção">Produção</option>
+            </select>
+            <button onclick="pautaAdicionarParticipanteManual()" style="background:#1a5276;color:#fff;border:none;border-radius:4px;padding:7px 12px;font-size:12px;cursor:pointer;">+</button>
+          </div>
+          <div id="pauta-participantes-manuais" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;"></div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+          <button onclick="document.getElementById('pauta-nova-modal').style.display='none'" class="btn-modal-cancel">Cancelar</button>
+          <button onclick="pautaSalvarCabecalho()" style="background:#1a5276;color:#fff;border:none;padding:8px 22px;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer;">📋 Salvar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Nova Ata -->
+  <div id="ata-nova-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-box" style="max-width:520px;">
+      <div class="modal-header">
+        <span>📄 Nova Ata de Reunião</span>
+        <button class="modal-close" onclick="document.getElementById('ata-nova-modal').style.display='none'">×</button>
+      </div>
+      <div style="padding:18px 20px;">
+        <div class="modal-row" style="margin-bottom:12px;">
+          <div class="modal-field">
+            <label>📅 Data</label>
+            <input type="date" id="ata-data" class="modal-input">
+          </div>
+          <div class="modal-field">
+            <label>🕐 Início</label>
+            <input type="time" id="ata-hora-inicio" class="modal-input">
+          </div>
+          <div class="modal-field">
+            <label>🕐 Término</label>
+            <input type="time" id="ata-hora-fim" class="modal-input">
+          </div>
+        </div>
+        <div class="modal-field" style="margin-bottom:10px;">
+          <label>👥 Participantes</label>
+          <div id="ata-participantes-fixos" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;"></div>
+          <div style="display:flex;gap:6px;">
+            <input type="text" id="ata-novo-participante" placeholder="Outro colaborador…" style="flex:1;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;">
+            <select id="ata-novo-participante-setor" style="padding:7px;border:1px solid #ccc;border-radius:4px;font-size:12px;">
+              <option value="Administrativo">Administrativo</option>
+              <option value="Produção">Produção</option>
+            </select>
+            <button onclick="ataAdicionarParticipanteManual()" style="background:#1a5276;color:#fff;border:none;border-radius:4px;padding:7px 12px;font-size:12px;cursor:pointer;">+</button>
+          </div>
+          <div id="ata-participantes-manuais" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;"></div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+          <button onclick="document.getElementById('ata-nova-modal').style.display='none'" class="btn-modal-cancel">Cancelar</button>
+          <button onclick="ataCriar()" style="background:#6c3483;color:#fff;border:none;padding:8px 22px;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer;">📄 Criar Ata</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Visualizar/Editar Ata -->
+  <div id="ata-view-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-box" style="max-width:650px;">
+      <div class="modal-header">
+        <span>📄 Ata da Reunião</span>
+        <button class="modal-close" onclick="document.getElementById('ata-view-modal').style.display='none'">×</button>
+      </div>
+      <div style="padding:18px 20px;">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:10px;gap:6px;">
           <button onclick="probAtaNovoItem()" style="background:var(--green);color:#fff;border:none;border-radius:4px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;">+ Item trazido na reunião</button>
         </div>
-        <div id="prob-ata-conteudo" style="font-size:13px;line-height:1.8;white-space:pre-wrap;background:#f9f8f6;border:1px solid var(--border);border-radius:4px;padding:14px;height:340px;overflow-y:auto;font-family:'Segoe UI',Tahoma,sans-serif;"></div>
+        <div id="prob-ata-conteudo" style="font-size:13px;line-height:1.8;white-space:pre-wrap;background:#f9f8f6;border:1px solid var(--border);border-radius:4px;padding:14px;max-height:420px;overflow-y:auto;font-family:'Segoe UI',Tahoma,sans-serif;"></div>
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);">
           <button onclick="probCopiarAta()" style="background:#1a5276;color:#fff;border:none;padding:8px 18px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;">📋 Copiar</button>
-          <button onclick="probImprimirAta()" style="background:#2c3e50;color:#fff;border:none;padding:8px 18px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;">🖨️ Imprimir</button>
-          <button onclick="document.getElementById('prob-ata-modal').style.display='none';">✕ Fechar</button>
+          <button onclick="probImprimirAta()" style="background:#2c3e50;color:#fff;border:none;padding:8px 18px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;">🖨️ Imprimir/PDF</button>
+          <button onclick="document.getElementById('ata-view-modal').style.display='none';">✕ Fechar</button>
         </div>
       </div>
     </div>
@@ -1162,8 +1273,9 @@ async function fbSave(t,r,a,tp){
     var licVenc=localStorage.getItem('gc_lic_vencedor_v1')||'{}';
     var licProg=localStorage.getItem('gc_lic_prog_v1')||'{}';
     var probs=localStorage.getItem('gc_problemas_v1')||'[]';
+    var atas=localStorage.getItem('gc_atas_v1')||'[]';
     _fbLastSaveTs=Date.now();
-    await setDoc(REF,{tasks:JSON.stringify(t),recorrencias:JSON.stringify(r),archived:JSON.stringify(a||[]),templates:JSON.stringify(tp||[]),certidoes:cert,licHistorico:licHist,licLog:licLog,licVencedor:licVenc,licProgresso:licProg,problemas:probs,updatedAt:new Date().toISOString()});
+    await setDoc(REF,{tasks:JSON.stringify(t),recorrencias:JSON.stringify(r),archived:JSON.stringify(a||[]),templates:JSON.stringify(tp||[]),certidoes:cert,licHistorico:licHist,licLog:licLog,licVencedor:licVenc,licProgresso:licProg,problemas:probs,atas:atas,updatedAt:new Date().toISOString()});
   }
   catch(e){console.warn("Firebase save:",e);}
 }
@@ -1184,6 +1296,7 @@ onSnapshot(REF, function(snap){
     if(d.licVencedor) localStorage.setItem('gc_lic_vencedor_v1',d.licVencedor);
     if(d.licProgresso) localStorage.setItem('gc_lic_prog_v1',d.licProgresso);
     if(d.problemas) localStorage.setItem('gc_problemas_v1',d.problemas);
+    if(d.atas) localStorage.setItem('gc_atas_v1',d.atas);
     // Só atualiza se os dados do Firebase forem diferentes dos locais
     var localRaw=localStorage.getItem('gc_tarefas_v3');
     var localTasks=localRaw?JSON.parse(localRaw):[];
@@ -5446,20 +5559,10 @@ function probGerarPauta(){
       html+='<span style="font-size:10px;font-weight:700;background:'+prioCor+';color:#fff;padding:1px 6px;border-radius:2px;">'+prioLabel+'</span>';
       html+='<span style="font-weight:700;color:#1a5276;">'+(i+1)+'. '+p.titulo+'</span>';
       html+='</div>';
-      if(p.relatou||p.responsavel){
-        html+='<div style="display:flex;gap:16px;flex-wrap:wrap;font-size:10px;color:#666;margin-bottom:5px;padding-left:4px;">';
-        if(p.relatou) html+='<span>👤 Relatado por: <strong>'+p.relatou+'</strong></span>';
-        if(p.responsavel) html+='<span>🛠 Responsável: <strong>'+p.responsavel+'</strong></span>';
-        html+='</div>';
-      }
-      if(p.descricao) html+='<div style="font-size:11px;color:#444;padding-left:4px;margin-bottom:6px;"><strong>Descrição:</strong> '+p.descricao+'</div>';
-      html+='<div style="font-size:10px;color:#555;border-top:1px solid #e8e5dd;padding-top:6px;margin-top:4px;">'
-        +'<div style="margin-bottom:5px;"><strong>Discussões realizadas:</strong><br><span style="display:inline-block;border-bottom:1px solid #ccc;width:100%;min-height:14px;">&nbsp;</span></div>'
-        +'<div style="margin-bottom:5px;"><strong>Análise da equipe:</strong><br><span style="display:inline-block;border-bottom:1px solid #ccc;width:100%;min-height:14px;">&nbsp;</span></div>'
-        +'<div style="margin-bottom:5px;"><strong>Decisão tomada:</strong><br><span style="display:inline-block;border-bottom:1px solid #ccc;width:100%;min-height:14px;">&nbsp;</span></div>'
-        +'<div style="margin-bottom:5px;"><strong>Plano de ação:</strong><br><span style="display:inline-block;border-bottom:1px solid #ccc;width:100%;min-height:14px;">&nbsp;</span></div>'
-        +'<div style="display:flex;gap:16px;"><span style="flex:1;"><strong>Responsável pela execução:</strong> '+(p.responsavel||'_______________')+'</span><span><strong>Prazo:</strong> ___/___/_____</span></div>'
-        +'</div>';
+      if(p.relatou) html+='<div style="font-size:10px;color:#666;margin-bottom:5px;padding-left:4px;">👤 Identificado por: <strong>'+p.relatou+'</strong></div>';
+      if(p.descricao) html+='<div style="font-size:11px;color:#444;padding-left:4px;margin-bottom:4px;"><strong>Observação:</strong> '+p.descricao+'</div>';
+      var dtCr=p.criadoEm?new Date(p.criadoEm).toLocaleDateString('pt-BR'):'';
+      if(dtCr) html+='<div style="font-size:10px;color:#999;padding-left:4px;">📅 Registrado em: '+dtCr+'</div>';
       html+='</div>';
     });
     html+='</div>';
@@ -5487,7 +5590,330 @@ function probImprimirPauta(){
   setTimeout(function(){w.print();},500);
 }
 // ── Ata da Reunião ──
+// ── Sub-abas de Problemas ──
+function probMudarSubAba(aba){
+  ['registrar','pauta','atas'].forEach(function(a){
+    document.getElementById('subtab-'+a).style.display=(a===aba)?'block':'none';
+    var btn=document.getElementById('subtab-btn-'+a);
+    if(btn){
+      if(a===aba){btn.style.borderBottomColor='#1a5276';btn.style.color='#1a5276';btn.style.fontWeight='700';}
+      else{btn.style.borderBottomColor='transparent';btn.style.color='var(--muted)';btn.style.fontWeight='600';}
+    }
+  });
+  if(aba==='pauta') probRenderPautaTab();
+  if(aba==='atas') ataRenderLista();
+}
+// ── Pauta (agora também como sub-aba fixa) ──
+// ── Cabeçalho de reunião da Pauta ──
+var PAUTA_CAB_KEY='gc_pauta_cabecalho_v1';
+var _pautaParticipantesSelecionados=[];
+var _pautaParticipantesManuais=[];
+function pautaCabLoad(){var r=localStorage.getItem(PAUTA_CAB_KEY);return r?JSON.parse(r):null;}
+function pautaCabSave(data){
+  localStorage.setItem(PAUTA_CAB_KEY,JSON.stringify(data));
+  if(window._fbSave){
+    var t=JSON.parse(localStorage.getItem('gc_tarefas_v3')||'[]');
+    var r=JSON.parse(localStorage.getItem('gc_recorrencias')||'[]');
+    var a=JSON.parse(localStorage.getItem('gc_archived')||'[]');
+    var tp=JSON.parse(localStorage.getItem('gc_templates')||'[]');
+    window._fbSave(t,r,a,tp);
+  }
+}
+function pautaNovaModal(){
+  var existente=pautaCabLoad();
+  _pautaParticipantesSelecionados=existente?existente.participantes.filter(function(p){return ATA_PARTICIPANTES_FIXOS.some(function(f){return f.nome===p.nome;});}):[];
+  _pautaParticipantesManuais=existente?existente.participantes.filter(function(p){return !ATA_PARTICIPANTES_FIXOS.some(function(f){return f.nome===p.nome;});}):[];
+  document.getElementById('pauta-data').value=existente?existente.data:new Date().toISOString().slice(0,10);
+  document.getElementById('pauta-hora-inicio').value=existente?existente.horaInicio:new Date().toTimeString().slice(0,5);
+  document.getElementById('pauta-hora-fim').value=existente?existente.horaFim||'':'';
+  document.getElementById('pauta-novo-participante').value='';
+  pautaRenderParticipantesFixos();
+  pautaRenderParticipantesManuais();
+  document.getElementById('pauta-nova-modal').style.display='flex';
+}
+function pautaRenderParticipantesFixos(){
+  var el=document.getElementById('pauta-participantes-fixos');
+  el.innerHTML=ATA_PARTICIPANTES_FIXOS.map(function(p){
+    var sel=_pautaParticipantesSelecionados.some(function(x){return x.nome===p.nome;});
+    return '<button type="button" onclick="pautaToggleParticipanteFixo(\''+p.nome+'\',\''+p.cargo+'\')" style="padding:5px 12px;border-radius:16px;border:2px solid '+(sel?'#1a5276':'#ccc')+';background:'+(sel?'#1a5276':'#fff')+';color:'+(sel?'#fff':'#555')+';font-size:12px;font-weight:600;cursor:pointer;">'+p.nome+'</button>';
+  }).join('');
+}
+function pautaToggleParticipanteFixo(nome,cargo){
+  var idx=_pautaParticipantesSelecionados.findIndex(function(x){return x.nome===nome;});
+  if(idx>=0) _pautaParticipantesSelecionados.splice(idx,1);
+  else _pautaParticipantesSelecionados.push({nome:nome,cargo:cargo});
+  pautaRenderParticipantesFixos();
+}
+function pautaAdicionarParticipanteManual(){
+  var nome=document.getElementById('pauta-novo-participante').value.trim();
+  if(!nome) return;
+  var setor=document.getElementById('pauta-novo-participante-setor').value;
+  _pautaParticipantesManuais.push({nome:nome,cargo:setor});
+  document.getElementById('pauta-novo-participante').value='';
+  pautaRenderParticipantesManuais();
+}
+function pautaRenderParticipantesManuais(){
+  var el=document.getElementById('pauta-participantes-manuais');
+  el.innerHTML=_pautaParticipantesManuais.map(function(p,i){
+    return '<span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:16px;background:#eef5fb;border:1px solid #a8c8e8;font-size:12px;color:#1a6b8a;">'+p.nome+' ('+p.cargo+') <button onclick="pautaRemoverParticipanteManual('+i+')" style="background:none;border:none;color:#c0392b;cursor:pointer;font-size:13px;">×</button></span>';
+  }).join('');
+}
+function pautaRemoverParticipanteManual(i){
+  _pautaParticipantesManuais.splice(i,1);
+  pautaRenderParticipantesManuais();
+}
+function pautaSalvarCabecalho(){
+  var data=document.getElementById('pauta-data').value;
+  var horaInicio=document.getElementById('pauta-hora-inicio').value;
+  if(!data){alert('Informe a data.');return;}
+  if(!horaInicio){alert('Informe a hora de início.');return;}
+  var horaFim=document.getElementById('pauta-hora-fim').value;
+  var todosParticipantes=_pautaParticipantesSelecionados.concat(_pautaParticipantesManuais);
+  var cab={data:data,horaInicio:horaInicio,horaFim:horaFim,participantes:todosParticipantes};
+  pautaCabSave(cab);
+  document.getElementById('pauta-nova-modal').style.display='none';
+  mostrarToast('📋 Cabeçalho da reunião salvo!',false);
+  probRenderPautaTab();
+}
+function probRenderPautaTab(){
+  var el=document.getElementById('prob-pauta-tab-conteudo');
+  if(!el) return;
+  var todos=probLoad().filter(function(p){return!p.resolvido;});
+  var naPauta=todos.filter(function(p){return p.naPauta;});
+  var probs=naPauta.length>0?naPauta:todos;
+  var cab=pautaCabLoad();
+  var cabHtml='';
+  if(cab){
+    var dataFmt=fmtDate(cab.data);
+    var partTxt=cab.participantes.map(function(p){return p.nome+' ('+p.cargo+')';}).join(', ');
+    cabHtml='<div style="background:#eef5fb;border:1px solid #a8c8e8;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#1a5276;">'
+      +'Reunião em <strong>'+dataFmt+'</strong>, com início às <strong>'+cab.horaInicio+'</strong>'+(cab.horaFim?' e término às <strong>'+cab.horaFim+'</strong>':'')+'. Participantes: <strong>'+(partTxt||'—')+'</strong>'
+      +'</div>';
+  } else {
+    cabHtml='<div style="background:#fff8e1;border:1px solid #f0d878;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#8a6d00;">⚠️ Clique em "📋 Definir Reunião" para registrar data, hora e participantes.</div>';
+  }
+  if(probs.length===0){
+    el.innerHTML=cabHtml+'<div class="cert-empty">Nenhum problema pendente. Marque ☑ Pauta nos problemas em "Registrar" ou eles aparecerão aqui automaticamente.</div>';
+    return;
+  }
+  var ordemPrio={alta:0,media:1,baixa:2};
+  probs.sort(function(a,b){return (ordemPrio[a.prioridade]||1)-(ordemPrio[b.prioridade]||1)||a.criadoEm.localeCompare(b.criadoEm);});
+  var html=cabHtml;
+  var setores=['Administrativo','Produção'];
+  setores.forEach(function(setor){
+    var doSetor=probs.filter(function(p){return p.setor===setor;});
+    if(doSetor.length===0) return;
+    html+='<div style="font-size:11px;font-weight:700;color:#1a5276;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid #1a5276;padding-bottom:4px;margin:14px 0 8px;">▌ '+setor+'</div>';
+    doSetor.forEach(function(p,i){
+      var prioCor={alta:'#b03a2e',media:'#c78a1a',baixa:'#2e7d32'}[p.prioridade]||'#555';
+      var prioLabel={alta:'ALTA',media:'MÉDIA',baixa:'BAIXA'}[p.prioridade]||'';
+      html+='<div class="cert-card" style="border-left-color:'+prioCor+';padding:10px 14px;margin-bottom:8px;">';
+      html+='<div style="display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;">';
+      html+='<div><span style="font-size:10px;font-weight:700;background:'+prioCor+';color:#fff;padding:1px 6px;border-radius:2px;margin-right:6px;">'+prioLabel+'</span>';
+      html+='<span style="font-weight:700;color:#1a5276;font-size:13px;">'+(i+1)+'. '+p.titulo+'</span></div>';
+      html+='<button onclick="probEditarModal('+p.id+')" style="background:none;border:1px solid #ddd;border-radius:3px;padding:3px 10px;font-size:11px;cursor:pointer;color:#555;">✏️ Editar Assunto</button>';
+      html+='</div>';
+      if(p.relatou) html+='<div style="font-size:11px;color:#666;margin-top:4px;">👤 Relatado por: <strong>'+p.relatou+'</strong>'+(p.responsavel?' · 🛠 Responsável: <strong>'+p.responsavel+'</strong>':'')+'</div>';
+      if(p.descricao) html+='<div style="font-size:12px;color:#444;margin-top:4px;">'+p.descricao+'</div>';
+      html+='</div>';
+    });
+  });
+  html+='<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">';
+  html+='<button onclick="probCopiarPautaTab()" style="background:#1a5276;color:#fff;border:none;padding:7px 16px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;">📋 Copiar</button>';
+  html+='<button onclick="probImprimirPautaTab()" style="background:#2c3e50;color:#fff;border:none;padding:7px 16px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;">🖨️ Imprimir</button>';
+  html+='</div>';
+  el.innerHTML=html;
+}
+function probCopiarPautaTab(){
+  probGerarPautaDoc(function(html,txt){
+    navigator.clipboard.writeText(txt).then(function(){mostrarToast('📋 Pauta copiada!',false);});
+  });
+}
+function probImprimirPautaTab(){
+  probGerarPautaDoc(function(html){
+    var w=window.open('','_blank','width=800,height=900');
+    w.document.write('<html><head><title>Pauta G&C</title><style>body{margin:0;padding:0;font-family:Segoe UI,Tahoma,sans-serif;}@media print{@page{size:A4 portrait;margin:0;}}</style></head><body>'+html+'</body></html>');
+    w.document.close();w.focus();
+    setTimeout(function(){w.print();},500);
+  });
+}
+function probGerarPautaDoc(callback){
+  var todos=probLoad().filter(function(p){return!p.resolvido;});
+  var naPauta=todos.filter(function(p){return p.naPauta;});
+  var probs=naPauta.length>0?naPauta:todos;
+  var cab=pautaCabLoad();
+  var introTxt='';
+  if(cab){
+    var dataFmt2=fmtDate(cab.data);
+    var partTxt2=cab.participantes.map(function(p){return p.nome+' ('+p.cargo+')';}).join(', ');
+    introTxt='Reunião em '+dataFmt2+', com início às '+cab.horaInicio+(cab.horaFim?' e término às '+cab.horaFim:'')+'. Participantes: '+(partTxt2||'—')+'.';
+  }
+  var hoje=cab?fmtDate(cab.data):new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+  var ordemPrio={alta:0,media:1,baixa:2};
+  probs.sort(function(a,b){return (ordemPrio[a.prioridade]||1)-(ordemPrio[b.prioridade]||1)||a.criadoEm.localeCompare(b.criadoEm);});
+  var html='<div id="prob-pauta-doc" style="background:#fff;font-family:\'Segoe UI\',Tahoma,sans-serif;font-size:12px;color:#222;padding:0;">';
+  html+='<div style="text-align:center;padding:8px 0;border-bottom:2px solid #1a5276;margin-bottom:14px;"><div style="font-size:18px;font-weight:700;color:#1a5276;">GALHARDO &amp; CANALES</div></div>';
+  html+='<div style="padding:0 20px;">';
+  html+='<div style="text-align:center;padding:8px 0;border-top:2px solid #1a5276;border-bottom:2px solid #1a5276;margin-bottom:14px;">';
+  html+='<div style="font-size:14px;font-weight:700;color:#1a5276;text-transform:uppercase;letter-spacing:1px;">Pauta do Dia</div>';
+  html+='<div style="font-size:11px;color:#555;margin-top:2px;">'+hoje+'</div>';
+  html+='</div>';
+  if(introTxt) html+='<div style="font-size:11px;color:#333;margin-bottom:14px;line-height:1.6;">'+introTxt+'</div>';
+  var setores=['Administrativo','Produção'];
+  setores.forEach(function(setor){
+    var doSetor=probs.filter(function(p){return p.setor===setor;});
+    if(doSetor.length===0) return;
+    html+='<div style="margin-bottom:14px;">';
+    html+='<div style="font-size:12px;font-weight:700;color:#1a5276;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid #1a5276;padding-bottom:4px;margin-bottom:8px;">▌ '+setor+'</div>';
+    doSetor.forEach(function(p,i){
+      var prioCor={alta:'#b03a2e',media:'#c78a1a',baixa:'#2e7d32'}[p.prioridade]||'#555';
+      var prioLabel={alta:'ALTA',media:'MÉDIA',baixa:'BAIXA'}[p.prioridade]||'';
+      html+='<div style="margin-bottom:14px;padding:8px 10px;border-left:3px solid '+prioCor+';background:#f9f8f6;">';
+      html+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">';
+      html+='<span style="font-size:10px;font-weight:700;background:'+prioCor+';color:#fff;padding:1px 6px;border-radius:2px;">'+prioLabel+'</span>';
+      html+='<span style="font-weight:700;color:#1a5276;">'+(i+1)+'. '+p.titulo+'</span>';
+      html+='</div>';
+      if(p.relatou) html+='<div style="font-size:10px;color:#666;margin-bottom:5px;padding-left:4px;">👤 Identificado por: <strong>'+p.relatou+'</strong></div>';
+      if(p.descricao) html+='<div style="font-size:11px;color:#444;padding-left:4px;margin-bottom:4px;"><strong>Observação:</strong> '+p.descricao+'</div>';
+      var dtCr=p.criadoEm?new Date(p.criadoEm).toLocaleDateString('pt-BR'):'';
+      if(dtCr) html+='<div style="font-size:10px;color:#999;padding-left:4px;">📅 Registrado em: '+dtCr+'</div>';
+      html+='</div>';
+    });
+    html+='</div>';
+  });
+  html+='</div></div>';
+  // Texto puro pra copiar
+  var tmp=document.createElement('div');tmp.innerHTML=html;
+  var txt=tmp.innerText||tmp.textContent;
+  if(callback) callback(html,txt);
+}
+function probGerarPauta(){ probMudarSubAba('pauta'); }
+function probCopiarPauta(){ probCopiarPautaTab(); }
+function probImprimirPauta(){ probImprimirPautaTab(); }
+
+// ── Atas (persistentes, com histórico) ──
+var ATA_KEY='gc_atas_v1';
+var ATA_PARTICIPANTES_FIXOS=[
+  {nome:'André',cargo:'Gerente'},
+  {nome:'Carlos',cargo:'Diretor'},
+  {nome:'Lilian',cargo:'Diretora'},
+  {nome:'Thiago',cargo:'Colaborador'},
+  {nome:'Tadeu',cargo:'Colaborador'},
+  {nome:'Luis',cargo:'Colaborador'},
+  {nome:'Giane',cargo:'Colaborador'}
+];
+var _ataParticipantesSelecionados=[];
+var _ataParticipantesManuais=[];
+var _ataAtualId=null;
+function ataLoad(){var r=localStorage.getItem(ATA_KEY);return r?JSON.parse(r):[];}
+function ataSaveData(data){
+  localStorage.setItem(ATA_KEY,JSON.stringify(data));
+  if(window._fbSave){
+    var t=JSON.parse(localStorage.getItem('gc_tarefas_v3')||'[]');
+    var r=JSON.parse(localStorage.getItem('gc_recorrencias')||'[]');
+    var a=JSON.parse(localStorage.getItem('gc_archived')||'[]');
+    var tp=JSON.parse(localStorage.getItem('gc_templates')||'[]');
+    window._fbSave(t,r,a,tp);
+  }
+}
+function ataNovaModal(){
+  _ataParticipantesSelecionados=[];
+  _ataParticipantesManuais=[];
+  document.getElementById('ata-data').value=new Date().toISOString().slice(0,10);
+  var agora=new Date();
+  document.getElementById('ata-hora-inicio').value=agora.toTimeString().slice(0,5);
+  document.getElementById('ata-hora-fim').value='';
+  document.getElementById('ata-novo-participante').value='';
+  ataRenderParticipantesFixos();
+  ataRenderParticipantesManuais();
+  document.getElementById('ata-nova-modal').style.display='flex';
+}
+function ataRenderParticipantesFixos(){
+  var el=document.getElementById('ata-participantes-fixos');
+  el.innerHTML=ATA_PARTICIPANTES_FIXOS.map(function(p){
+    var sel=_ataParticipantesSelecionados.some(function(x){return x.nome===p.nome;});
+    return '<button type="button" onclick="ataToggleParticipanteFixo(\''+p.nome+'\',\''+p.cargo+'\')" style="padding:5px 12px;border-radius:16px;border:2px solid '+(sel?'#3a8c4a':'#ccc')+';background:'+(sel?'#3a8c4a':'#fff')+';color:'+(sel?'#fff':'#555')+';font-size:12px;font-weight:600;cursor:pointer;">'+p.nome+'</button>';
+  }).join('');
+}
+function ataToggleParticipanteFixo(nome,cargo){
+  var idx=_ataParticipantesSelecionados.findIndex(function(x){return x.nome===nome;});
+  if(idx>=0) _ataParticipantesSelecionados.splice(idx,1);
+  else _ataParticipantesSelecionados.push({nome:nome,cargo:cargo});
+  ataRenderParticipantesFixos();
+}
+function ataAdicionarParticipanteManual(){
+  var nome=document.getElementById('ata-novo-participante').value.trim();
+  if(!nome) return;
+  var setor=document.getElementById('ata-novo-participante-setor').value;
+  _ataParticipantesManuais.push({nome:nome,cargo:setor});
+  document.getElementById('ata-novo-participante').value='';
+  ataRenderParticipantesManuais();
+}
+function ataRenderParticipantesManuais(){
+  var el=document.getElementById('ata-participantes-manuais');
+  el.innerHTML=_ataParticipantesManuais.map(function(p,i){
+    return '<span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:16px;background:#eef5fb;border:1px solid #a8c8e8;font-size:12px;color:#1a6b8a;">'+p.nome+' ('+p.cargo+') <button onclick="ataRemoverParticipanteManual('+i+')" style="background:none;border:none;color:#c0392b;cursor:pointer;font-size:13px;">×</button></span>';
+  }).join('');
+}
+function ataRemoverParticipanteManual(i){
+  _ataParticipantesManuais.splice(i,1);
+  ataRenderParticipantesManuais();
+}
+function ataCriar(){
+  var data=document.getElementById('ata-data').value;
+  var horaInicio=document.getElementById('ata-hora-inicio').value;
+  if(!data){alert('Informe a data.');return;}
+  if(!horaInicio){alert('Informe a hora de início.');return;}
+  var horaFim=document.getElementById('ata-hora-fim').value;
+  var todosParticipantes=_ataParticipantesSelecionados.concat(_ataParticipantesManuais);
+  var nova={
+    id:Date.now(),
+    data:data,
+    horaInicio:horaInicio,
+    horaFim:horaFim,
+    participantes:todosParticipantes,
+    itensIds:[],
+    criadaEm:new Date().toISOString()
+  };
+  var atas=ataLoad();
+  atas.push(nova);
+  ataSaveData(atas);
+  document.getElementById('ata-nova-modal').style.display='none';
+  mostrarToast('📄 Ata criada!',false);
+  ataAbrirView(nova.id);
+}
+function ataRenderLista(){
+  var el=document.getElementById('atas-lista');
+  if(!el) return;
+  var atas=ataLoad().slice().sort(function(a,b){return b.criadaEm.localeCompare(a.criadaEm);});
+  if(atas.length===0){
+    el.innerHTML='<div class="cert-empty">Nenhuma ata registrada ainda. Clique em "+ Nova Ata" para começar.</div>';
+    return;
+  }
+  var html='';
+  atas.forEach(function(ata){
+    var probs=probLoad();
+    var itens=probs.filter(function(p){return ata.itensIds.indexOf(p.id)>=0;});
+    var dataFmt=fmtDate(ata.data);
+    var partTxt=ata.participantes.map(function(p){return p.nome;}).join(', ');
+    html+='<div class="cert-card" style="border-left-color:#6c3483;padding:12px 16px;margin-bottom:10px;cursor:pointer;" onclick="ataAbrirView('+ata.id+')">';
+    html+='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">';
+    html+='<span style="font-size:13px;font-weight:700;color:#6c3483;">📄 Ata — '+dataFmt+'</span>';
+    html+='<span style="font-size:11px;color:var(--muted);">'+ata.horaInicio+(ata.horaFim?' às '+ata.horaFim:'')+'</span>';
+    html+='</div>';
+    html+='<div style="font-size:11px;color:#555;margin-top:4px;">👥 '+(partTxt||'Sem participantes')+'</div>';
+    html+='<div style="font-size:11px;color:var(--muted);margin-top:4px;">'+itens.length+' assunto(s) registrado(s)</div>';
+    html+='</div>';
+  });
+  el.innerHTML=html;
+}
+function ataAbrirView(ataId){
+  _ataAtualId=ataId;
+  probGerarAtaDoc(ataId);
+  document.getElementById('ata-view-modal').style.display='flex';
+}
 function probAtaNovoItem(){
+  if(!_ataAtualId){mostrarToast('Abra uma ata primeiro.',false);return;}
   var overlay=document.createElement('div');
   overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;';
   overlay.innerHTML='<div style="background:#fff;border-radius:8px;padding:24px;max-width:480px;width:100%;font-family:Segoe UI,Tahoma,sans-serif;max-height:90vh;overflow-y:auto;">'
@@ -5545,36 +5971,76 @@ function probAtaNovoItem(){
       analise:document.getElementById('ai-analise').value.trim(),
       plano:document.getElementById('ai-plano').value.trim(),
       prazo:document.getElementById('ai-prazo').value,
-      naPauta:true,
+      naPauta:false,
       criadoEm:new Date().toISOString(),
       resolvidoEm:new Date().toISOString()
     };
     var probs=probLoad();
     probs.push(novo);
     probSaveData(probs);
+    // Vincular à ata atual
+    var atas=ataLoad();
+    var ata=atas.find(function(a){return a.id===_ataAtualId;});
+    if(ata){ata.itensIds.push(novo.id);ataSaveData(atas);}
     document.body.removeChild(overlay);
     mostrarToast('✅ Item adicionado à ata e salvo em Problemas!',false);
-    probGerarAta();
+    probGerarAtaDoc(_ataAtualId);
   };
 }
-function probGerarAta(){
-  var todos=probLoad();
-  // Puxa os que estavam marcados na pauta (naPauta=true), independente de já estarem resolvidos ou não
-  var doAta=todos.filter(function(p){return p.naPauta;});
-  if(doAta.length===0){
-    mostrarToast('Nenhum problema marcado para pauta. Marque ☑ Pauta antes de gerar a ata.',false);
-    return;
+function ataSalvarItem(probId,ataId){
+  var discussoes=document.getElementById('ata-it-discussoes-'+probId).value.trim();
+  var analise=document.getElementById('ata-it-analise-'+probId).value.trim();
+  var decisao=document.getElementById('ata-it-decisao-'+probId).value.trim();
+  var plano=document.getElementById('ata-it-plano-'+probId).value.trim();
+  var responsavel=document.getElementById('ata-it-responsavel-'+probId).value.trim();
+  var prazo=document.getElementById('ata-it-prazo-'+probId).value;
+  var probs=probLoad();
+  var p=probs.find(function(x){return x.id===probId;});
+  if(!p){mostrarToast('Problema não encontrado.',false);return;}
+  p.discussoes=discussoes;
+  p.analise=analise;
+  p.resolucao=decisao;
+  p.plano=plano;
+  p.responsavel=responsavel;
+  p.prazo=prazo;
+  if(decisao&&!p.resolvido){
+    p.resolvido=true;
+    p.resolvidoEm=new Date().toISOString();
   }
-  var hoje=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+  probSaveData(probs);
+  mostrarToast('💾 Resolução salva — '+p.titulo,false);
+  probGerarAtaDoc(ataId);
+}
+function probGerarAtaDoc(ataId){
+  var atas=ataLoad();
+  var ata=atas.find(function(a){return a.id===ataId;});
+  if(!ata) return;
+  var probs=probLoad();
+  // Itens já vinculados + itens vindos da pauta (naPauta=true) que ainda não foram vinculados a nenhuma ata
+  var itensVinculados=probs.filter(function(p){return ata.itensIds.indexOf(p.id)>=0;});
+  var itensDaPauta=probs.filter(function(p){return p.naPauta&&ata.itensIds.indexOf(p.id)<0;});
+  // Auto-vincular itens da pauta a esta ata na primeira vez que abrir
+  if(itensDaPauta.length>0){
+    itensDaPauta.forEach(function(p){ata.itensIds.push(p.id);});
+    ataSaveData(atas);
+    itensVinculados=itensVinculados.concat(itensDaPauta);
+  }
+  var doAta=itensVinculados;
+  var dataFmt=fmtDate(ata.data);
+  var partTxt=ata.participantes.map(function(p){return p.nome+' ('+p.cargo+')';}).join(', ');
+  var introTxt='Na data '+dataFmt+', com início às '+ata.horaInicio+(ata.horaFim?' e término às '+ata.horaFim:'')+', estiveram presentes os colaboradores: '+(partTxt||'—')+'.';
   var ordemPrio={alta:0,media:1,baixa:2};
   doAta.sort(function(a,b){return (ordemPrio[a.prioridade]||1)-(ordemPrio[b.prioridade]||1)||a.criadoEm.localeCompare(b.criadoEm);});
-  var html='<div id="prob-ata-doc" style="background:#fff;font-family:\'Segoe UI\',Tahoma,sans-serif;font-size:12px;color:#222;padding:0;">';
+  var html='<div id="prob-ata-doc" data-ata-id="'+ata.id+'" style="background:#fff;font-family:\'Segoe UI\',Tahoma,sans-serif;font-size:12px;color:#222;padding:0;">';
   html+='<div style="text-align:center;padding:8px 0;border-bottom:2px solid #1a5276;margin-bottom:14px;"><div style="font-size:18px;font-weight:700;color:#1a5276;">GALHARDO &amp; CANALES</div></div>';
   html+='<div style="padding:0 20px;">';
   html+='<div style="text-align:center;padding:8px 0;border-top:2px solid #1a5276;border-bottom:2px solid #1a5276;margin-bottom:14px;">';
   html+='<div style="font-size:14px;font-weight:700;color:#1a5276;text-transform:uppercase;letter-spacing:1px;">Ata de Reunião</div>';
-  html+='<div style="font-size:11px;color:#555;margin-top:2px;">'+hoje+'</div>';
   html+='</div>';
+  html+='<div style="font-size:12px;color:#333;margin-bottom:16px;line-height:1.6;">'+introTxt+'</div>';
+  if(doAta.length===0){
+    html+='<div style="color:#999;font-size:12px;text-align:center;padding:20px;">Nenhum assunto registrado ainda. Use "+ Item trazido na reunião" para adicionar.</div>';
+  }
   var setores=['Administrativo','Produção'];
   setores.forEach(function(setor){
     var doSetor=doAta.filter(function(p){return p.setor===setor;});
@@ -5586,6 +6052,81 @@ function probGerarAta(){
       var prioLabel={alta:'ALTA',media:'MÉDIA',baixa:'BAIXA'}[p.prioridade]||'';
       var statusLbl=p.resolvido?'<span style="font-size:9px;font-weight:700;background:#2e7d32;color:#fff;padding:1px 7px;border-radius:10px;margin-left:6px;">RESOLVIDO</span>':'<span style="font-size:9px;font-weight:700;background:#c78a1a;color:#fff;padding:1px 7px;border-radius:10px;margin-left:6px;">PENDENTE</span>';
       html+='<div style="margin-bottom:12px;padding:8px 10px;border-left:3px solid '+prioCor+';background:#f9f8f6;">';
+      html+='<div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:4px;flex-wrap:wrap;">';
+      html+='<div><span style="font-size:10px;font-weight:700;background:'+prioCor+';color:#fff;padding:1px 6px;border-radius:2px;">'+prioLabel+'</span> ';
+      html+='<span style="font-weight:700;color:#1a5276;">'+(i+1)+'. '+p.titulo+'</span>';
+      html+=statusLbl+'</div>';
+      html+='<button onclick="probEditarModal('+p.id+')" style="background:none;border:1px solid #ddd;border-radius:3px;padding:2px 8px;font-size:10px;cursor:pointer;color:#555;">✏️ Editar Assunto</button>';
+      html+='</div>';
+      if(p.relatou||p.responsavel){
+        html+='<div style="display:flex;gap:16px;flex-wrap:wrap;font-size:10px;color:#666;margin-bottom:5px;padding-left:4px;">';
+        if(p.relatou) html+='<span>👤 Relatado por: <strong>'+p.relatou+'</strong></span>';
+        if(p.responsavel) html+='<span>🛠 Responsável: <strong>'+p.responsavel+'</strong></span>';
+        html+='</div>';
+      }
+      if(p.descricao) html+='<div style="font-size:11px;color:#444;padding-left:4px;margin-bottom:6px;"><strong>Descrição:</strong> '+p.descricao+'</div>';
+      html+='<div style="border-top:1px solid #e8e5dd;padding-top:8px;margin-top:4px;">';
+      html+='<div style="margin-bottom:6px;"><label style="font-size:10px;font-weight:700;color:#555;display:block;margin-bottom:2px;">💬 Discussões realizadas</label>'
+        +'<textarea id="ata-it-discussoes-'+p.id+'" style="width:100%;padding:6px;border:1px solid #ccc;border-radius:3px;font-size:12px;box-sizing:border-box;min-height:40px;font-family:inherit;">'+(p.discussoes||'')+'</textarea></div>';
+      html+='<div style="margin-bottom:6px;"><label style="font-size:10px;font-weight:700;color:#555;display:block;margin-bottom:2px;">🔍 Análise da equipe</label>'
+        +'<textarea id="ata-it-analise-'+p.id+'" style="width:100%;padding:6px;border:1px solid #ccc;border-radius:3px;font-size:12px;box-sizing:border-box;min-height:40px;font-family:inherit;">'+(p.analise||'')+'</textarea></div>';
+      html+='<div style="margin-bottom:6px;"><label style="font-size:10px;font-weight:700;color:#2e7d32;display:block;margin-bottom:2px;">✅ Decisão tomada</label>'
+        +'<textarea id="ata-it-decisao-'+p.id+'" style="width:100%;padding:6px;border:1px solid #3a8c4a;border-radius:3px;font-size:12px;box-sizing:border-box;min-height:40px;font-family:inherit;">'+(p.resolucao||'')+'</textarea></div>';
+      html+='<div style="margin-bottom:6px;"><label style="font-size:10px;font-weight:700;color:#555;display:block;margin-bottom:2px;">📌 Plano de ação</label>'
+        +'<textarea id="ata-it-plano-'+p.id+'" style="width:100%;padding:6px;border:1px solid #ccc;border-radius:3px;font-size:12px;box-sizing:border-box;min-height:40px;font-family:inherit;">'+(p.plano||'')+'</textarea></div>';
+      html+='<div style="display:flex;gap:8px;margin-bottom:8px;">'
+        +'<div style="flex:1;"><label style="font-size:10px;font-weight:700;color:#555;display:block;margin-bottom:2px;">🛠 Responsável pela execução</label>'
+        +'<input id="ata-it-responsavel-'+p.id+'" type="text" value="'+(p.responsavel||'').replace(/"/g,'&quot;')+'" style="width:100%;padding:6px;border:1px solid #ccc;border-radius:3px;font-size:12px;box-sizing:border-box;"></div>'
+        +'<div style="flex:0 0 130px;"><label style="font-size:10px;font-weight:700;color:#555;display:block;margin-bottom:2px;">📅 Prazo</label>'
+        +'<input id="ata-it-prazo-'+p.id+'" type="date" value="'+(p.prazo||'')+'" style="width:100%;padding:6px;border:1px solid #ccc;border-radius:3px;font-size:12px;box-sizing:border-box;"></div>'
+        +'</div>';
+      html+='<button onclick="ataSalvarItem('+p.id+','+ata.id+')" style="background:#3a8c4a;color:#fff;border:none;border-radius:4px;padding:5px 14px;font-size:11px;font-weight:700;cursor:pointer;">💾 Salvar Resolução</button>';
+      html+='</div>';
+      html+='</div>';
+    });
+    html+='</div>';
+  });
+  html+='<div style="margin-top:10px;font-size:10px;color:#777;text-align:right;">Total: '+doAta.length+' item(ns) na ata</div>';
+  html+='</div></div>';
+  document.getElementById('prob-ata-conteudo').innerHTML=html;
+}
+function probCopiarAta(){
+  var el=document.getElementById('prob-ata-conteudo');
+  var txt=el?el.innerText||el.textContent:'';
+  navigator.clipboard.writeText(txt).then(function(){mostrarToast('📋 Ata copiada!',false);});
+}
+function probImprimirAta(){
+  var docEl=document.getElementById('prob-ata-doc');
+  if(!docEl){mostrarToast('Abra a ata primeiro.',false);return;}
+  var ataId=parseInt(docEl.getAttribute('data-ata-id'));
+  var atas=ataLoad();
+  var ata=atas.find(function(a){return a.id===ataId;});
+  if(!ata) return;
+  var probs=probLoad();
+  var doAta=probs.filter(function(p){return ata.itensIds.indexOf(p.id)>=0;});
+  var ordemPrio={alta:0,media:1,baixa:2};
+  doAta.sort(function(a,b){return (ordemPrio[a.prioridade]||1)-(ordemPrio[b.prioridade]||1)||a.criadoEm.localeCompare(b.criadoEm);});
+  var dataFmt=fmtDate(ata.data);
+  var partTxt=ata.participantes.map(function(p){return p.nome+' ('+p.cargo+')';}).join(', ');
+  var introTxt='Na data '+dataFmt+', com início às '+ata.horaInicio+(ata.horaFim?' e término às '+ata.horaFim:'')+', estiveram presentes os colaboradores: '+(partTxt||'—')+'.';
+  var html='<div style="background:#fff;font-family:\'Segoe UI\',Tahoma,sans-serif;font-size:12px;color:#222;padding:0;">';
+  html+='<div style="text-align:center;padding:8px 0;border-bottom:2px solid #1a5276;margin-bottom:14px;"><div style="font-size:18px;font-weight:700;color:#1a5276;">GALHARDO &amp; CANALES</div></div>';
+  html+='<div style="padding:0 20px;">';
+  html+='<div style="text-align:center;padding:8px 0;border-top:2px solid #1a5276;border-bottom:2px solid #1a5276;margin-bottom:14px;">';
+  html+='<div style="font-size:14px;font-weight:700;color:#1a5276;text-transform:uppercase;letter-spacing:1px;">Ata de Reunião</div>';
+  html+='</div>';
+  html+='<div style="font-size:12px;color:#333;margin-bottom:16px;line-height:1.6;">'+introTxt+'</div>';
+  var setores=['Administrativo','Produção'];
+  setores.forEach(function(setor){
+    var doSetor=doAta.filter(function(p){return p.setor===setor;});
+    if(doSetor.length===0) return;
+    html+='<div style="margin-bottom:14px;">';
+    html+='<div style="font-size:12px;font-weight:700;color:#1a5276;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid #1a5276;padding-bottom:4px;margin-bottom:8px;">▌ '+setor+'</div>';
+    doSetor.forEach(function(p,i){
+      var prioCor={alta:'#b03a2e',media:'#c78a1a',baixa:'#2e7d32'}[p.prioridade]||'#555';
+      var prioLabel={alta:'ALTA',media:'MÉDIA',baixa:'BAIXA'}[p.prioridade]||'';
+      var statusLbl=p.resolvido?'<span style="font-size:9px;font-weight:700;background:#2e7d32;color:#fff;padding:1px 7px;border-radius:10px;margin-left:6px;">RESOLVIDO</span>':'<span style="font-size:9px;font-weight:700;background:#c78a1a;color:#fff;padding:1px 7px;border-radius:10px;margin-left:6px;">PENDENTE</span>';
+      html+='<div style="margin-bottom:12px;padding:8px 10px;border-left:3px solid '+prioCor+';background:#f9f8f6;page-break-inside:avoid;">';
       html+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap;">';
       html+='<span style="font-size:10px;font-weight:700;background:'+prioCor+';color:#fff;padding:1px 6px;border-radius:2px;">'+prioLabel+'</span>';
       html+='<span style="font-weight:700;color:#1a5276;">'+(i+1)+'. '+p.titulo+'</span>';
@@ -5594,7 +6135,6 @@ function probGerarAta(){
       if(p.relatou||p.responsavel){
         html+='<div style="display:flex;gap:16px;flex-wrap:wrap;font-size:10px;color:#666;margin-bottom:5px;padding-left:4px;">';
         if(p.relatou) html+='<span>👤 Relatado por: <strong>'+p.relatou+'</strong></span>';
-        if(p.responsavel) html+='<span>🛠 Responsável: <strong>'+p.responsavel+'</strong></span>';
         html+='</div>';
       }
       if(p.descricao) html+='<div style="font-size:11px;color:#444;padding-left:4px;margin-bottom:6px;"><strong>Descrição:</strong> '+p.descricao+'</div>';
@@ -5611,21 +6151,8 @@ function probGerarAta(){
   });
   html+='<div style="margin-top:10px;font-size:10px;color:#777;text-align:right;">Total: '+doAta.length+' item(ns) na ata</div>';
   html+='</div></div>';
-  document.getElementById('prob-ata-conteudo').innerHTML=html;
-  document.getElementById('prob-ata-modal').style.display='flex';
-}
-function probCopiarAta(){
-  var el=document.getElementById('prob-ata-conteudo');
-  var txt=el?el.innerText||el.textContent:'';
-  navigator.clipboard.writeText(txt).then(function(){mostrarToast('📋 Ata copiada!',false);});
-}
-function probImprimirAta(){
-  var doc=document.getElementById('prob-ata-doc');
-  if(!doc){mostrarToast('Gere a ata primeiro.',false);return;}
   var w=window.open('','_blank','width=800,height=900');
-  w.document.write('<html><head><title>Ata G&C</title><style>body{margin:0;padding:0;font-family:Segoe UI,Tahoma,sans-serif;}@media print{@page{size:A4 portrait;margin:0;}}</style></head><body>');
-  w.document.write(doc.outerHTML);
-  w.document.write('</body></html>');
+  w.document.write('<html><head><title>Ata G&C</title><style>body{margin:0;padding:0;font-family:Segoe UI,Tahoma,sans-serif;}@media print{@page{size:A4 portrait;margin:0;}}</style></head><body>'+html+'</body></html>');
   w.document.close();w.focus();
   setTimeout(function(){w.print();},500);
 }
