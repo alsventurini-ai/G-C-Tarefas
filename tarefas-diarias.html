@@ -426,7 +426,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <div class="tab-bar">
     <button class="tab-btn active" id="tab-btn-tarefas" onclick="mudarAba('tarefas')">📋 Tarefas</button>
     <button class="tab-btn" id="tab-btn-licitacoes" onclick="mudarAba('licitacoes')">🏛 Licitações <span class="tab-badge" id="tab-lic-badge" style="display:none;">0</span></button>
-    <button class="tab-btn" id="tab-btn-lic-concluidas" onclick="mudarAba('lic-concluidas')">✅ Lic. Concluídas <span class="tab-badge" id="tab-lic-conc-badge" style="display:none;background:#3a8c4a;">0</span></button>
+    <button class="tab-btn" id="tab-btn-lic-concluidas" onclick="mudarAba('lic-concluidas')">✅ Participando <span class="tab-badge" id="tab-lic-conc-badge" style="display:none;background:#3a8c4a;">0</span></button>
     <button class="tab-btn" id="tab-btn-lic-historico" onclick="mudarAba('lic-historico')">📊 Hist. Licitações</button>
     <button class="tab-btn" id="tab-btn-certidoes" onclick="mudarAba('certidoes')">📜 Certidões <span class="tab-badge" id="tab-cert-badge" style="display:none;">!</span></button>
     <button class="tab-btn" id="tab-btn-historico" onclick="mudarAba('historico')">📅 Histórico</button>
@@ -606,7 +606,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <!-- Aba Licitações Concluídas -->
   <div id="tab-lic-concluidas" class="tab-content">
   <div class="action-bar" style="justify-content:space-between;">
-    <span style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.3px;color:var(--green);font-weight:600;">✅ Licitações Concluídas</span>
+    <span style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.3px;color:var(--green);font-weight:600;">✅ Participando</span>
     <button class="btn" style="font-size:12px;padding:5px 11px;border-color:#3a8c4a;color:#3a8c4a;" onclick="imprimirLicitacoesConcluidas()">🖨 Imprimir</button>
   </div>
   <div id="lic-conc-stats-row" style="display:flex;gap:10px;margin:0 30px 10px;flex-wrap:wrap;"></div>
@@ -3535,6 +3535,13 @@ function _renderLicGrupoHTML(mun, ts, etapasData, mostrarEtapas, histRegs){
         {k:'Conf. Habilitação',     ico:'🔍', cor:'#1a5276'},
         {k:'Envio Proposta',        ico:'📤', cor:'#1a5276'},
         {k:'Resposta Impugnação',   ico:'📩', cor:'#6c3483'},
+        {k:'Amostra',               ico:'🧪', cor:'#1a5276'},
+        {k:'Intenção de Recurso',   ico:'⚠️', cor:'#b8860b'},
+        {k:'Recurso',               ico:'📄', cor:'#6c3483'},
+        {k:'Contrarrazões',         ico:'📝', cor:'#6c3483'},
+        {k:'Julgamento Recurso',    ico:'⚖️', cor:'#6c3483'},
+        {k:'MP/TCU',                ico:'🏛', cor:'#b03a2e'},
+        {k:'Atendimento Local',     ico:'🧑‍💼', cor:'#1a6b8a'},
         {k:'Suspensão',             ico:'⛔', cor:'#b03a2e'}
       ];
       var checkboxes=STEPS.map(function(step){
@@ -3678,12 +3685,84 @@ function licEtapaClicar(mun, step){
   if(!data[mun])data[mun]=[];
   var feito=data[mun].indexOf(step)>=0;
   if(feito){
-    // Desmarcar — só remove do prog
     data[mun].splice(data[mun].indexOf(step),1);
     localStorage.setItem(KEY_PROG,JSON.stringify(data));
     renderLicitacoes();
     return;
   }
+  licEtapaModal(mun, step);
+}
+function licEtapaModal(mun, step){
+  var agora=new Date();
+  var dataDefault=agora.toISOString().slice(0,10);
+  var horaDefault=agora.toTimeString().slice(0,5);
+  var overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  var extraHtml='';
+  if(step==='Intenção de Recurso'){
+    var prazoRecurso=somarDiasUteis(dataDefault,3);
+    var prazoContra=somarDiasUteis(prazoRecurso,3);
+    extraHtml='<div style="margin-bottom:12px;padding:10px;background:#fff8e1;border-radius:4px;border:1px solid #f0d878;">'
+      +'<div style="font-size:11px;font-weight:700;color:#8a6d00;margin-bottom:8px;">⏱ Prazos calculados automaticamente (Lei 14.133/2021)</div>'
+      +'<label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:2px;">📄 Prazo Recurso (3 dias úteis)</label>'
+      +'<input id="et-prazo-recurso" type="date" value="'+prazoRecurso+'" style="width:100%;padding:6px;border:1px solid #ccc;border-radius:4px;font-size:13px;margin-bottom:8px;box-sizing:border-box;">'
+      +'<label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:2px;">📝 Prazo Contrarrazões (+3 dias úteis)</label>'
+      +'<input id="et-prazo-contra" type="date" value="'+prazoContra+'" style="width:100%;padding:6px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;">'
+      +'</div>';
+  }
+  if(step==='Amostra'){
+    extraHtml='<div style="margin-bottom:12px;padding:10px;background:#eef5fb;border-radius:4px;border:1px solid #a8c8e8;">'
+      +'<label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:2px;">🧪 Prazo para Apresentação da Amostra</label>'
+      +'<input id="et-prazo-amostra" type="date" style="width:100%;padding:6px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;">'
+      +'</div>';
+  }
+  if(step==='Atendimento Local'){
+    extraHtml='<div style="margin-bottom:12px;padding:10px;background:#eef5fb;border-radius:4px;border:1px solid #a8c8e8;">'
+      +'<label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:6px;">🧑‍💼 Envio de profissional</label>'
+      +'<div style="display:flex;gap:8px;">'
+      +'<label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;border:2px solid #3a8c4a;border-radius:4px;cursor:pointer;font-size:13px;font-weight:600;color:#3a8c4a;"><input type="radio" name="et-atend-local" value="sim" style="cursor:pointer;"> Sim</label>'
+      +'<label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;border:2px solid #b03a2e;border-radius:4px;cursor:pointer;font-size:13px;font-weight:600;color:#b03a2e;"><input type="radio" name="et-atend-local" value="nao" style="cursor:pointer;"> Não</label>'
+      +'</div>'
+      +'</div>';
+  }
+  overlay.innerHTML='<div style="background:#fff;border-radius:8px;padding:24px;max-width:380px;width:90%;font-family:Segoe UI,Tahoma,sans-serif;">'
+    +'<div style="font-size:14px;font-weight:700;color:#1a5276;margin-bottom:16px;">✔ '+step+' — '+mun+'</div>'
+    +'<div style="margin-bottom:12px;">'
+    +'<label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:2px;">📅 Data do registro</label>'
+    +'<input id="et-data" type="date" value="'+dataDefault+'" style="width:100%;padding:6px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;margin-bottom:6px;">'
+    +'<label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:2px;">🕐 Hora</label>'
+    +'<input id="et-hora" type="time" value="'+horaDefault+'" style="width:100%;padding:6px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;">'
+    +'</div>'
+    +extraHtml
+    +'<div style="margin-bottom:16px;">'
+    +'<label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:2px;">📝 Observação (opcional)</label>'
+    +'<textarea id="et-obs" style="width:100%;padding:6px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;min-height:50px;"></textarea>'
+    +'</div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end;">'
+    +'<button id="et-cancelar" style="padding:7px 16px;border:1px solid #ccc;border-radius:4px;background:#fff;font-size:12px;cursor:pointer;">Cancelar</button>'
+    +'<button id="et-confirmar" style="padding:7px 16px;border:none;border-radius:4px;background:#1a5276;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">✔ Confirmar</button>'
+    +'</div></div>';
+  document.body.appendChild(overlay);
+  document.getElementById('et-cancelar').onclick=function(){document.body.removeChild(overlay);};
+  document.getElementById('et-confirmar').onclick=function(){
+    var dataReg=document.getElementById('et-data').value||dataDefault;
+    var horaReg=document.getElementById('et-hora').value||horaDefault;
+    var obs=document.getElementById('et-obs').value.trim();
+    var prazoRecursoVal=document.getElementById('et-prazo-recurso')?document.getElementById('et-prazo-recurso').value:null;
+    var prazoContraVal=document.getElementById('et-prazo-contra')?document.getElementById('et-prazo-contra').value:null;
+    var prazoAmostraVal=document.getElementById('et-prazo-amostra')?document.getElementById('et-prazo-amostra').value:null;
+    var atendLocalRadio=document.querySelector('input[name="et-atend-local"]:checked');
+    var atendLocalVal=atendLocalRadio?atendLocalRadio.value:null;
+    document.body.removeChild(overlay);
+    licEtapaConfirmar(mun, step, dataReg, horaReg, obs, prazoRecursoVal, prazoContraVal, prazoAmostraVal, atendLocalVal);
+  };
+}
+function licEtapaConfirmar(mun, step, dataReg, horaReg, obs, prazoRecurso, prazoContra, prazoAmostra, atendLocal){
+  var KEY_PROG='gc_lic_prog_v1';
+  var data={};try{data=JSON.parse(localStorage.getItem(KEY_PROG)||'{}');}catch(e){}
+  if(!data[mun])data[mun]=[];
+  data[mun].push(step);
+  localStorage.setItem(KEY_PROG,JSON.stringify(data));
   // Mapeamento: botão de etapa → palavras-chave da tarefa correspondente
   var MAPA_ETAPA={
     'Análise do Edital': ['analise','edital'],
@@ -3692,10 +3771,6 @@ function licEtapaClicar(mun, step){
     'Resposta Impugnação':['resposta','impugnacao','impugnação'],
     'Conf. Habilitação': ['habilitacao','habilitação','conferencia','conferência']
   };
-  // Marcar no prog
-  data[mun].push(step);
-  localStorage.setItem(KEY_PROG,JSON.stringify(data));
-  // Verificar se existe tarefa correspondente criada
   var munNorm=_normMun(mun);
   var palavras=MAPA_ETAPA[step]||[];
   var tarefaMatch=null;
@@ -3709,17 +3784,40 @@ function licEtapaClicar(mun, step){
       return palavras.some(function(p){return txt.indexOf(p)>=0;});
     });
   }
+  var descLog='Registrado em '+fmtDate(dataReg)+' às '+horaReg+(obs?' — '+obs:'');
+  if(prazoRecurso) descLog+=' | Prazo Recurso: '+fmtDate(prazoRecurso);
+  if(prazoContra) descLog+=' | Prazo Contrarrazões: '+fmtDate(prazoContra);
+  if(prazoAmostra) descLog+=' | Prazo Amostra: '+fmtDate(prazoAmostra);
+  if(atendLocal) descLog+=' | Envio de profissional: '+(atendLocal==='sim'?'Sim':'Não');
   if(tarefaMatch){
-    // Tem tarefa criada — conclui e remove da aba Licitações
     tarefaMatch.done=true;tarefaMatch.doneAt=timeNow();
     save();
-    licLogRegistrar(mun,'✔ '+step,'Tarefa concluída e removida da aba Licitações');
+    licLogRegistrar(mun,'✔ '+step,descLog+' | Tarefa concluída e removida da aba Licitações');
     mostrarToast('✔ '+step+' — tarefa concluída e enviada ao histórico',false);
   } else {
-    // Sem tarefa — apenas registra no histórico
-    licLogRegistrar(mun,'✔ '+step,'Etapa registrada no histórico');
+    licLogRegistrar(mun,'✔ '+step,descLog);
     mostrarToast('✔ '+step+' registrado no histórico',false);
   }
+  // Se foram informados prazos, criar tarefas-lembrete
+  if(prazoRecurso){
+    var jaTemR=tasks.some(function(t){return t._licMunicipio&&_normMun(t._licMunicipio)===munNorm&&t.text.indexOf('Prazo Final de Recurso')>=0&&!t.done;});
+    if(!jaTemR){
+      tasks.push({id:Date.now()+1,text:'📄 Prazo Final de Recurso — '+mun,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:prazoRecurso,alertFired:false,paraQuem:'Licitações',obs:'Prazo final para protocolar o recurso — '+mun,priority:'alta',tags:['licitação','recurso',mun],pinned:false,duracao:'',_licMunicipio:mun});
+    }
+  }
+  if(prazoContra){
+    var jaTemC=tasks.some(function(t){return t._licMunicipio&&_normMun(t._licMunicipio)===munNorm&&t.text.indexOf('Prazo Final de Contrarrazões')>=0&&!t.done;});
+    if(!jaTemC){
+      tasks.push({id:Date.now()+2,text:'📝 Prazo Final de Contrarrazões — '+mun,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:prazoContra,alertFired:false,paraQuem:'Licitações',obs:'Prazo final para apresentar contrarrazões — '+mun,priority:'alta',tags:['licitação','contrarrazões',mun],pinned:false,duracao:'',_licMunicipio:mun});
+    }
+  }
+  if(prazoAmostra){
+    var jaTemA=tasks.some(function(t){return t._licMunicipio&&_normMun(t._licMunicipio)===munNorm&&t.text.indexOf('Prazo Final de Amostra')>=0&&!t.done;});
+    if(!jaTemA){
+      tasks.push({id:Date.now()+3,text:'🧪 Prazo Final de Amostra — '+mun,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:prazoAmostra,alertFired:false,paraQuem:'Licitações',obs:'Prazo final para apresentação da amostra — '+mun,priority:'alta',tags:['licitação','amostra',mun],pinned:false,duracao:'',_licMunicipio:mun});
+    }
+  }
+  if(prazoRecurso||prazoContra||prazoAmostra) save();
   renderLicitacoes();
 }
 function licConcluirTarefa(id, mun){
@@ -3848,7 +3946,7 @@ function renderLicitacoes(){
       '<div class="cert-stat-lbl">Concluídas →</div>'+
     '</div>';
   if(gruposPend.length===0){
-    lista.innerHTML='<div class="cert-empty">Nenhuma licitação pendente. Veja a aba <strong>✅ Lic. Concluídas</strong>.</div>';
+    lista.innerHTML='<div class="cert-empty">Nenhuma licitação pendente. Veja a aba <strong>✅ Participando</strong>.</div>';
     return;
   }
   var licSort=(document.getElementById('lic-sort')||{}).value||'municipio';
@@ -4053,7 +4151,7 @@ function licConcEditarModal(mun){
   };
 }
 function licConcExcluir(mun){
-  if(!confirm('Remover "'+mun+'" da lista de Lic. Concluídas?\\nIsso vai apagar a decisão de participação (volta a aparecer como pendente em Licitações, se houver tarefas).')) return;
+  if(!confirm('Remover "'+mun+'" da lista de Participando?\\nIsso vai apagar a decisão de participação (volta a aparecer como pendente em Licitações, se houver tarefas).')) return;
   var norm=_normMun(mun);
   // Remover do licVencedor
   var vd=licVencedorLoad();
@@ -4073,7 +4171,7 @@ function licConcExcluir(mun){
     var tp=JSON.parse(localStorage.getItem('gc_templates')||'[]');
     window._fbSave(t,r,a,tp);
   }
-  mostrarToast('🗑️ Removido de Lic. Concluídas — '+mun,false);
+  mostrarToast('🗑️ Removido de Participando — '+mun,false);
   renderLicitacoesConcluidas();
 }
 function imprimirLicitacoesConcluidas(){
