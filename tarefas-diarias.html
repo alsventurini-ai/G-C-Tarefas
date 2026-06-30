@@ -674,7 +674,17 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
           <label>📋 Nº Pregão / Processo</label>
           <input type="text" id="lh-pregao" class="modal-input" placeholder="PE 001/2025…" autocomplete="off">
         </div>
-        <div class="modal-field" style="flex:0 0 160px;">
+        <div class="modal-field" style="flex:0 0 200px;">
+          <label>✅ Participamos?</label>
+          <select id="lh-participou" class="modal-input" style="cursor:pointer;" onchange="licHistTogglePartCampos()">
+            <option value="">— Não informado</option>
+            <option value="sim">✅ Sim, participamos</option>
+            <option value="nao">❌ Não participamos</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-row" id="lh-row-resultado" style="display:none;">
+        <div class="modal-field">
           <label>🎯 Resultado</label>
           <select id="lh-resultado" class="modal-input" style="cursor:pointer;">
             <option value="">— Não definido</option>
@@ -682,6 +692,12 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
             <option value="perdeu">❌ Perdemos</option>
             <option value="deserto">— Deserto/Cancelado</option>
           </select>
+        </div>
+      </div>
+      <div class="modal-row" id="lh-row-motivo" style="display:none;">
+        <div class="modal-field">
+          <label>❓ Motivo de não participar</label>
+          <input type="text" id="lh-motivo" class="modal-input" placeholder="Ex: prazo apertado, fora da região, valor inviável…" autocomplete="off">
         </div>
       </div>
       <div class="modal-row">
@@ -696,14 +712,6 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
         </div>
       </div>
       <div class="modal-row">
-        <div class="modal-field">
-          <label>✅ Participamos?</label>
-          <select id="lh-participou" class="modal-input" style="cursor:pointer;">
-            <option value="">— Não informado</option>
-            <option value="sim">✅ Sim, participamos</option>
-            <option value="nao">❌ Não participamos</option>
-          </select>
-        </div>
         <div class="modal-field" style="flex:0 0 220px;">
           <label>🔗 Link (PNCP/edital)</label>
           <input type="url" id="lh-link" class="modal-input" placeholder="https://…">
@@ -4275,9 +4283,9 @@ function licNaoParticiparTarefas(mun, idPrincipal){
   var jaExiste=listaHist.find(function(r){return _normMun(r.municipio)===munNorm&&r.data===dataDisp;});
   if(jaExiste){
     jaExiste.participou='nao';
-    if(motivo&&!jaExiste.obs) jaExiste.obs=motivo;
+    if(motivo) jaExiste.motivo=motivo;
   } else {
-    listaHist.push({id:Date.now(),municipio:mun,data:dataDisp,pregao:pregaoLabel,resultado:'',quemFaz:'',vencedor:'',participou:'nao',obs:motivo,link:(tDisp&&tDisp.link?tDisp.link:''),criadoEm:new Date().toISOString(),_licTipo:tDisp&&tDisp._licTipo?tDisp._licTipo:'',_licNumero:numPregao});
+    listaHist.push({id:Date.now(),municipio:mun,data:dataDisp,pregao:pregaoLabel,resultado:'',motivo:motivo,quemFaz:'',vencedor:'',participou:'nao',obs:'',link:(tDisp&&tDisp.link?tDisp.link:''),criadoEm:new Date().toISOString(),_licTipo:tDisp&&tDisp._licTipo?tDisp._licTipo:'',_licNumero:numPregao});
   }
   licHistSave(listaHist);
   // Registrar no log
@@ -4318,13 +4326,19 @@ function licHistPreencherQuemFazList(){
   empresas=empresas.filter(function(v,i,a){return v&&a.indexOf(v)===i;}).sort();
   dl.innerHTML=empresas.map(function(e){return'<option value="'+e.replace(/"/g,'&quot;')+'">'+e+'</option>';}).join('');
 }
+function licHistTogglePartCampos(){
+  var v=document.getElementById('lh-participou').value;
+  document.getElementById('lh-row-resultado').style.display=(v==='sim')?'flex':'none';
+  document.getElementById('lh-row-motivo').style.display=(v==='nao')?'flex':'none';
+}
 function licHistNovoModal(){
   _licHistEditId=null;
   document.getElementById('lic-hist-modal-title').textContent='📊 Nova Licitação — Histórico';
-  ['lh-municipio','lh-pregao','lh-quemfaz','lh-vencedor','lh-link','lh-obs'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  ['lh-municipio','lh-pregao','lh-quemfaz','lh-vencedor','lh-link','lh-obs','lh-motivo'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
   var selPart=document.getElementById('lh-participou');if(selPart)selPart.value='';
   document.getElementById('lh-data').value='';
   document.getElementById('lh-resultado').value='';
+  licHistTogglePartCampos();
   document.getElementById('lic-hist-modal').style.display='flex';
   setTimeout(function(){document.getElementById('lh-municipio').focus();},80);
 }
@@ -4341,8 +4355,10 @@ function licHistEditarModal(id){
   document.getElementById('lh-quemfaz').value=reg.quemFaz||reg.vencedor||'';
   document.getElementById('lh-vencedor').value=reg.vencedor||'';
   document.getElementById('lh-participou').value=reg.participou||'';
+  document.getElementById('lh-motivo').value=reg.motivo||reg.obs||'';
   document.getElementById('lh-link').value=reg.link||'';
   document.getElementById('lh-obs').value=reg.obs||'';
+  licHistTogglePartCampos();
   document.getElementById('lic-hist-modal').style.display='flex';
   setTimeout(function(){document.getElementById('lh-municipio').focus();},80);
 }
@@ -4357,15 +4373,17 @@ function licHistSalvar(){
   if(!mun){alert('Informe o município.');document.getElementById('lh-municipio').focus();return;}
   if(!data){alert('Informe a data da disputa.');document.getElementById('lh-data').focus();return;}
   var lista=licHistLoad();
+  var participou=document.getElementById('lh-participou').value;
   var reg={
     id:_licHistEditId||Date.now(),
     municipio:mun,
     data:data,
     pregao:document.getElementById('lh-pregao').value.trim(),
-    resultado:document.getElementById('lh-resultado').value,
+    resultado:participou==='sim'?document.getElementById('lh-resultado').value:'',
+    motivo:participou==='nao'?document.getElementById('lh-motivo').value.trim():'',
     quemFaz:document.getElementById('lh-quemfaz').value.trim(),
     vencedor:document.getElementById('lh-vencedor').value.trim(),
-    participou:document.getElementById('lh-participou').value,
+    participou:participou,
     link:document.getElementById('lh-link').value.trim(),
     obs:document.getElementById('lh-obs').value.trim(),
     criadoEm:_licHistEditId?(lista.find(function(r){return r.id===_licHistEditId;})||{}).criadoEm||new Date().toISOString():new Date().toISOString()
@@ -4479,15 +4497,16 @@ function licHistRender(){
       html+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px;">';
       html+='<span style="font-size:12px;font-weight:700;color:var(--navy);">📊 '+(r.pregao||'Pregão')+(dStr?' — '+dStr:'')+'</span>';
       if(partLbl) html+='<span style="font-size:10px;font-weight:700;color:'+partCor+';background:'+(r.participou==='sim'?'#e8f5e9':'#fde8e8')+';padding:1px 8px;border-radius:10px;">'+partLbl+'</span>';
-      if(resLbl) html+='<span style="font-size:10px;font-weight:700;color:'+resCor+';background:'+(r.resultado==='ganhou'?'#e8f5e9':r.resultado==='perdeu'?'#fde8e8':'#f5f5f5')+';padding:1px 8px;border-radius:10px;">'+resLbl+'</span>';
+      if(r.participou==='sim'&&resLbl) html+='<span style="font-size:10px;font-weight:700;color:'+resCor+';background:'+(r.resultado==='ganhou'?'#e8f5e9':r.resultado==='perdeu'?'#fde8e8':'#f5f5f5')+';padding:1px 8px;border-radius:10px;">'+resLbl+'</span>';
       html+='</div>';
+      if(r.participou==='nao'&&r.motivo) html+='<div style="font-size:11px;color:#b03a2e;margin-bottom:2px;">❓ <strong>Motivo:</strong> '+r.motivo+'</div>';
       if(r.quemFaz||r.vencedor){
         html+='<div style="display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:#555;margin-bottom:2px;">';
         if(r.quemFaz) html+='<span>👤 <strong>Quem Faz:</strong> '+r.quemFaz+'</span>';
         if(r.vencedor) html+='<span>🏆 <strong>Quem Venceu:</strong> '+r.vencedor+'</span>';
         html+='</div>';
       }
-      if(r.obs) html+='<div style="font-size:11px;color:var(--muted);font-style:italic;">'+r.obs+'</div>';
+      if(r.obs) html+='<div style="font-size:11px;color:var(--muted);font-style:italic;">📝 '+r.obs+'</div>';
       html+='<div style="display:flex;gap:4px;margin-top:4px;">';
       html+='<button onclick="licHistEditarModal('+r.id+')" style="background:none;border:1px solid #ddd;border-radius:3px;padding:1px 8px;font-size:11px;cursor:pointer;color:#555;">✏️ Editar</button>';
       html+='<button onclick="licHistExcluir('+r.id+')" style="background:none;border:1px solid #ffcccc;border-radius:3px;padding:1px 8px;font-size:11px;cursor:pointer;color:#c0392b;">× Excluir</button>';
