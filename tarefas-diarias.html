@@ -3543,8 +3543,8 @@ function _renderLicGrupoHTML(mun, ts, etapasData, mostrarEtapas, histRegs){
       // Botões de decisão principais
       var jaParticipou=munProg.indexOf('✅ Participamos')>=0;
       var naoParticipou=munProg.indexOf('❌ Não participamos')>=0;
-      var btnParticipar='<button onclick="licDecisaoParticipar(\''+munEscProg+'\')" style="padding:5px 16px;border-radius:20px;border:2px solid #3a8c4a;font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif;'+(jaParticipou?'background:#3a8c4a;color:#fff;':'background:#fff;color:#3a8c4a;')+'">✅ Participamos</button>';
-      var btnNaoParticipar='<button onclick="licNaoParticipar(\''+munEscProg+'\')" style="padding:5px 16px;border-radius:20px;border:2px solid #b03a2e;font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif;'+(naoParticipou?'background:#b03a2e;color:#fff;':'background:#fff;color:#b03a2e;')+'">❌ Não participamos</button>';
+      var btnParticipar='<button onclick="licDecisaoParticipar(\''+munEscProg+'\')" style="padding:5px 16px;border-radius:20px;border:2px solid #3a8c4a;font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif;'+(jaParticipou?'background:#3a8c4a;color:#fff;':'background:#fff;color:#3a8c4a;')+'">✅ Participaremos</button>';
+      var btnNaoParticipar='<button onclick="licNaoParticipar(\''+munEscProg+'\')" style="padding:5px 16px;border-radius:20px;border:2px solid #b03a2e;font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif;'+(naoParticipou?'background:#b03a2e;color:#fff;':'background:#fff;color:#b03a2e;')+'">❌ Não Participaremos</button>';
       progHtml='<div style="margin-top:10px;border-top:1px solid var(--border);padding-top:8px;">'
         +'<div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">📋 Etapas — clique para registrar no histórico</div>'
         +'<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;">'+checkboxes+'</div>'
