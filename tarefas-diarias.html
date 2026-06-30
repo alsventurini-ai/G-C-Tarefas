@@ -1039,6 +1039,19 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
         </div>
       </div>
       <div class="modal-field" style="margin-bottom:14px;">
+        <label>🌐 Plataforma / Site (onde ocorrerá)</label>
+        <input type="text" id="lic-plataforma" class="modal-input" placeholder="Ex: BLL, BNC Compras, Portal de Compras Públicas, ComprasNet…" autocomplete="off" list="lic-plataforma-list">
+        <datalist id="lic-plataforma-list">
+          <option value="BLL Compras">
+          <option value="BNC Compras">
+          <option value="Portal de Compras Públicas">
+          <option value="ComprasNet">
+          <option value="Licitanet">
+          <option value="BBMNET">
+          <option value="Bolsa de Licitações do Brasil">
+        </datalist>
+      </div>
+      <div class="modal-field" style="margin-bottom:14px;">
         <label>👤 Quem Faz (opcional)</label>
         <input type="text" id="lic-quemfaz" class="modal-input" placeholder="Empresa que executa o contrato…" autocomplete="off">
       </div>
@@ -2601,6 +2614,7 @@ function abrirModalLicitacao(){
   document.getElementById('lic-obs').value='';
   var _lt=document.getElementById('lic-tipo');if(_lt)_lt.value='Pregão Eletrônico';
   var _ln=document.getElementById('lic-numero');if(_ln)_ln.value='';
+  var _lp=document.getElementById('lic-plataforma');if(_lp)_lp.value='';
   document.getElementById('lic-modal').style.display='flex';
   setTimeout(function(){document.getElementById('lic-municipio').focus();},80);
 }
@@ -2611,6 +2625,7 @@ function fecharModalLicitacao(){
   var qf=document.getElementById('lic-quemfaz');if(qf) qf.value='';
   var _lt=document.getElementById('lic-tipo');if(_lt)_lt.value='Pregão Eletrônico';
   var _ln=document.getElementById('lic-numero');if(_ln)_ln.value='';
+  var _lp=document.getElementById('lic-plataforma');if(_lp)_lp.value='';
 }
 
 var _licHistTimer=null;
@@ -2711,6 +2726,7 @@ function criarLicitacao(){
   var obs=document.getElementById('lic-obs').value.trim();
   var licTipo=(document.getElementById('lic-tipo')||{}).value||'Pregão Eletrônico';
   var licNumero=((document.getElementById('lic-numero')||{}).value||'').trim();
+  var licPlataforma=((document.getElementById('lic-plataforma')||{}).value||'').trim();
   if(!municipio){alert('Informe o município.');marcarCampoObrigatorio('lic-municipio');return false;}
   if(!dataDisputa){alert('Informe a data da disputa.');marcarCampoObrigatorio('lic-data');return false;}
   if(!horaDisputa){alert('Informe o horário da disputa.');marcarCampoObrigatorio('lic-hora');return false;}
@@ -2718,22 +2734,27 @@ function criarLicitacao(){
   var dataImpug=somarDiasUteis_subtrair(dataDisputa,3);
   var dataAnalise=somarDiasUteis_subtrair(dataDisputa,8);
   var dataInicioProposta=somarDiasCorridos(dataDisputa,1);
+  // Prazo de resposta da impugnação: 3 dias úteis a partir do protocolo, limitado ao último dia útil antes da disputa
+  var dataRespostaImpug=somarDiasUteis(dataImpug,3);
+  var ultimoDiaUtilAntesDisputa=somarDiasUteis_subtrair(dataDisputa,1);
+  if(dataRespostaImpug>ultimoDiaUtilAntesDisputa) dataRespostaImpug=ultimoDiaUtilAntesDisputa;
   var labelTipo=licNumero?(licTipo+' '+licNumero):licTipo;
   var licQuemFaz=((document.getElementById('lic-quemfaz')||{}).value||'').trim();
-  var obsBase=(obs?(obs+' | '):'')+'['+labelTipo+']'+(licQuemFaz?' | Quem Faz: '+licQuemFaz:'');
+  var obsBase=(obs?(obs+' | '):'')+'['+labelTipo+']'+(licQuemFaz?' | Quem Faz: '+licQuemFaz:'')+(licPlataforma?' | Plataforma: '+licPlataforma:'');
   // Tarefa principal
-  tasks.push({id:now2,text:'Licitação - '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataDisputa,alertFired:false,paraQuem:'Licitações',obs:obsBase,priority:'alta',tags:['licitação',municipio,licTipo],pinned:false,duracao:'',link:licLink,_licMunicipio:municipio,_licDataDisputa:dataDisputa,_licHoraDisputa:horaDisputa,_licTipo:licTipo,_licNumero:licNumero,_licQuemFaz:licQuemFaz});
+  tasks.push({id:now2,text:'Licitação - '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataDisputa,alertFired:false,paraQuem:'Licitações',obs:obsBase,priority:'alta',tags:['licitação',municipio,licTipo],pinned:false,duracao:'',link:licLink,_licMunicipio:municipio,_licDataDisputa:dataDisputa,_licHoraDisputa:horaDisputa,_licTipo:licTipo,_licNumero:licNumero,_licQuemFaz:licQuemFaz,_licPlataforma:licPlataforma});
   tasks.push({id:now2+1,text:'⚠️ Impugnação — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataImpug,alertFired:false,paraQuem:'Licitações',obs:'Prazo de impugnação — '+municipio+' ('+labelTipo+')\nLei nº 14.133/2021, Art. 164.',priority:'alta',tags:['licitação','impugnação',municipio],pinned:false,duracao:'',link:licLink,_licMunicipio:municipio,_licDataDisputa:dataDisputa,_licHoraDisputa:horaDisputa,_impugnacaoEnviada:null,_licTipo:licTipo,_licNumero:licNumero});
   tasks.push({id:now2+2,text:'📋 Análise de Edital — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataAnalise,alertFired:false,paraQuem:'Licitações',obs:'Análise do edital — '+municipio+' ('+labelTipo+')',priority:'alta',tags:['licitação','edital',municipio],pinned:false,duracao:'',link:licLink,_licMunicipio:municipio,_licTipo:licTipo,_licNumero:licNumero});
   tasks.push({id:now2+3,text:'📤 Prazo Final Inclusão da Proposta — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataInicioProposta,alertFired:false,paraQuem:'Licitações',obs:'⚠️ ATENÇÃO: Verificar e incluir proposta no sistema até o dia da disputa!\n'+municipio+' ('+labelTipo+')',priority:'alta',tags:['licitação','proposta',municipio],pinned:true,duracao:'',link:licLink,_licMunicipio:municipio,_licTipo:licTipo,_licNumero:licNumero,_intradayTimes:['08:00','15:00']});
   tasks.push({id:now2+5,text:'📨 Início Envio da Proposta — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:somarDiasUteis_subtrair(dataDisputa,4),alertFired:false,paraQuem:'Licitações',obs:'Iniciar elaboração e envio da proposta — '+municipio+' ('+labelTipo+')',priority:'alta',tags:['licitação','proposta',municipio],pinned:false,duracao:'',link:licLink,_licMunicipio:municipio,_licTipo:licTipo,_licNumero:licNumero});
   tasks.push({id:now2+4,text:'⚖️ Prazo Final de Impugnação — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataImpug,alertFired:false,paraQuem:'Licitações',obs:'ATENÇÃO: encerra hoje o prazo de impugnação — '+municipio+' ('+labelTipo+')\nLei nº 14.133/2021, Art. 164.',priority:'alta',tags:['licitação','impugnação',municipio],pinned:false,duracao:'',link:licLink,_licMunicipio:municipio,_licTipo:licTipo,_licNumero:licNumero});
+  tasks.push({id:now2+6,text:'📩 Prazo Final p/ Resposta da Impugnação — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataRespostaImpug,alertFired:false,paraQuem:'Licitações',obs:'⚠️ ATENÇÃO: o órgão tem até esta data para julgar e responder a impugnação (3 dias úteis, limitado ao último dia útil antes da disputa) — '+municipio+' ('+labelTipo+')\nLei nº 14.133/2021, Art. 164, parágrafo único. Verifique se a resposta foi divulgada para não perder o prazo de propostas.',priority:'alta',tags:['licitação','resposta-impugnação',municipio],pinned:true,duracao:'',link:licLink,_licMunicipio:municipio,_licTipo:licTipo,_licNumero:licNumero,_intradayTimes:['08:00','14:00']});
   save();render();atualizarFiltros();
   // Registrar no log com tipo e número
-  licLogRegistrar(municipio,'📌 Licitação cadastrada','Disputa em '+fmtDate(dataDisputa)+' às '+horaDisputa+' | '+labelTipo);
+  licLogRegistrar(municipio,'📌 Licitação cadastrada','Disputa em '+fmtDate(dataDisputa)+' às '+horaDisputa+' | '+labelTipo+(licPlataforma?' | Plataforma: '+licPlataforma:''));
   // Salvar automaticamente no Hist. Licitações (aba hist) com tipo e número
   var listaHist=licHistLoad();
-  listaHist.push({id:Date.now(),municipio:municipio,data:dataDisputa,pregao:labelTipo,resultado:'',vencedor:'',obs:obs||'',link:licLink,criadoEm:new Date().toISOString(),_licTipo:licTipo,_licNumero:licNumero});
+  listaHist.push({id:Date.now(),municipio:municipio,data:dataDisputa,pregao:labelTipo,resultado:'',vencedor:'',obs:obs||'',link:licLink,plataforma:licPlataforma,criadoEm:new Date().toISOString(),_licTipo:licTipo,_licNumero:licNumero});
   licHistSave(listaHist);
   // Salvar quem faz automaticamente no licVencedor
   if(licQuemFaz){
@@ -3483,13 +3504,21 @@ function _renderLicGrupoHTML(mun, ts, etapasData, mostrarEtapas, histRegs){
   // Tipo e número do pregão — pegar da tarefa principal
   var _tPrinc=ts.find(function(t){return /^licita/i.test(t.text.normalize('NFD').replace(/[\u0300-\u036f]/g,''));});
   var _licTipoLabel='';
+  var _licPlataformaLabel='';
   if(_tPrinc&&_tPrinc._licTipo){
     _licTipoLabel=_tPrinc._licTipo+(_tPrinc._licNumero?' '+_tPrinc._licNumero:'');
   }
+  if(_tPrinc&&_tPrinc._licPlataforma){
+    _licPlataformaLabel=_tPrinc._licPlataforma;
+  }
   html+='<div style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:600;padding:8px 0 6px;border-bottom:1.5px solid var(--border);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">'+
-    '<span>🏛 '+mun+' <span style="font-size:10px;color:var(--green);font-weight:400;">'+concEt+'/'+totalEt+' etapas</span>'+(_licTipoLabel?' <span style="font-size:10px;color:#6c3483;font-weight:600;background:#f5f0fa;border:1px solid #c9a8e8;border-radius:3px;padding:1px 7px;">'+_licTipoLabel+'</span>':'')+
+    '<span>🏛 '+mun+' <span style="font-size:10px;color:var(--green);font-weight:400;">'+concEt+'/'+totalEt+' etapas</span>'+(_licTipoLabel?' <span style="font-size:10px;color:#6c3483;font-weight:600;background:#f5f0fa;border:1px solid #c9a8e8;border-radius:3px;padding:1px 7px;">'+_licTipoLabel+'</span>':'')+(_licPlataformaLabel?' <span style="font-size:10px;color:#1a6b8a;font-weight:600;background:#eef5fb;border:1px solid #a8c8e8;border-radius:3px;padding:1px 7px;">🌐 '+_licPlataformaLabel+'</span>':'')+
     '</span>'+
+    '<span style="display:flex;gap:4px;flex-wrap:wrap;">'+
     (!todasConcluidas?'<button onclick="licConcluirGrupo(\''+munEscGrp+'\')" style="background:#3a8c4a;color:#fff;border:none;border-radius:20px;padding:4px 14px;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.3px;white-space:nowrap;">✅ Concluir Licitação</button>':'')+
+    '<button onclick="licGrupoEditarModal(\''+munEscGrp+'\')" style="background:none;border:1px solid #ddd;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600;cursor:pointer;color:#555;white-space:nowrap;">✏️ Editar</button>'+
+    '<button onclick="licGrupoExcluir(\''+munEscGrp+'\')" style="background:none;border:1px solid #ffcccc;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600;cursor:pointer;color:#c0392b;white-space:nowrap;">× Excluir</button>'+
+    '</span>'+
     '</div>';
   if(mostrarEtapas){
     // etapas removidas — andamento agora fica dentro do card da tarefa Licitação
@@ -3843,6 +3872,75 @@ function licConcluirTarefa(id, mun){
   renderLicitacoes();
   mostrarToast('✔ Registrado no histórico: '+t.text.substring(0,35),false);
 }
+function licGrupoEditarModal(mun){
+  var grupos=_getLicGrupos();
+  var ts=grupos[mun]||[];
+  var tPrinc=ts.find(function(t){return /^licita/i.test(t.text.normalize('NFD').replace(/[\u0300-\u036f]/g,''));});
+  if(!tPrinc){mostrarToast('Tarefa principal não encontrada.',false);return;}
+  var overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML='<div style="background:#fff;border-radius:8px;padding:24px;max-width:420px;width:90%;font-family:Segoe UI,Tahoma,sans-serif;max-height:85vh;overflow-y:auto;">'
+    +'<div style="font-size:14px;font-weight:700;color:#1a5276;margin-bottom:16px;">✏️ Editar Licitação — '+mun+'</div>'
+    +'<div style="margin-bottom:10px;"><label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:2px;">🏙 Município</label>'
+    +'<input id="edg-municipio" type="text" value="'+mun.replace(/"/g,'&quot;')+'" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;"></div>'
+    +'<div style="margin-bottom:10px;"><label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:2px;">📅 Data da Disputa</label>'
+    +'<input id="edg-data" type="date" value="'+(tPrinc.taskDate||'')+'" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;"></div>'
+    +'<div style="margin-bottom:10px;"><label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:2px;">⏰ Hora</label>'
+    +'<input id="edg-hora" type="time" value="'+(tPrinc.schedule||'')+'" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;"></div>'
+    +'<div style="margin-bottom:10px;"><label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:2px;">🔢 Nº do Pregão</label>'
+    +'<input id="edg-numero" type="text" value="'+(tPrinc._licNumero||'').replace(/"/g,'&quot;')+'" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;"></div>'
+    +'<div style="margin-bottom:10px;"><label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:2px;">👤 Quem Faz</label>'
+    +'<input id="edg-quemfaz" type="text" value="'+(tPrinc._licQuemFaz||'').replace(/"/g,'&quot;')+'" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;"></div>'
+    +'<div style="margin-bottom:16px;"><label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:2px;">🌐 Plataforma</label>'
+    +'<input id="edg-plataforma" type="text" value="'+(tPrinc._licPlataforma||'').replace(/"/g,'&quot;')+'" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;"></div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end;">'
+    +'<button id="edg-cancelar" style="padding:7px 16px;border:1px solid #ccc;border-radius:4px;background:#fff;font-size:12px;cursor:pointer;">Cancelar</button>'
+    +'<button id="edg-salvar" style="padding:7px 16px;border:none;border-radius:4px;background:#1a5276;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">💾 Salvar</button>'
+    +'</div></div>';
+  document.body.appendChild(overlay);
+  document.getElementById('edg-cancelar').onclick=function(){document.body.removeChild(overlay);};
+  document.getElementById('edg-salvar').onclick=function(){
+    var novoMun=document.getElementById('edg-municipio').value.trim();
+    var novaData=document.getElementById('edg-data').value;
+    var novaHora=document.getElementById('edg-hora').value;
+    var novoNumero=document.getElementById('edg-numero').value.trim();
+    var novoQuemFaz=document.getElementById('edg-quemfaz').value.trim();
+    var novaPlataforma=document.getElementById('edg-plataforma').value.trim();
+    document.body.removeChild(overlay);
+    // Atualizar todas as tarefas do grupo
+    ts.forEach(function(t){
+      var real=tasks.find(function(x){return x.id===t.id;});
+      if(!real) return;
+      if(novoMun) real._licMunicipio=novoMun;
+      if(novoNumero!==undefined) real._licNumero=novoNumero;
+      if(novoQuemFaz!==undefined) real._licQuemFaz=novoQuemFaz;
+      if(novaPlataforma!==undefined) real._licPlataforma=novaPlataforma;
+      // Atualizar texto se o município mudou
+      if(novoMun&&novoMun!==mun){
+        real.text=real.text.replace(mun,novoMun);
+      }
+    });
+    // Atualizar data/hora apenas da tarefa principal
+    var realPrinc=tasks.find(function(x){return x.id===tPrinc.id;});
+    if(realPrinc){
+      if(novaData) realPrinc.taskDate=novaData;
+      if(novaHora) realPrinc.schedule=novaHora;
+    }
+    save();render();
+    mostrarToast('✅ Licitação atualizada — '+(novoMun||mun),false);
+    renderLicitacoes();
+  };
+}
+function licGrupoExcluir(mun){
+  if(!confirm('Excluir TODAS as tarefas da licitação de "'+mun+'"?\nEsta ação não pode ser desfeita.\n(Os registros já existentes em Participando e Histórico não serão apagados.)')) return;
+  var grupos=_getLicGrupos();
+  var ts=grupos[mun]||[];
+  var idsExcluir=ts.map(function(t){return t.id;});
+  tasks=tasks.filter(function(t){return idsExcluir.indexOf(t.id)<0;});
+  save();render();
+  mostrarToast('🗑️ Licitação excluída — '+mun,false);
+  renderLicitacoes();
+}
 function licConcluirGrupo(mun){
   var grupos=_getLicGrupos();
   var ts=grupos[mun];
@@ -4058,6 +4156,7 @@ function renderLicitacoesConcluidas(){
     var dataDisp=tDisp&&tDisp.taskDate?tDisp.taskDate:(munHist.length>0?munHist[0].data:'');
     var labelTipo=tDisp&&tDisp._licTipo?(tDisp._licTipo+(tDisp._licNumero?' '+tDisp._licNumero:'')):
       (munHist.length>0&&munHist[0].pregao?munHist[0].pregao:'');
+    var plataforma=tDisp&&tDisp._licPlataforma?tDisp._licPlataforma:(munHist.length>0&&munHist[0].plataforma?munHist[0].plataforma:'');
     // Cores por estado
     var bordCor=temPart?'var(--green)':temNao?'var(--red)':todasConc?'var(--amber)':'var(--border)';
     var bgCor=temPart?'#f0faf0':temNao?'#fdf0f0':'#f9f8f6';
@@ -4070,6 +4169,7 @@ function renderLicitacoesConcluidas(){
     html+='<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">';
     html+='<span style="font-size:14px;font-weight:700;color:var(--navy);">'+iconeMun+' '+mun+'</span>';
     if(labelTipo) html+='<span style="font-size:10px;color:#6c3483;background:#f5f0fa;border:1px solid #c9a8e8;border-radius:3px;padding:1px 6px;font-weight:600;">'+labelTipo+'</span>';
+    if(plataforma) html+='<span style="font-size:10px;color:#1a6b8a;background:#eef5fb;border:1px solid #a8c8e8;border-radius:3px;padding:1px 6px;font-weight:600;">🌐 '+plataforma+'</span>';
     if(dataDisp) html+='<span style="font-size:11px;color:var(--muted);">📅 '+fmtDate(dataDisp)+'</span>';
     html+='</div>';
     // Botões ver histórico, editar e excluir
