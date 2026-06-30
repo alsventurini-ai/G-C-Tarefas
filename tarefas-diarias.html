@@ -123,7 +123,8 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
 .btn-clear-filter:hover{color:var(--red);}
 
 /* Tasks */
-.tasks-area{background:var(--cream);padding:0 30px 30px;}
+.tasks-area{background:var(--cream);padding:0 30px 30px;position:relative;}
+.tasks-area::before{content:'';position:absolute;left:30px;top:38px;bottom:30px;width:2px;background:var(--border);}
 .section-head{display:flex;justify-content:space-between;align-items:center;padding:15px 0 9px;border-bottom:1.5px solid var(--border);font-size:10.5px;text-transform:uppercase;letter-spacing:1.3px;color:var(--muted);}
 .section-count{background:var(--navy);color:#fff;padding:2px 9px;border-radius:10px;font-size:11px;letter-spacing:0;text-transform:none;}
 .section-count.green{background:var(--green);}
