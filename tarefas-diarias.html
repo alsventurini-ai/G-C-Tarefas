@@ -3449,6 +3449,10 @@ function certRender(){
     if(c.tipo!=='permanente'&&alerta){
       renovLine='<div class="cert-file-name">⏰ Alerta: '+certFmtDate(alerta)+' (5 dias úteis antes)</div>';
     }
+    if(c.historico&&c.historico.length>0){
+      var ultRenov=c.historico[c.historico.length-1];
+      renovLine+='<div class="cert-file-name" style="color:#3a8c4a;">✅ Última renovação: '+certFmtDate(ultRenov.renovadoEm)+' ('+c.historico.length+'x renovada)</div>';
+    }
     var realIdx=certidoes.findIndex(function(x){return x.id===c.id;});
     return '<div class="cert-card '+st+'">'+
       '<div class="cert-card-top">'+
@@ -3463,11 +3467,42 @@ function certRender(){
       renovLine+
       '<div class="cert-file-name">📄 '+certEsc(c.arquivo||'')+'</div>'+
       '<div class="cert-card-actions">'+
+      '<button class="btn" style="font-size:12px;padding:4px 10px;border-color:#3a8c4a;color:#3a8c4a;font-weight:700;" onclick="certRenovar('+realIdx+')">✅ Renovar</button>'+
       '<button class="btn" style="font-size:12px;padding:4px 10px;" onclick="certOpenEdit('+realIdx+')">✏️ Editar</button>'+
       '<button class="btn" style="font-size:12px;padding:4px 10px;border-color:#c0392b;color:#c0392b;" onclick="certRemove('+realIdx+')">🗑 Remover</button>'+
       '</div></div>';
   }).join('');
   certAtualizarBadge();
+}
+function certRenovar(idx){
+  var c=certidoes[idx];
+  if(!c) return;
+  var hoje=new Date().toISOString().slice(0,10);
+  if(c.tipo==='mensal'||c.tipo==='licitacao'){
+    // Renovação rotineira: nova emissão = hoje, vencimento = +30 dias
+    var venc=new Date(hoje+'T00:00:00');
+    venc.setDate(venc.getDate()+30);
+    if(!confirm('Renovar "'+c.nome+'"?\nNova emissão: '+certFmtDate(hoje)+'\nNovo vencimento: '+certFmtDate(venc.toISOString().slice(0,10)))) return;
+    if(!c.historico) c.historico=[];
+    c.historico.push({renovadoEm:hoje,emissaoAnterior:c.emissao||null,vencimentoAnterior:c.vencimento||null});
+    c.emissao=hoje;
+    c.vencimento=venc.toISOString().slice(0,10);
+  } else if(c.tipo==='validade'){
+    var novaData=prompt('Nova data de vencimento (AAAA-MM-DD) para "'+c.nome+'":',c.vencimento||'');
+    if(!novaData) return;
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(novaData)){alert('Data inválida. Use o formato AAAA-MM-DD.');return;}
+    if(!c.historico) c.historico=[];
+    c.historico.push({renovadoEm:hoje,emissaoAnterior:c.emissao||null,vencimentoAnterior:c.vencimento||null});
+    c.emissao=hoje;
+    c.vencimento=novaData;
+  } else {
+    mostrarToast('Certidões permanentes não precisam de renovação.',false);
+    return;
+  }
+  c.atualizadoEm=hoje;
+  certSave();certRender();
+  if(window._fbSave) window._fbSave(tasks,recorrencias,archived,templates);
+  mostrarToast('✅ '+c.nome+' renovada! Próximo vencimento: '+certFmtDate(c.vencimento),false);
 }
 function certRemove(idx){
   if(confirm('Remover esta certidão?')){certidoes.splice(idx,1);certSave();certRender();}
