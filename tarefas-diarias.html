@@ -5549,6 +5549,7 @@ function probRender(){
     '<div class="cert-stat"><div class="cert-stat-num" style="color:var(--green)">'+resol+'</div><div class="cert-stat-lbl">Resolvidos</div></div>';
   // Filtrar
   var filtrados=probs.filter(function(p){
+    if(p.naPauta&&!p.resolvido) return false; // pendente e já na pauta, sai do Registrar
     if(filtroSetor&&p.setor!==filtroSetor) return false;
     if(filtroStatus==='pendente'&&p.resolvido) return false;
     if(filtroStatus==='resolvido'&&!p.resolvido) return false;
@@ -5766,12 +5767,12 @@ function pautaSalvarCabecalho(){
   probRenderPautaTab();
 }
 function pautaExcluirItem(id){
-  if(!confirm('Remover este item da pauta? O problema continuará salvo em "Registrar", apenas sairá da pauta atual.')) return;
+  if(!confirm('Voltar este assunto para "Registrar"? Ele sairá da pauta atual.')) return;
   var probs=probLoad();
   var p=probs.find(function(x){return x.id===id;});
   if(p) p.naPauta=false;
   probSaveData(probs);
-  mostrarToast('🗑️ Removido da pauta.',false);
+  mostrarToast('← Assunto voltou para Registrar.',false);
   probRenderPautaTab();
 }
 function pautaExcluirCabecalho(){
@@ -5868,7 +5869,7 @@ function probRenderPautaTab(){
       html+='<div style="display:flex;gap:4px;flex-wrap:wrap;">';
       html+='<button onclick="pautaEnviarParaAta('+p.id+')" style="background:#6c3483;color:#fff;border:none;border-radius:3px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;">→ Enviar para Ata</button>';
       html+='<button onclick="probEditarModal('+p.id+')" style="background:none;border:1px solid #ddd;border-radius:3px;padding:3px 10px;font-size:11px;cursor:pointer;color:#555;">✏️ Editar Assunto</button>';
-      html+='<button onclick="pautaExcluirItem('+p.id+')" style="background:none;border:1px solid #ffcccc;border-radius:3px;padding:3px 10px;font-size:11px;cursor:pointer;color:#c0392b;">× Excluir</button>';
+      html+='<button onclick="pautaExcluirItem('+p.id+')" style="background:none;border:1px solid #f0c674;border-radius:3px;padding:3px 10px;font-size:11px;cursor:pointer;color:#8a6d00;">← Voltar para Registrar</button>';
       html+='</div>';
       html+='</div>';
       if(p.relatou) html+='<div style="font-size:11px;color:#666;margin-top:4px;">👤 Relatado por: <strong>'+p.relatou+'</strong>'+(p.responsavel?' · 🛠 Responsável: <strong>'+p.responsavel+'</strong>':'')+'</div>';
