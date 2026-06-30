@@ -1,6 +1,6 @@
 {
-  "name": "GC Tarefas",
-  "short_name": "GC Tarefas",
+  "name": "G&C Operacional",
+  "short_name": "G&C Operacional",
   "description": "Galhardo & Canales — Controle Operacional Diário",
   "start_url": "/G-C-Tarefas/tarefas-diarias.html",
   "display": "standalone",
