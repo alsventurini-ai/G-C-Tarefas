@@ -2821,6 +2821,12 @@ function licDecisaoParticipar(mun){
     data[mun].push('✅ Participamos');
     localStorage.setItem(KEY_PROG,JSON.stringify(data));
     licLogRegistrar(mun,'✅ Participamos','G&C confirmou participação nesta licitação');
+    // Garantir entrada em Lic. Concluídas (mesmo pendente)
+    var vd=licVencedorLoad();
+    var norm=_normMun(mun);
+    var chaveReal=Object.keys(vd).find(function(k){return _normMun(k)===norm;})||mun;
+    if(!vd[chaveReal]) vd[chaveReal]={nome:'',resultado:'',quemVenceu:''};
+    licVencedorSave(vd);
     mostrarToast('✅ Participação registrada — '+mun,false);
   }
   renderLicitacoes();
@@ -3869,17 +3875,23 @@ function renderLicitacoesConcluidas(){
   if(!lista) return;
   var grupos=_getLicGrupos();
   var munKeys=Object.keys(grupos);
-  // TODOS os municípios com licitação criada, independente de concluído ou não
   var histRegs=licHistLoad();
   var logRegs=licLogLoad();
-  // Também incluir municípios que só existem no histórico (log ou hist)
   var munSet={};
   munKeys.forEach(function(m){munSet[_normMun(m)]=m;});
   histRegs.forEach(function(r){var n=_normMun(r.municipio);if(!munSet[n])munSet[n]=r.municipio;});
   logRegs.forEach(function(e){var n=_normMun(e.municipio);if(!munSet[n])munSet[n]=e.municipio;});
-  var todosKeys=Object.keys(munSet).map(function(k){return munSet[k];}).sort(function(a,b){return a.localeCompare(b);});
+  var todosKeysRaw=Object.keys(munSet).map(function(k){return munSet[k];});
+  // Apenas municípios que decidiram PARTICIPAR
+  var todosKeys=todosKeysRaw.filter(function(mun){
+    var log=logRegs.filter(function(e){return _normMun(e.municipio)===_normMun(mun);});
+    var hist=histRegs.filter(function(r){return _normMun(r.municipio)===_normMun(mun);});
+    var temPartLog=log.some(function(e){return e.tipo.indexOf('Participamos')>=0&&e.tipo.indexOf('Não')<0;});
+    var temPartHist=hist.some(function(r){return r.participou==='sim';});
+    return temPartLog||temPartHist;
+  }).sort(function(a,b){return a.localeCompare(b);});
   if(todosKeys.length===0){
-    lista.innerHTML='<div class="cert-empty">Nenhuma licitação cadastrada ainda.</div>';
+    lista.innerHTML='<div class="cert-empty">Nenhuma licitação em participação ainda. Clique em <strong>✅ Participaremos</strong> na aba Licitações.</div>';
     stats.innerHTML='';return;
   }
   // Stats
@@ -3954,8 +3966,12 @@ function renderLicitacoesConcluidas(){
     if(labelTipo) html+='<span style="font-size:10px;color:#6c3483;background:#f5f0fa;border:1px solid #c9a8e8;border-radius:3px;padding:1px 6px;font-weight:600;">'+labelTipo+'</span>';
     if(dataDisp) html+='<span style="font-size:11px;color:var(--muted);">📅 '+fmtDate(dataDisp)+'</span>';
     html+='</div>';
-    // Botão ver histórico
-    html+='<button onclick="mudarAba(\'lic-historico\')" style="background:none;border:1px solid var(--border);border-radius:3px;padding:3px 10px;font-size:11px;cursor:pointer;color:var(--navy);">📋 Ver histórico</button>';
+    // Botões ver histórico, editar e excluir
+    html+='<div style="display:flex;gap:4px;">';
+    html+='<button onclick="mudarAba(\'lic-historico\')" style="background:none;border:1px solid var(--border);border-radius:3px;padding:3px 10px;font-size:11px;cursor:pointer;color:var(--navy);">📋 Histórico</button>';
+    html+='<button onclick="licConcEditarModal(\''+munEscC+'\')" style="background:none;border:1px solid #ddd;border-radius:3px;padding:3px 8px;font-size:11px;cursor:pointer;color:#555;">✏️ Editar</button>';
+    html+='<button onclick="licConcExcluir(\''+munEscC+'\')" style="background:none;border:1px solid #ffcccc;border-radius:3px;padding:3px 8px;font-size:11px;cursor:pointer;color:#c0392b;">× Excluir</button>';
+    html+='</div>';
     html+='</div>';
     // Quem faz — linha inline editável
     var quemVenceu=venc.quemVenceu||'';
@@ -3985,6 +4001,80 @@ function renderLicitacoesConcluidas(){
     lista_html+=html;
   });
   lista.innerHTML=lista_html;
+}
+function licConcEditarModal(mun){
+  var venc=licVencedorGetMun(mun);
+  var overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML='<div style="background:#fff;border-radius:8px;padding:24px;max-width:420px;width:90%;font-family:Segoe UI,Tahoma,sans-serif;">'
+    +'<div style="font-size:14px;font-weight:700;color:#1a5276;margin-bottom:16px;">✏️ Editar — '+mun+'</div>'
+    +'<div style="margin-bottom:12px;">'
+    +'<label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px;">🎯 Resultado</label>'
+    +'<select id="edc-resultado" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;">'
+    +'<option value="">— Não definido</option>'
+    +'<option value="ganhou"'+(venc.resultado==='ganhou'?' selected':'')+'>✅ Ganhamos</option>'
+    +'<option value="perdeu"'+(venc.resultado==='perdeu'?' selected':'')+'>❌ Perdemos</option>'
+    +'<option value="deserto"'+(venc.resultado==='deserto'?' selected':'')+'>— Deserto/Cancelado</option>'
+    +'</select></div>'
+    +'<div style="margin-bottom:12px;">'
+    +'<label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px;">👤 Quem Faz</label>'
+    +'<input id="edc-quemfaz" type="text" value="'+(venc.nome||'').replace(/"/g,'&quot;')+'" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;"></div>'
+    +'<div style="margin-bottom:16px;">'
+    +'<label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px;">🏆 Quem Venceu</label>'
+    +'<input id="edc-vencedor" type="text" value="'+(venc.quemVenceu||'').replace(/"/g,'&quot;')+'" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;"></div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end;">'
+    +'<button id="edc-cancelar" style="padding:7px 16px;border:1px solid #ccc;border-radius:4px;background:#fff;font-size:12px;cursor:pointer;">Cancelar</button>'
+    +'<button id="edc-salvar" style="padding:7px 16px;border:none;border-radius:4px;background:#1a5276;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">💾 Salvar</button>'
+    +'</div></div>';
+  document.body.appendChild(overlay);
+  document.getElementById('edc-cancelar').onclick=function(){document.body.removeChild(overlay);};
+  document.getElementById('edc-salvar').onclick=function(){
+    var resultado=document.getElementById('edc-resultado').value;
+    var quemFaz=document.getElementById('edc-quemfaz').value.trim();
+    var quemVenceu=document.getElementById('edc-vencedor').value.trim();
+    document.body.removeChild(overlay);
+    var vd=licVencedorLoad();
+    var norm=_normMun(mun);
+    var chaveReal=Object.keys(vd).find(function(k){return _normMun(k)===norm;})||mun;
+    if(!vd[chaveReal])vd[chaveReal]={};
+    vd[chaveReal].nome=quemFaz;
+    vd[chaveReal].resultado=resultado;
+    vd[chaveReal].quemVenceu=quemVenceu;
+    licVencedorSave(vd);
+    // Atualizar também no Hist. Licitações se existir registro
+    var listaHist=licHistLoad();
+    var reg=listaHist.find(function(r){return _normMun(r.municipio)===norm&&r.participou==='sim';});
+    if(reg){
+      reg.resultado=resultado;reg.quemFaz=quemFaz;reg.vencedor=quemVenceu;
+      licHistSave(listaHist);
+    }
+    mostrarToast('✅ Atualizado — '+mun,false);
+    renderLicitacoesConcluidas();
+  };
+}
+function licConcExcluir(mun){
+  if(!confirm('Remover "'+mun+'" da lista de Lic. Concluídas?\\nIsso vai apagar a decisão de participação (volta a aparecer como pendente em Licitações, se houver tarefas).')) return;
+  var norm=_normMun(mun);
+  // Remover do licVencedor
+  var vd=licVencedorLoad();
+  var chave=Object.keys(vd).find(function(k){return _normMun(k)===norm;});
+  if(chave) delete vd[chave];
+  licVencedorSave(vd);
+  // Remover marcação de participação do log e prog
+  var KEY_PROG='gc_lic_prog_v1';
+  var data={};try{data=JSON.parse(localStorage.getItem(KEY_PROG)||'{}');}catch(e){}
+  var chaveProg=Object.keys(data).find(function(k){return _normMun(k)===norm;});
+  if(chaveProg) data[chaveProg]=data[chaveProg].filter(function(s){return s.indexOf('Participamos')<0;});
+  localStorage.setItem(KEY_PROG,JSON.stringify(data));
+  if(window._fbSave){
+    var t=JSON.parse(localStorage.getItem('gc_tarefas_v3')||'[]');
+    var r=JSON.parse(localStorage.getItem('gc_recorrencias')||'[]');
+    var a=JSON.parse(localStorage.getItem('gc_archived')||'[]');
+    var tp=JSON.parse(localStorage.getItem('gc_templates')||'[]');
+    window._fbSave(t,r,a,tp);
+  }
+  mostrarToast('🗑️ Removido de Lic. Concluídas — '+mun,false);
+  renderLicitacoesConcluidas();
 }
 function imprimirLicitacoesConcluidas(){
   var grupos=_getLicGrupos();
