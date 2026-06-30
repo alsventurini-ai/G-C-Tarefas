@@ -2618,7 +2618,8 @@ function makeEl(t){
   div.className='task-item'+(t.done?' done':'')+(t.pinned?' pinned':'')+(t._futuro?' futuro':'')+(_atrasada?' atrasada':'');
   div.id='task-'+t.id;
   if(t._licGrupoMun){
-    div.style.borderLeft='3px solid #6c3483';
+    div.style.boxShadow='inset 3px 0 0 #6c3483';
+    div.style.paddingLeft='9px';
     div.style.background='#faf7fd';
     if(t._licGrupoInicio){
       var grpHdr=document.createElement('div');
