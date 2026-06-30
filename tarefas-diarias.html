@@ -5269,27 +5269,58 @@ document.addEventListener('firebase-ready', function(){
 // ── Problemas Internos ──
 var PROB_KEY='gc_problemas_v1';
 function probEnviarDeTarefa(t){
-  // Pedir setor e prioridade
-  var setor=confirm('Setor:\nOK = Administrativo\nCancelar = Produção')?'Administrativo':'Produção';
-  var prioOpts=['alta','media','baixa'];
-  var prioResposta=prompt('Prioridade:\n1 = 🔴 Alta\n2 = 🟡 Média\n3 = 🟢 Baixa','1');
-  if(prioResposta===null) return;
-  var prio=prioOpts[(parseInt(prioResposta)||1)-1]||'alta';
-  var probs=probLoad();
-  probs.push({
-    id:Date.now(),
-    titulo:t.text,
-    descricao:t.obs||'',
-    setor:setor,
-    prioridade:prio,
-    resolvido:false,
-    resolucao:'',
-    criadoEm:new Date().toISOString(),
-    origemTarefaId:t.id
-  });
-  probSaveData(probs);
-  mostrarToast('⚠️ Enviado para Problemas Internos!',false);
-  if(confirm('Ir para a aba Problemas Internos agora?')) mudarAba('problemas');
+  var overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  overlay.innerHTML='<div style="background:#fff;border-radius:8px;padding:24px;max-width:420px;width:100%;font-family:Segoe UI,Tahoma,sans-serif;">'
+    +'<div style="font-size:14px;font-weight:700;color:#b03a2e;margin-bottom:4px;">⚠️ Virar Problema</div>'
+    +'<div style="font-size:11px;color:#888;margin-bottom:16px;">Esta tarefa será registrada para pauta de reunião</div>'
+    +'<div style="margin-bottom:10px;"><label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px;">📌 Título</label>'
+    +'<input id="pft-titulo" type="text" value="'+t.text.replace(/"/g,'&quot;')+'" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;"></div>'
+    +'<div class="modal-row" style="display:flex;gap:8px;margin-bottom:10px;">'
+    +'<div style="flex:1;"><label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px;">🏢 Setor</label>'
+    +'<select id="pft-setor" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;"><option value="Administrativo">Administrativo</option><option value="Produção">Produção</option></select></div>'
+    +'<div style="flex:1;"><label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px;">🎯 Prioridade</label>'
+    +'<select id="pft-prioridade" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;"><option value="alta">🔴 Alta</option><option value="media" selected>🟡 Média</option><option value="baixa">🟢 Baixa</option></select></div>'
+    +'</div>'
+    +'<div class="modal-row" style="display:flex;gap:8px;margin-bottom:16px;">'
+    +'<div style="flex:1;"><label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px;">👤 Identificado por</label>'
+    +'<input id="pft-relatou" type="text" value="André" list="prob-pessoas-list" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;"></div>'
+    +'<div style="flex:1;"><label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px;">🛠 Responsável</label>'
+    +'<input id="pft-responsavel" type="text" list="prob-pessoas-list" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;"></div>'
+    +'</div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end;">'
+    +'<button id="pft-cancelar" style="padding:7px 16px;border:1px solid #ccc;border-radius:4px;background:#fff;font-size:12px;cursor:pointer;">Cancelar</button>'
+    +'<button id="pft-salvar" style="padding:7px 16px;border:none;border-radius:4px;background:#b03a2e;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">⚠️ Virar Problema</button>'
+    +'</div></div>';
+  document.body.appendChild(overlay);
+  probPreencherPessoasList();
+  document.getElementById('pft-cancelar').onclick=function(){document.body.removeChild(overlay);};
+  document.getElementById('pft-salvar').onclick=function(){
+    var titulo=document.getElementById('pft-titulo').value.trim();
+    if(!titulo){alert('Informe o título.');return;}
+    var setor=document.getElementById('pft-setor').value;
+    var prioridade=document.getElementById('pft-prioridade').value;
+    var relatou=document.getElementById('pft-relatou').value.trim()||'André';
+    var responsavel=document.getElementById('pft-responsavel').value.trim();
+    document.body.removeChild(overlay);
+    var probs=probLoad();
+    probs.push({
+      id:Date.now(),
+      titulo:titulo,
+      descricao:t.obs||'',
+      setor:setor,
+      prioridade:prioridade,
+      relatou:relatou,
+      responsavel:responsavel,
+      resolvido:false,
+      resolucao:'',
+      naPauta:true,
+      criadoEm:new Date().toISOString(),
+      origemTarefaId:t.id
+    });
+    probSaveData(probs);
+    mostrarToast('⚠️ Tarefa virou Problema — já marcada para a pauta!',false);
+  };
 }
 function probTogglePauta(id){
   var probs=probLoad();
