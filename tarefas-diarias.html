@@ -1009,6 +1009,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);">
           <button onclick="probCopiarAta()" style="background:#1a5276;color:#fff;border:none;padding:8px 18px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;">📋 Copiar</button>
           <button onclick="probImprimirAta()" style="background:#2c3e50;color:#fff;border:none;padding:8px 18px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;">🖨️ Imprimir/PDF</button>
+          <button onclick="ataExcluir(_ataAtualId)" style="background:none;border:1px solid #ffcccc;color:#c0392b;padding:8px 18px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;">× Excluir Ata</button>
           <button onclick="document.getElementById('ata-view-modal').style.display='none';">✕ Fechar</button>
         </div>
       </div>
@@ -2616,6 +2617,16 @@ function makeEl(t){
   var _atrasada=!t.done&&!t._futuro&&t.taskDate&&new Date(t.taskDate+'T00:00:00')<_hoje;
   div.className='task-item'+(t.done?' done':'')+(t.pinned?' pinned':'')+(t._futuro?' futuro':'')+(_atrasada?' atrasada':'');
   div.id='task-'+t.id;
+  if(t._licGrupoMun){
+    div.style.borderLeft='3px solid #6c3483';
+    div.style.background='#faf7fd';
+    if(t._licGrupoInicio){
+      var grpHdr=document.createElement('div');
+      grpHdr.style.cssText='font-size:10px;font-weight:700;color:#6c3483;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;';
+      grpHdr.textContent='🏛 Licitação — '+t._licGrupoMun;
+      div.appendChild(grpHdr);
+    }
+  }
   var chk=document.createElement('div');
   chk.className='chk'+(t.done?' done':'');chk.textContent=t.done?'✕':'';
   chk.title=t._futuro?'Tarefa futura':(t.done?'Marcar como pendente':'Marcar como concluída');
@@ -2734,6 +2745,7 @@ function render(){
   atualizarTitulo();
   var todos=tasks;var visiveis=filtrarLista(todos);
   var p=sortTasks(visiveis.filter(function(x){return!x.done;}),false);
+  p=agruparTarefasLicitacao(p);
   var d=sortTasks(visiveis.filter(function(x){return x.done&&!x._futuro;}),true);
   var lp=document.getElementById('list-p'),ld=document.getElementById('list-d');
   lp.innerHTML='';ld.innerHTML='';
@@ -2755,7 +2767,51 @@ function render(){
   atualizarBadgesLic();
 }
 
-// ── Licitação ──
+function _getMunLic(t){
+  var m=t._licMunicipio;
+  if(!m){var mm=t.text.match(/^licita[çc][aã]o\s*[-—]\s*(.+)$/i)||t.text.match(/[-—]\s*(.+)$/);if(mm)m=mm[1].trim();}
+  return m;
+}
+function agruparTarefasLicitacao(lista){
+  // Identificar tarefas de licitação (têm _licMunicipio ou tag de licitação)
+  var grupos={};
+  var ordem=[];
+  var resultado=[];
+  var jaProcessado={};
+  lista.forEach(function(t,idx){
+    var isLic=t._licMunicipio||(t.tags&&t.tags.indexOf('licitação')>=0);
+    if(!isLic){return;}
+    var mun=_getMunLic(t);
+    if(!mun){return;}
+    if(!grupos[mun]){grupos[mun]=[];ordem.push(mun);}
+    grupos[mun].push(t);
+  });
+  // Para cada item da lista original, se já fizer parte de um grupo processado, pular;
+  // senão, se for o primeiro membro do grupo encontrado, inserir o grupo inteiro (ordenado por data)
+  lista.forEach(function(t){
+    var isLic=t._licMunicipio||(t.tags&&t.tags.indexOf('licitação')>=0);
+    var mun=isLic?_getMunLic(t):null;
+    if(mun&&grupos[mun]){
+      if(jaProcessado[mun]) return; // já inserido
+      jaProcessado[mun]=true;
+      var membros=grupos[mun].slice().sort(function(a,b){
+        var da=a.taskDate||'9999-99-99',db=b.taskDate||'9999-99-99';
+        if(da!==db) return da<db?-1:1;
+        var ha=a.schedule||'99:99',hb=b.schedule||'99:99';
+        return ha<hb?-1:(ha>hb?1:a.id-b.id);
+      });
+      if(membros.length>1){
+        membros[0]._licGrupoInicio=true;
+        membros[membros.length-1]._licGrupoFim=true;
+        membros.forEach(function(m){m._licGrupoMun=mun;});
+      }
+      membros.forEach(function(m){resultado.push(m);});
+    } else {
+      resultado.push(t);
+    }
+  });
+  return resultado;
+}
 function abrirModalLicitacao(){
   document.getElementById('lic-municipio').value='';
   document.getElementById('lic-data').value='';
@@ -5718,6 +5774,61 @@ function pautaExcluirItem(id){
   mostrarToast('🗑️ Removido da pauta.',false);
   probRenderPautaTab();
 }
+function pautaExcluirCabecalho(){
+  if(!confirm('Excluir esta pauta (data, horário e participantes)?\nOs assuntos continuam salvos em "Registrar", só o cabeçalho da reunião será removido.')) return;
+  localStorage.removeItem(PAUTA_CAB_KEY);
+  if(window._fbSave){
+    var t=JSON.parse(localStorage.getItem('gc_tarefas_v3')||'[]');
+    var r=JSON.parse(localStorage.getItem('gc_recorrencias')||'[]');
+    var a=JSON.parse(localStorage.getItem('gc_archived')||'[]');
+    var tp=JSON.parse(localStorage.getItem('gc_templates')||'[]');
+    window._fbSave(t,r,a,tp);
+  }
+  mostrarToast('🗑️ Pauta excluída.',false);
+  probRenderPautaTab();
+}
+function pautaEnviarParaAta(probId){
+  var atas=ataLoad();
+  // Se não houver nenhuma ata aberta na sessão, ou a atual não existir mais, perguntar/criar
+  var ata=_ataAtualId?atas.find(function(a){return a.id===_ataAtualId;}):null;
+  if(!ata){
+    if(atas.length>0){
+      // Oferecer escolher entre a mais recente ou criar nova
+      var maisRecente=atas.slice().sort(function(a,b){return b.criadaEm.localeCompare(a.criadaEm);})[0];
+      if(confirm('Enviar para a ata mais recente ('+ataNumeroLabel(maisRecente.id)+' — '+fmtDate(maisRecente.data)+')?\n\nOK = usar essa ata\nCancelar = criar uma nova ata')){
+        ata=maisRecente;
+      }
+    }
+    if(!ata){
+      mostrarToast('Crie uma ata primeiro na sub-aba "Atas".',false);
+      probMudarSubAba('atas');
+      return;
+    }
+  }
+  if(ata.itensIds.indexOf(probId)>=0){
+    mostrarToast('Este assunto já está nesta ata.',false);
+  } else {
+    ata.itensIds.push(probId);
+    ataSaveData(atas);
+    mostrarToast('→ Enviado para '+ataNumeroLabel(ata.id)+'!',false);
+  }
+  _ataAtualId=ata.id;
+}
+function ataNumeroLabel(ataId){
+  var atas=ataLoad().slice().sort(function(a,b){return a.criadaEm.localeCompare(b.criadaEm);});
+  var idx=atas.findIndex(function(a){return a.id===ataId;});
+  var num=idx>=0?idx+1:atas.length;
+  return num+'ª Ata';
+}
+function ataExcluir(ataId){
+  if(!confirm('Excluir esta ata inteira?\nOs problemas continuam salvos em "Registrar", apenas a ata será removida.')) return;
+  var atas=ataLoad().filter(function(a){return a.id!==ataId;});
+  ataSaveData(atas);
+  if(_ataAtualId===ataId) _ataAtualId=null;
+  mostrarToast('🗑️ Ata excluída.',false);
+  document.getElementById('ata-view-modal').style.display='none';
+  ataRenderLista();
+}
 function probRenderPautaTab(){
   var el=document.getElementById('prob-pauta-tab-conteudo');
   if(!el) return;
@@ -5754,7 +5865,8 @@ function probRenderPautaTab(){
       html+='<div style="display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;">';
       html+='<div><span style="font-size:10px;font-weight:700;background:'+prioCor+';color:#fff;padding:1px 6px;border-radius:2px;margin-right:6px;">'+prioLabel+'</span>';
       html+='<span style="font-weight:700;color:#1a5276;font-size:13px;">'+(i+1)+'. '+p.titulo+'</span></div>';
-      html+='<div style="display:flex;gap:4px;">';
+      html+='<div style="display:flex;gap:4px;flex-wrap:wrap;">';
+      html+='<button onclick="pautaEnviarParaAta('+p.id+')" style="background:#6c3483;color:#fff;border:none;border-radius:3px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;">→ Enviar para Ata</button>';
       html+='<button onclick="probEditarModal('+p.id+')" style="background:none;border:1px solid #ddd;border-radius:3px;padding:3px 10px;font-size:11px;cursor:pointer;color:#555;">✏️ Editar Assunto</button>';
       html+='<button onclick="pautaExcluirItem('+p.id+')" style="background:none;border:1px solid #ffcccc;border-radius:3px;padding:3px 10px;font-size:11px;cursor:pointer;color:#c0392b;">× Excluir</button>';
       html+='</div>';
@@ -5767,6 +5879,7 @@ function probRenderPautaTab(){
   html+='<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">';
   html+='<button onclick="probCopiarPautaTab()" style="background:#1a5276;color:#fff;border:none;padding:7px 16px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;">📋 Copiar</button>';
   html+='<button onclick="probImprimirPautaTab()" style="background:#2c3e50;color:#fff;border:none;padding:7px 16px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;">🖨️ Imprimir</button>';
+  if(cab) html+='<button onclick="pautaExcluirCabecalho()" style="background:none;border:1px solid #ffcccc;color:#c0392b;padding:7px 16px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;">× Excluir Pauta</button>';
   html+='</div>';
   el.innerHTML=html;
 }
@@ -5931,24 +6044,29 @@ function ataCriar(){
 function ataRenderLista(){
   var el=document.getElementById('atas-lista');
   if(!el) return;
-  var atas=ataLoad().slice().sort(function(a,b){return b.criadaEm.localeCompare(a.criadaEm);});
+  var atasOrdemCriacao=ataLoad().slice().sort(function(a,b){return a.criadaEm.localeCompare(b.criadaEm);});
+  var atas=atasOrdemCriacao.slice().sort(function(a,b){return b.criadaEm.localeCompare(a.criadaEm);});
   if(atas.length===0){
     el.innerHTML='<div class="cert-empty">Nenhuma ata registrada ainda. Clique em "+ Nova Ata" para começar.</div>';
     return;
   }
   var html='';
   atas.forEach(function(ata){
+    var numero=atasOrdemCriacao.findIndex(function(a){return a.id===ata.id;})+1;
     var probs=probLoad();
     var itens=probs.filter(function(p){return ata.itensIds.indexOf(p.id)>=0;});
     var dataFmt=fmtDate(ata.data);
     var partTxt=ata.participantes.map(function(p){return p.nome;}).join(', ');
-    html+='<div class="cert-card" style="border-left-color:#6c3483;padding:12px 16px;margin-bottom:10px;cursor:pointer;" onclick="ataAbrirView('+ata.id+')">';
+    html+='<div class="cert-card" style="border-left-color:#6c3483;padding:12px 16px;margin-bottom:10px;">';
     html+='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">';
-    html+='<span style="font-size:13px;font-weight:700;color:#6c3483;">📄 Ata — '+dataFmt+'</span>';
+    html+='<span style="font-size:13px;font-weight:700;color:#6c3483;cursor:pointer;" onclick="ataAbrirView('+ata.id+')">📄 '+numero+'ª Ata — '+dataFmt+'</span>';
+    html+='<div style="display:flex;align-items:center;gap:8px;">';
     html+='<span style="font-size:11px;color:var(--muted);">'+ata.horaInicio+(ata.horaFim?' às '+ata.horaFim:'')+'</span>';
+    html+='<button onclick="event.stopPropagation();ataExcluir('+ata.id+')" style="background:none;border:1px solid #ffcccc;border-radius:3px;padding:2px 8px;font-size:11px;cursor:pointer;color:#c0392b;">× Excluir</button>';
     html+='</div>';
-    html+='<div style="font-size:11px;color:#555;margin-top:4px;">👥 '+(partTxt||'Sem participantes')+'</div>';
-    html+='<div style="font-size:11px;color:var(--muted);margin-top:4px;">'+itens.length+' assunto(s) registrado(s)</div>';
+    html+='</div>';
+    html+='<div style="font-size:11px;color:#555;margin-top:4px;cursor:pointer;" onclick="ataAbrirView('+ata.id+')">👥 '+(partTxt||'Sem participantes')+'</div>';
+    html+='<div style="font-size:11px;color:var(--muted);margin-top:4px;cursor:pointer;" onclick="ataAbrirView('+ata.id+')">'+itens.length+' assunto(s) registrado(s)</div>';
     html+='</div>';
   });
   el.innerHTML=html;
@@ -6073,16 +6191,7 @@ function probGerarAtaDoc(ataId){
   var ata=atas.find(function(a){return a.id===ataId;});
   if(!ata) return;
   var probs=probLoad();
-  // Itens já vinculados + itens vindos da pauta (naPauta=true) que ainda não foram vinculados a nenhuma ata
-  var itensVinculados=probs.filter(function(p){return ata.itensIds.indexOf(p.id)>=0;});
-  var itensDaPauta=probs.filter(function(p){return p.naPauta&&ata.itensIds.indexOf(p.id)<0;});
-  // Auto-vincular itens da pauta a esta ata na primeira vez que abrir
-  if(itensDaPauta.length>0){
-    itensDaPauta.forEach(function(p){ata.itensIds.push(p.id);});
-    ataSaveData(atas);
-    itensVinculados=itensVinculados.concat(itensDaPauta);
-  }
-  var doAta=itensVinculados;
+  var doAta=probs.filter(function(p){return ata.itensIds.indexOf(p.id)>=0;});
   var dataFmt=fmtDate(ata.data);
   var partTxt=ata.participantes.map(function(p){return p.nome+' ('+p.cargo+')';}).join(', ');
   var introTxt='Na data '+dataFmt+', com início às '+ata.horaInicio+(ata.horaFim?' e término às '+ata.horaFim:'')+', estiveram presentes os colaboradores: '+(partTxt||'—')+'.';
@@ -6092,7 +6201,7 @@ function probGerarAtaDoc(ataId){
   html+='<div style="text-align:center;padding:8px 0;border-bottom:2px solid #1a5276;margin-bottom:14px;"><div style="font-size:18px;font-weight:700;color:#1a5276;">GALHARDO &amp; CANALES</div></div>';
   html+='<div style="padding:0 20px;">';
   html+='<div style="text-align:center;padding:8px 0;border-top:2px solid #1a5276;border-bottom:2px solid #1a5276;margin-bottom:14px;">';
-  html+='<div style="font-size:14px;font-weight:700;color:#1a5276;text-transform:uppercase;letter-spacing:1px;">Ata de Reunião</div>';
+  html+='<div style="font-size:14px;font-weight:700;color:#1a5276;text-transform:uppercase;letter-spacing:1px;">'+ataNumeroLabel(ata.id)+' de Reunião</div>';
   html+='</div>';
   html+='<div style="font-size:12px;color:#333;margin-bottom:16px;line-height:1.6;">'+introTxt+'</div>';
   if(doAta.length===0){
@@ -6173,7 +6282,7 @@ function probImprimirAta(){
   html+='<div style="text-align:center;padding:8px 0;border-bottom:2px solid #1a5276;margin-bottom:14px;"><div style="font-size:18px;font-weight:700;color:#1a5276;">GALHARDO &amp; CANALES</div></div>';
   html+='<div style="padding:0 20px;">';
   html+='<div style="text-align:center;padding:8px 0;border-top:2px solid #1a5276;border-bottom:2px solid #1a5276;margin-bottom:14px;">';
-  html+='<div style="font-size:14px;font-weight:700;color:#1a5276;text-transform:uppercase;letter-spacing:1px;">Ata de Reunião</div>';
+  html+='<div style="font-size:14px;font-weight:700;color:#1a5276;text-transform:uppercase;letter-spacing:1px;">'+ataNumeroLabel(ata.id)+' de Reunião</div>';
   html+='</div>';
   html+='<div style="font-size:12px;color:#333;margin-bottom:16px;line-height:1.6;">'+introTxt+'</div>';
   var setores=['Administrativo','Produção'];
