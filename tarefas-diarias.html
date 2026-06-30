@@ -2767,7 +2767,10 @@ function render(){
 
 function _getMunLic(t){
   var m=t._licMunicipio;
-  if(!m){var mm=t.text.match(/^licita[çc][aã]o\s*[-—]\s*(.+)$/i)||t.text.match(/[-—]\s*(.+)$/);if(mm)m=mm[1].trim();}
+  if(!m&&t.tags&&t.tags.indexOf('licitação')>=0){
+    var mm=t.text.match(/^licita[çc][aã]o\s*[-—]\s*(.+)$/i);
+    if(mm) m=mm[1].trim();
+  }
   return m;
 }
 function agruparTarefasLicitacao(lista){
