@@ -813,6 +813,10 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
           <option value="media">🟡 Média</option>
           <option value="baixa">🟢 Baixa</option>
         </select>
+        <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:220px;">
+          <label for="prob-filtro-responsavel" style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">Responsável pela Execução</label>
+          <input id="prob-filtro-responsavel" type="text" placeholder="Digite o nome do responsável..." class="filter-select" oninput="probRender()" style="font-size:12px;padding:6px 10px;">
+        </div>
       </div>
       <div id="prob-stats-row" style="display:flex;gap:12px;padding:0 30px 14px;flex-wrap:wrap;"></div>
       <div id="prob-lista" style="padding:0 30px 24px;background:var(--cream);"></div>
@@ -5586,6 +5590,8 @@ function probRender(){
   var filtroSetor=(document.getElementById('prob-filtro-setor')||{}).value||'';
   var filtroStatus=(document.getElementById('prob-filtro-status')||{}).value||'pendente';
   var filtroPrio=(document.getElementById('prob-filtro-prio')||{}).value||'';
+  var filtroResp=(document.getElementById('prob-filtro-responsavel')||{}).value||'';
+  filtroResp=filtroResp.trim().toLowerCase();
   // Stats
   var total=probs.length;
   var pend=probs.filter(function(p){return!p.resolvido;}).length;
@@ -5603,6 +5609,7 @@ function probRender(){
     if(filtroStatus==='pendente'&&p.resolvido) return false;
     if(filtroStatus==='resolvido'&&!p.resolvido) return false;
     if(filtroPrio&&p.prioridade!==filtroPrio) return false;
+    if(filtroResp&&(p.responsavel||'').toLowerCase().indexOf(filtroResp)===-1) return false;
     return true;
   });
   // Ordenar: alta primeiro, depois data
