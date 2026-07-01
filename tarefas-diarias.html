@@ -439,6 +439,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
     <button class="tab-btn" id="tab-btn-certidoes" onclick="mudarAba('certidoes')"><span>📜 Certidões</span><span class="tab-badge" id="tab-cert-badge" style="display:none;">!</span></button>
     <button class="tab-btn" id="tab-btn-historico" onclick="mudarAba('historico')"><span>📅 Histórico</span><span class="tab-spacer"></span></button>
     <button class="tab-btn" id="tab-btn-problemas" onclick="mudarAba('problemas')"><span>⚠️ Problemas</span><span class="tab-badge" id="tab-prob-badge" style="display:none;background:#b03a2e;">0</span></button>
+    <button class="tab-btn" id="tab-btn-problemas-resolvidos" onclick="mudarAba('problemas-resolvidos')"><span>✅ Prob. Resolvidos</span><span class="tab-badge" id="tab-prob-resol-badge" style="display:none;background:#3a8c4a;">0</span></button>
     <button class="tab-btn" id="tab-btn-busca" onclick="abrirBuscaGlobal()" style="margin-left:auto;"><span>🔍</span><span class="tab-spacer"></span></button>
   </div>
 
@@ -802,11 +803,6 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
           <option value="Administrativo">Administrativo</option>
           <option value="Produção">Produção</option>
         </select>
-        <select id="prob-filtro-status" class="filter-select" onchange="probRender()" style="font-size:12px;">
-          <option value="pendente">Pendentes</option>
-          <option value="resolvido">Resolvidos</option>
-          <option value="">Todos</option>
-        </select>
         <select id="prob-filtro-prio" class="filter-select" onchange="probRender()" style="font-size:12px;">
           <option value="">Todas as prioridades</option>
           <option value="alta">🔴 Alta</option>
@@ -1021,6 +1017,34 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
         </div>
       </div>
     </div>
+  </div>
+
+  <div id="tab-problemas-resolvidos" class="tab-content">
+    <div style="padding:18px 30px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:1px;">✅ Problemas Resolvidos</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">Histórico de problemas encerrados, com a ata da decisão</div>
+      </div>
+    </div>
+    <div style="padding:12px 30px 0;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <select id="probres-filtro-setor" class="filter-select" onchange="probRenderResolvidos()" style="font-size:12px;">
+        <option value="">Todos os setores</option>
+        <option value="Administrativo">Administrativo</option>
+        <option value="Produção">Produção</option>
+      </select>
+      <select id="probres-filtro-prio" class="filter-select" onchange="probRenderResolvidos()" style="font-size:12px;">
+        <option value="">Todas as prioridades</option>
+        <option value="alta">🔴 Alta</option>
+        <option value="media">🟡 Média</option>
+        <option value="baixa">🟢 Baixa</option>
+      </select>
+      <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:220px;">
+        <label for="probres-filtro-responsavel" style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">Responsável pela Execução</label>
+        <input id="probres-filtro-responsavel" type="text" placeholder="Digite o nome do responsável..." class="filter-select" oninput="probRenderResolvidos()" style="font-size:12px;padding:6px 10px;">
+      </div>
+    </div>
+    <div id="probres-stats-row" style="display:flex;gap:12px;padding:12px 30px 14px;flex-wrap:wrap;"></div>
+    <div id="prob-resolvidos-lista" style="padding:0 30px 24px;background:var(--cream);"></div>
   </div>
 
   <div id="tab-historico" class="tab-content">
@@ -1326,6 +1350,8 @@ onSnapshot(REF, function(snap){
     if(typeof probAtualizarBadge==='function') probAtualizarBadge();
     var probTab=document.getElementById('tab-problemas');
     if(probTab&&probTab.classList.contains('active')&&typeof probRender==='function') probRender();
+    var probResTab=document.getElementById('tab-problemas-resolvidos');
+    if(probResTab&&probResTab.classList.contains('active')&&typeof probRenderResolvidos==='function') probRenderResolvidos();
   }catch(e){console.warn("onSnapshot parse:",e);}
 }, function(err){
   console.warn("onSnapshot error:",err);
@@ -3674,7 +3700,7 @@ function certExportCSV(){
   a.click();
 }
 function mudarAba(aba){
-  ['tarefas','licitacoes','lic-concluidas','lic-historico','certidoes','historico','problemas'].forEach(function(a){
+  ['tarefas','licitacoes','lic-concluidas','lic-historico','certidoes','historico','problemas','problemas-resolvidos'].forEach(function(a){
     var tabEl=document.getElementById('tab-'+a);
     if(tabEl) tabEl.classList.toggle('active', a===aba);
     var btn=document.getElementById('tab-btn-'+a);
@@ -3689,6 +3715,7 @@ function mudarAba(aba){
   if(aba==='lic-historico') licHistRender();
   if(aba==='historico'){histPeriodo(7);}
   if(aba==='problemas'){probRender();}
+  if(aba==='problemas-resolvidos'){probRenderResolvidos();}
 }
 
 function imprimirLicitacoes(){
@@ -5441,9 +5468,13 @@ function probTogglePauta(id){
 function probLoad(){var r=localStorage.getItem(PROB_KEY);return r?JSON.parse(r):[];}
 function probSaveData(data){localStorage.setItem(PROB_KEY,JSON.stringify(data));probAtualizarBadge();if(window._fbSave)window._fbSave(tasks,recorrencias,archived,templates);}
 function probAtualizarBadge(){
-  var pend=probLoad().filter(function(p){return!p.resolvido;}).length;
+  var all=probLoad();
+  var pend=all.filter(function(p){return!p.resolvido;}).length;
   var badge=document.getElementById('tab-prob-badge');
   if(badge){badge.style.display=pend>0?'':'none';badge.textContent=pend;}
+  var resol=all.filter(function(p){return p.resolvido;}).length;
+  var rbadge=document.getElementById('tab-prob-resol-badge');
+  if(rbadge){rbadge.style.display=resol>0?'':'none';rbadge.textContent=resol;}
 }
 var _probEditId=null;
 function probNovoModal(){
@@ -5574,13 +5605,85 @@ function probResolver(id){
       p2.resolvidoEm=new Date().toISOString();
     }
     probSaveData(probs2);probRender();
-    mostrarToast('✅ Problema marcado como resolvido!',false);
+    if(typeof probRenderResolvidos==='function') probRenderResolvidos();
+    mostrarToast('✅ Resolvido! Movido para a aba Problemas Resolvidos.',false);
   };
 }
 function probExcluir(id){
   if(!confirm('Excluir este problema?')) return;
   var probs=probLoad().filter(function(x){return x.id!==id;});
   probSaveData(probs);probRender();
+  if(typeof probRenderResolvidos==='function') probRenderResolvidos();
+}
+function probReabrir(id){
+  if(!confirm('Reabrir este problema? Ele volta para a aba Problemas como pendente.')) return;
+  var probs=probLoad();
+  var p=probs.find(function(x){return x.id===id;});
+  if(p){ p.resolvido=false; p.resolvidoEm=null; p.naPauta=false; }
+  probSaveData(probs);
+  probRenderResolvidos();
+  if(typeof probRender==='function') probRender();
+  mostrarToast('↩ Problema reaberto e movido para a aba Problemas.',false);
+}
+function probRenderResolvidos(){
+  var lista=document.getElementById('prob-resolvidos-lista');
+  var stats=document.getElementById('probres-stats-row');
+  if(!lista) return;
+  var probs=probLoad().filter(function(p){return p.resolvido;});
+  var fSetor=(document.getElementById('probres-filtro-setor')||{}).value||'';
+  var fPrio=(document.getElementById('probres-filtro-prio')||{}).value||'';
+  var fResp=((document.getElementById('probres-filtro-responsavel')||{}).value||'').trim().toLowerCase();
+  if(stats){
+    stats.innerHTML='<div class="cert-stat"><div class="cert-stat-num" style="color:var(--green)">'+probs.length+'</div><div class="cert-stat-lbl">Resolvidos</div></div>';
+  }
+  var filtrados=probs.filter(function(p){
+    if(fSetor&&p.setor!==fSetor) return false;
+    if(fPrio&&p.prioridade!==fPrio) return false;
+    if(fResp&&(p.responsavel||'').toLowerCase().indexOf(fResp)===-1) return false;
+    return true;
+  });
+  filtrados.sort(function(a,b){
+    var ra=a.resolvidoEm||a.criadoEm, rb=b.resolvidoEm||b.criadoEm;
+    return ra<rb?1:-1; // mais recentes primeiro
+  });
+  if(filtrados.length===0){
+    lista.innerHTML='<div class="cert-empty">Nenhum problema resolvido'+(probs.length>0?' com esses filtros':' ainda')+'.</div>';
+    return;
+  }
+  var prioCor={alta:'#b03a2e',media:'#c78a1a',baixa:'#2e7d32'};
+  var prioLabel={alta:'🔴 Alta',media:'🟡 Média',baixa:'🟢 Baixa'};
+  var html='';
+  filtrados.forEach(function(p){
+    var cor=prioCor[p.prioridade]||'#555';
+    var dt=new Date(p.criadoEm).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+    var resDt=p.resolvidoEm?new Date(p.resolvidoEm).toLocaleDateString('pt-BR'):'';
+    html+='<div class="cert-card" style="border-left-color:var(--green);background:#f0faf0;padding:12px 14px;margin-bottom:10px;">';
+    html+='<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px;">';
+    html+='<div>';
+    html+='<span style="font-size:13px;font-weight:700;color:var(--navy);">✅ '+p.titulo+'</span>';
+    html+='<span style="margin-left:8px;font-size:10px;background:'+cor+';color:#fff;border-radius:10px;padding:1px 8px;font-weight:700;">'+(prioLabel[p.prioridade]||'')+'</span>';
+    html+='<span style="margin-left:6px;font-size:10px;background:#e8eaf6;color:#3949ab;border-radius:10px;padding:1px 8px;font-weight:600;">'+p.setor+'</span>';
+    html+='</div>';
+    html+='<div style="display:flex;gap:4px;white-space:nowrap;">';
+    html+='<button onclick="probReabrir('+p.id+')" style="background:none;border:1px solid #c78a1a;color:#a06a00;border-radius:3px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;">↩ Reabrir</button>';
+    html+='<button onclick="probExcluir('+p.id+')" style="background:none;border:1px solid #e57373;border-radius:3px;padding:3px 7px;font-size:11px;cursor:pointer;color:#c0392b;">×</button>';
+    html+='</div></div>';
+    if(p.descricao) html+='<div style="font-size:12px;color:var(--ink);margin-bottom:4px;">'+p.descricao+'</div>';
+    if(p.relatou||p.responsavel){
+      html+='<div style="display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:#555;margin-bottom:4px;">';
+      if(p.relatou) html+='<span>👤 <strong>Relatado por:</strong> '+p.relatou+'</span>';
+      if(p.responsavel) html+='<span>🛠 <strong>Responsável:</strong> '+p.responsavel+'</span>';
+      html+='</div>';
+    }
+    if(p.discussoes) html+='<div style="font-size:11px;color:#555;margin-top:4px;">💬 <strong>Discussões:</strong> '+p.discussoes+'</div>';
+    if(p.analise) html+='<div style="font-size:11px;color:#555;margin-top:2px;">🔍 <strong>Análise:</strong> '+p.analise+'</div>';
+    if(p.resolucao) html+='<div style="font-size:11px;color:#2e7d32;font-style:italic;margin-top:4px;">✅ <strong>Decisão:</strong> '+p.resolucao+'</div>';
+    if(p.plano) html+='<div style="font-size:11px;color:#555;margin-top:2px;">📌 <strong>Plano de Ação:</strong> '+p.plano+'</div>';
+    if(p.prazo) html+='<div style="font-size:11px;color:#b8860b;margin-top:2px;">📅 <strong>Prazo:</strong> '+fmtDate(p.prazo)+'</div>';
+    html+='<div style="font-size:10px;color:var(--muted);margin-top:6px;">Registrado em '+dt+(resDt?' · Resolvido em '+resDt:'')+'</div>';
+    html+='</div>';
+  });
+  lista.innerHTML=html;
 }
 function probRender(){
   var lista=document.getElementById('prob-lista');
@@ -5588,7 +5691,6 @@ function probRender(){
   if(!lista) return;
   var probs=probLoad();
   var filtroSetor=(document.getElementById('prob-filtro-setor')||{}).value||'';
-  var filtroStatus=(document.getElementById('prob-filtro-status')||{}).value||'pendente';
   var filtroPrio=(document.getElementById('prob-filtro-prio')||{}).value||'';
   var filtroResp=(document.getElementById('prob-filtro-responsavel')||{}).value||'';
   filtroResp=filtroResp.trim().toLowerCase();
@@ -5604,10 +5706,9 @@ function probRender(){
     '<div class="cert-stat"><div class="cert-stat-num" style="color:var(--green)">'+resol+'</div><div class="cert-stat-lbl">Resolvidos</div></div>';
   // Filtrar
   var filtrados=probs.filter(function(p){
-    if(p.naPauta&&!p.resolvido) return false; // pendente e já na pauta, sai do Registrar
+    if(p.resolvido) return false; // resolvidos vão para a aba "Problemas Resolvidos"
+    if(p.naPauta) return false; // pendente e já na pauta, sai do Registrar
     if(filtroSetor&&p.setor!==filtroSetor) return false;
-    if(filtroStatus==='pendente'&&p.resolvido) return false;
-    if(filtroStatus==='resolvido'&&!p.resolvido) return false;
     if(filtroPrio&&p.prioridade!==filtroPrio) return false;
     if(filtroResp&&(p.responsavel||'').toLowerCase().indexOf(filtroResp)===-1) return false;
     return true;
