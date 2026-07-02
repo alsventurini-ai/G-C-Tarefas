@@ -301,6 +301,7 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
 .tab-bar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.25);border-radius:4px;}
 .tab-bar::-webkit-scrollbar-track{background:transparent;}
 .tab-btn{background:none;border:none;color:rgba(255,255,255,.6);padding:8px 10px;font-size:12px;font-family:'Segoe UI',Tahoma,sans-serif;cursor:pointer;border-bottom:3px solid transparent;transition:all .15s;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:2px;white-space:nowrap;flex-shrink:0;}
+.tab-lbl{display:block;text-align:center;line-height:1.25;}
 .tab-spacer{display:block;height:15px;}
 .subtab-btn{transition:all .15s;}
 .subtab-btn:hover{color:#1a5276!important;}
@@ -432,14 +433,14 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
 
   <!-- Abas -->
   <div class="tab-bar">
-    <button class="tab-btn active" id="tab-btn-tarefas" onclick="mudarAba('tarefas')"><span>📋 Tarefas</span><span class="tab-spacer"></span></button>
-    <button class="tab-btn" id="tab-btn-licitacoes" onclick="mudarAba('licitacoes')"><span>🏛 Licitações</span><span class="tab-badge" id="tab-lic-badge" style="display:none;">0</span></button>
-    <button class="tab-btn" id="tab-btn-lic-concluidas" onclick="mudarAba('lic-concluidas')"><span>✅ Participando</span><span class="tab-badge" id="tab-lic-conc-badge" style="display:none;background:#3a8c4a;">0</span></button>
-    <button class="tab-btn" id="tab-btn-lic-historico" onclick="mudarAba('lic-historico')"><span>📊 Hist. Licitações</span><span class="tab-spacer"></span></button>
-    <button class="tab-btn" id="tab-btn-certidoes" onclick="mudarAba('certidoes')"><span>📜 Certidões</span><span class="tab-badge" id="tab-cert-badge" style="display:none;">!</span></button>
-    <button class="tab-btn" id="tab-btn-historico" onclick="mudarAba('historico')"><span>📅 Histórico</span><span class="tab-spacer"></span></button>
-    <button class="tab-btn" id="tab-btn-problemas" onclick="mudarAba('problemas')"><span>⚠️ Problemas</span><span class="tab-badge" id="tab-prob-badge" style="display:none;background:#b03a2e;">0</span></button>
-    <button class="tab-btn" id="tab-btn-problemas-resolvidos" onclick="mudarAba('problemas-resolvidos')"><span>✅ Prob. Resolvidos</span><span class="tab-badge" id="tab-prob-resol-badge" style="display:none;background:#3a8c4a;">0</span></button>
+    <button class="tab-btn active" id="tab-btn-tarefas" onclick="mudarAba('tarefas')"><span class="tab-lbl">📋 Tarefas</span><span class="tab-spacer"></span></button>
+    <button class="tab-btn" id="tab-btn-historico" onclick="mudarAba('historico')"><span class="tab-lbl">📅 Histórico<br>de Tarefas</span><span class="tab-spacer"></span></button>
+    <button class="tab-btn" id="tab-btn-licitacoes" onclick="mudarAba('licitacoes')"><span class="tab-lbl">🏛 Licitações</span><span class="tab-badge" id="tab-lic-badge" style="display:none;">0</span></button>
+    <button class="tab-btn" id="tab-btn-lic-concluidas" onclick="mudarAba('lic-concluidas')"><span class="tab-lbl">✅ Participando</span><span class="tab-badge" id="tab-lic-conc-badge" style="display:none;background:#3a8c4a;">0</span></button>
+    <button class="tab-btn" id="tab-btn-lic-historico" onclick="mudarAba('lic-historico')"><span class="tab-lbl">📊 Hist.<br>Licitações</span><span class="tab-spacer"></span></button>
+    <button class="tab-btn" id="tab-btn-certidoes" onclick="mudarAba('certidoes')"><span class="tab-lbl">📜 Certidões</span><span class="tab-badge" id="tab-cert-badge" style="display:none;">!</span></button>
+    <button class="tab-btn" id="tab-btn-problemas" onclick="mudarAba('problemas')"><span class="tab-lbl">⚠️ Problemas</span><span class="tab-badge" id="tab-prob-badge" style="display:none;background:#b03a2e;">0</span></button>
+    <button class="tab-btn" id="tab-btn-problemas-resolvidos" onclick="mudarAba('problemas-resolvidos')"><span class="tab-lbl">✅ Prob.<br>Resolvidos</span><span class="tab-badge" id="tab-prob-resol-badge" style="display:none;background:#3a8c4a;">0</span></button>
     <button class="tab-btn" id="tab-btn-busca" onclick="abrirBuscaGlobal()" style="margin-left:auto;"><span>🔍</span><span class="tab-spacer"></span></button>
   </div>
 
@@ -470,6 +471,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
       <button class="btn-add" onclick="addTask()">+ Adicionar</button>
     </div>
     <div class="input-meta-row">
+      <input type="text" id="criada-por-input" placeholder="✍️ Criada por" autocomplete="off" style="border:1px solid var(--border);background:var(--white);padding:8px 12px;font-size:14px;border-radius:2px;font-family:'Segoe UI',Tahoma,sans-serif;color:var(--ink);outline:none;width:160px;">
       <input type="text" id="para-quem-input" placeholder="👤 Para quem / Município / Setor" autocomplete="off">
       <select id="priority-input" class="meta-select">
         <option value="">⚪ Sem prioridade</option>
@@ -589,6 +591,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
     <div class="section-head" style="margin-top:6px;">
       <span>Concluídas</span>
       <span class="section-count green" id="cnt-d">0</span>
+      <button onclick="mudarAba('historico')" style="margin-left:auto;background:none;border:1px solid var(--navy);color:var(--navy);border-radius:3px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Segoe UI',Tahoma,sans-serif;">📅 Ver no Histórico de Tarefas →</button>
     </div>
     <div id="list-d"></div>
   </div>
@@ -962,6 +965,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
         <button class="modal-close" onclick="document.getElementById('ata-nova-modal').style.display='none'">×</button>
       </div>
       <div style="padding:18px 20px;">
+        <div id="ata-pre-aviso" style="display:none;background:#f3ecf8;border:1px solid #c9a8e8;border-radius:4px;padding:8px 12px;font-size:12px;color:#6c3483;font-weight:600;margin-bottom:12px;"></div>
         <div class="modal-row" style="margin-bottom:12px;">
           <div class="modal-field">
             <label>📅 Data</label>
@@ -1049,7 +1053,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
 
   <div id="tab-historico" class="tab-content">
   <div class="action-bar" style="justify-content:space-between;flex-wrap:wrap;gap:8px;">
-    <span style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.3px;color:var(--muted);font-weight:600;">📅 Histórico</span>
+    <span style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.3px;color:var(--muted);font-weight:600;">📅 Histórico de Tarefas</span>
     <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;">
       <input type="date" id="hist-de" class="input-field" style="width:140px;" onchange="renderHistorico()">
       <span style="font-size:12px;color:var(--muted);">até</span>
@@ -1060,8 +1064,15 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
       <button class="btn btn-print" style="font-size:12px;padding:5px 11px;" onclick="imprimirHistorico()">🖨 Imprimir</button>
     </div>
   </div>
-  <div style="padding:8px 30px;background:var(--cream2);border-bottom:1px solid var(--border);">
-    <input type="text" id="hist-busca" placeholder="🔍 Filtrar por texto ou Para quem…" oninput="renderHistorico()" style="width:100%;border:1px solid var(--border);background:var(--white);padding:7px 10px;font-size:13px;border-radius:2px;font-family:'Segoe UI',Tahoma,sans-serif;color:var(--ink);outline:none;">
+  <div style="padding:8px 30px;background:var(--cream2);border-bottom:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+    <input type="text" id="hist-busca" placeholder="🔍 Filtrar por texto ou Para quem…" oninput="renderHistorico()" style="flex:1;min-width:180px;border:1px solid var(--border);background:var(--white);padding:7px 10px;font-size:13px;border-radius:2px;font-family:'Segoe UI',Tahoma,sans-serif;color:var(--ink);outline:none;">
+    <select id="hist-pq" class="filter-select" onchange="renderHistorico()" title="Para quem / Município / Sede" style="font-size:12.5px;">
+      <option value="">👤 Todos (Para quem / Município / Sede)</option>
+    </select>
+    <select id="hist-sort" class="filter-select" onchange="renderHistorico()" title="Ordenar" style="font-size:12.5px;">
+      <option value="data_desc">📅 Data: mais próxima (recente)</option>
+      <option value="data_asc">📅 Data: mais distante (antiga)</option>
+    </select>
   </div>
   <div id="hist-lista" style="padding:0 30px 24px;background:var(--cream);min-height:100px;"></div>
   </div>
@@ -1092,6 +1103,10 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
     </div>
     <div class="modal-body">
       <div class="modal-row">
+        <div class="modal-field" style="flex:0 0 150px;">
+          <label>✍️ Criada por</label>
+          <input type="text" id="em-criadapor" class="modal-input">
+        </div>
         <div class="modal-field" style="flex:0 0 200px;">
           <label>👤 Para quem</label>
           <input type="text" id="em-pq" class="modal-input">
@@ -1826,6 +1841,7 @@ function renderRecorrencias(){
 function editarRecorrencia(id){
   var r=recorrencias.find(function(x){return x.id===id;});if(!r)return;
   _editingId=id;
+  var _emcpR=document.getElementById('em-criadapor');if(_emcpR)_emcpR.value=r.criadaPor||'';
   document.getElementById('em-pq').value=r.paraQuem||'';
   document.getElementById('em-text').value=r.text;
   document.getElementById('em-date').value='';
@@ -2011,6 +2027,8 @@ function addTask(){
   var timeSel=document.getElementById('time-input'),dateSel=document.getElementById('date-input');
   if(!dateSel.value){alert('Informe a data da tarefa.');marcarCampoObrigatorio('date-input');return;}
   var pqInp=document.getElementById('para-quem-input'),repeatSel=document.getElementById('repeat-input');
+  var cpInp=document.getElementById('criada-por-input');
+  var criadaPor=cpInp?cpInp.value.trim():'';
   var pq=pqInp.value.trim(),maxRep=parseInt(document.getElementById('maxrep-input').value)||0;
   var obsVal=document.getElementById('obs-new-input').value.trim();
   var priority=document.getElementById('priority-input').value||'';
@@ -2020,7 +2038,7 @@ function addTask(){
     if(intradayTimes.length===0){alert('Adicione ao menos um horário.');return;}
     var rid=Date.now();
     var recorr={id:rid,text:txt,paraQuem:pq,schedule:'',repeat:'intraday',times:intradayTimes.slice(),active:true,maxRep:maxRep,repCount:1,dayOfWeek:now.getDay(),dayOfMonth:now.getDate(),lastGenerated:todayStr,priority:priority};
-    intradayTimes.forEach(function(hr,i){tasks.push({id:rid+i+1,text:txt,done:false,addedAt:timeNow(),doneAt:'',schedule:hr,taskDate:dateSel.value||todayStr,alertFired:false,paraQuem:pq,repeatId:rid,obs:obsVal,priority:priority,duracao:duracao});});
+    intradayTimes.forEach(function(hr,i){tasks.push({id:rid+i+1,text:txt,done:false,addedAt:timeNow(),doneAt:'',schedule:hr,taskDate:dateSel.value||todayStr,alertFired:false,paraQuem:pq,repeatId:rid,obs:obsVal,priority:priority,duracao:duracao,criadaPor:criadaPor});});
     adicionarRecorrencia(recorr);
     intradayTimes=[];renderIntradayList('intraday-times-list',[],null);
     document.getElementById('intraday-section').style.display='none';
@@ -2029,7 +2047,7 @@ function addTask(){
     var tid=Date.now();
     var dataTask=dateSel.value||'';
     var horaTask=timeSel.value||'';
-    var _licM=txt.match(/^licitaç[aã]o\s*[-—]\s*(.+)$/i);    tasks.push({id:tid,text:txt,done:false,addedAt:timeNow(),doneAt:'',schedule:horaTask,taskDate:dataTask,alertFired:false,paraQuem:pq,obs:obsVal,priority:priority,duracao:duracao,pinned:false,_licMunicipio:(_licM?_licM[1].trim():undefined),_licDataDisputa:(_licM?dataTask:undefined),_licHoraDisputa:(_licM?horaTask:undefined)});
+    var _licM=txt.match(/^licitaç[aã]o\s*[-—]\s*(.+)$/i);    tasks.push({id:tid,text:txt,done:false,addedAt:timeNow(),doneAt:'',schedule:horaTask,taskDate:dataTask,alertFired:false,paraQuem:pq,obs:obsVal,priority:priority,duracao:duracao,pinned:false,criadaPor:criadaPor,_licMunicipio:(_licM?_licM[1].trim():undefined),_licDataDisputa:(_licM?dataTask:undefined),_licHoraDisputa:(_licM?horaTask:undefined)});
     if(repeat!=='none'){
       var recorr2={id:tid,text:txt,paraQuem:pq,schedule:horaTask,repeat:repeat,active:true,maxRep:maxRep,repCount:1,dayOfWeek:now.getDay(),dayOfMonth:now.getDate(),lastGenerated:todayStr,priority:priority,startDate:dataTask||todayStr};
       tasks[tasks.length-1].repeatId=tid;adicionarRecorrencia(recorr2);
@@ -2041,15 +2059,15 @@ function addTask(){
       var dataImpugAuto=somarDiasUteis_subtrair(dataTask,3);
       var dataAnaliseAuto=somarDiasCorridos(dataTask,8);
       var dataPropostaAuto=somarDiasUteis_subtrair(dataTask,3);
-      tasks.push({id:tid+1,text:'⚠️ Impugnação — '+munAuto,done:false,addedAt:timeNow(),doneAt:'',schedule:horaTask,taskDate:dataImpugAuto,alertFired:false,paraQuem:pq||'Licitações',obs:'Prazo de impugnação — '+munAuto+'\nDe acordo com a Lei nº 14.133/2021, Art. 164: a impugnação deverá ser protocolada até 3 (três) dias úteis antes da data de abertura do certame.',priority:'alta',duracao:'',pinned:false,_licMunicipio:munAuto,_licDataDisputa:dataTask,_licHoraDisputa:horaTask,_impugnacaoEnviada:null});
-      tasks.push({id:tid+2,text:'📋 Análise de Edital — '+munAuto,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataAnaliseAuto,alertFired:false,paraQuem:pq||'Licitações',obs:'Análise do edital — '+munAuto,priority:'alta',duracao:'',pinned:false,_licMunicipio:munAuto,_licDataDisputa:dataTask});
-      tasks.push({id:tid+3,text:'📤 Prazo Final Inclusão da Proposta — '+munAuto,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:somarDiasCorridos(dataTask,1),alertFired:false,paraQuem:pq||'Licitações',obs:'⚠️ ATENÇÃO: Verificar e incluir proposta no sistema até o dia da disputa!\n'+munAuto,priority:'alta',duracao:'',pinned:true,_licMunicipio:munAuto,_licDataDisputa:dataTask,_intradayTimes:['08:00','15:00']});
-      tasks.push({id:tid+5,text:'📨 Início Envio da Proposta — '+munAuto,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:somarDiasUteis_subtrair(dataTask,4),alertFired:false,paraQuem:pq||'Licitações',obs:'Iniciar elaboração e envio da proposta — '+munAuto,priority:'alta',duracao:'',pinned:false,_licMunicipio:munAuto,_licDataDisputa:dataTask});
-      tasks.push({id:tid+4,text:'⚖️ Prazo Final de Impugnação — '+munAuto,done:false,addedAt:timeNow(),doneAt:'',schedule:horaTask,taskDate:dataImpugAuto,alertFired:false,paraQuem:pq||'Licitações',obs:'ATENÇÃO: encerra hoje o prazo de impugnação ao edital — '+munAuto+'\nDe acordo com a Lei nº 14.133/2021, Art. 164: a impugnação deverá ser protocolada até 3 (três) dias úteis antes da data de abertura do certame.',priority:'alta',duracao:'',pinned:false,_licMunicipio:munAuto,_licDataDisputa:dataTask,_licHoraDisputa:horaTask});
+      tasks.push({id:tid+1,text:'⚠️ Impugnação — '+munAuto,done:false,addedAt:timeNow(),doneAt:'',schedule:horaTask,taskDate:dataImpugAuto,alertFired:false,paraQuem:pq||'Licitações',obs:'Prazo de impugnação — '+munAuto+'\nDe acordo com a Lei nº 14.133/2021, Art. 164: a impugnação deverá ser protocolada até 3 (três) dias úteis antes da data de abertura do certame.',priority:'alta',duracao:'',pinned:false,criadaPor:criadaPor,_licMunicipio:munAuto,_licDataDisputa:dataTask,_licHoraDisputa:horaTask,_impugnacaoEnviada:null});
+      tasks.push({id:tid+2,text:'📋 Análise de Edital — '+munAuto,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataAnaliseAuto,alertFired:false,paraQuem:pq||'Licitações',obs:'Análise do edital — '+munAuto,priority:'alta',duracao:'',pinned:false,criadaPor:criadaPor,_licMunicipio:munAuto,_licDataDisputa:dataTask});
+      tasks.push({id:tid+3,text:'📤 Prazo Final Inclusão da Proposta — '+munAuto,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:somarDiasCorridos(dataTask,1),alertFired:false,paraQuem:pq||'Licitações',obs:'⚠️ ATENÇÃO: Verificar e incluir proposta no sistema até o dia da disputa!\n'+munAuto,priority:'alta',duracao:'',pinned:true,criadaPor:criadaPor,_licMunicipio:munAuto,_licDataDisputa:dataTask,_intradayTimes:['08:00','15:00']});
+      tasks.push({id:tid+5,text:'📨 Início Envio da Proposta — '+munAuto,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:somarDiasUteis_subtrair(dataTask,4),alertFired:false,paraQuem:pq||'Licitações',obs:'Iniciar elaboração e envio da proposta — '+munAuto,priority:'alta',duracao:'',pinned:false,criadaPor:criadaPor,_licMunicipio:munAuto,_licDataDisputa:dataTask});
+      tasks.push({id:tid+4,text:'⚖️ Prazo Final de Impugnação — '+munAuto,done:false,addedAt:timeNow(),doneAt:'',schedule:horaTask,taskDate:dataImpugAuto,alertFired:false,paraQuem:pq||'Licitações',obs:'ATENÇÃO: encerra hoje o prazo de impugnação ao edital — '+munAuto+'\nDe acordo com a Lei nº 14.133/2021, Art. 164: a impugnação deverá ser protocolada até 3 (três) dias úteis antes da data de abertura do certame.',priority:'alta',duracao:'',pinned:false,criadaPor:criadaPor,_licMunicipio:munAuto,_licDataDisputa:dataTask,_licHoraDisputa:horaTask});
       mostrarToast('✅ 5 tarefas criadas para '+munAuto+'!',false);
     }
   }
-  inp.value='';timeSel.value='';dateSel.value='';pqInp.value='';repeatSel.value='none';
+  inp.value='';timeSel.value='';dateSel.value='';pqInp.value='';if(cpInp)cpInp.value='';repeatSel.value='none';
   document.getElementById('maxrep-input').value='';document.getElementById('maxrep-wrap').style.display='none';
   document.getElementById('obs-new-input').value='';document.getElementById('priority-input').value='';
   document.getElementById('duracao-input').value='';
@@ -2159,6 +2177,7 @@ function del(id){
 function abrirModalEdicao(id){
   var t=tasks.find(function(x){return x.id===id;});if(!t)return;
   _editingId=id;
+  var _emcp=document.getElementById('em-criadapor');if(_emcp)_emcp.value=t.criadaPor||'';
   document.getElementById('em-pq').value=t.paraQuem||'';
   document.getElementById('em-text').value=t.text;
   document.getElementById('em-date').value=t.taskDate||'';
@@ -2182,6 +2201,7 @@ function fecharModalEdicao(){document.getElementById('edit-modal').style.display
 function duplicarTarefa(id){
   var t=tasks.find(function(x){return x.id===id;});if(!t)return;
   _editingId='__novo__';
+  var _emcp2=document.getElementById('em-criadapor');if(_emcp2)_emcp2.value=t.criadaPor||'';
   document.getElementById('em-pq').value=t.paraQuem||'';
   document.getElementById('em-text').value=t.text;
   document.getElementById('em-date').value='';
@@ -2216,6 +2236,8 @@ function marcarCampoObrigatorio(id){
 function salvarModalEdicao(){
   var novoText=document.getElementById('em-text').value.trim();if(!novoText){marcarCampoObrigatorio('em-text');return false;}
   var novoPQ=document.getElementById('em-pq').value.trim();
+  var _emcp3=document.getElementById('em-criadapor');
+  var novoCriadaPor=_emcp3?_emcp3.value.trim():'';
   var novaData=document.getElementById('em-date').value;
   var novoTime=document.getElementById('em-time').value;
   var novoObs=document.getElementById('em-obs').value.trim();
@@ -2226,7 +2248,7 @@ function salvarModalEdicao(){
   var novoMaxRep=parseInt(document.getElementById('em-maxrep').value)||0;
   var mode=document.getElementById('edit-modal').dataset.mode;
   if(mode==='duplicar'){
-    var nova={id:Date.now(),text:novoText,paraQuem:novoPQ,obs:novoObs,priority:novoPriority,pinned:novoPin,duracao:novoDuracao,schedule:novoTime||'',taskDate:novaData||'',done:false,doneAt:'',alertFired:false,addedAt:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})};
+    var nova={id:Date.now(),text:novoText,paraQuem:novoPQ,criadaPor:novoCriadaPor,obs:novoObs,priority:novoPriority,pinned:novoPin,duracao:novoDuracao,schedule:novoTime||'',taskDate:novaData||'',done:false,doneAt:'',alertFired:false,addedAt:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})};
     tasks.unshift(nova);save();render();atualizarFiltros();fecharModalEdicao();return true;
   }
   if(mode==='recorr'){
@@ -2240,7 +2262,7 @@ function salvarModalEdicao(){
     }
   } else {
     var t=tasks.find(function(x){return x.id===_editingId;});if(!t)return false;
-    t.text=novoText;t.paraQuem=novoPQ;t.obs=novoObs;t.priority=novoPriority;t.pinned=novoPin;t.duracao=novoDuracao;t.schedule=novoTime||'';
+    t.text=novoText;t.paraQuem=novoPQ;t.criadaPor=novoCriadaPor;t.obs=novoObs;t.priority=novoPriority;t.pinned=novoPin;t.duracao=novoDuracao;t.schedule=novoTime||'';
     var hoje=new Date().toISOString().slice(0,10);
     if(novaData&&novaData>hoje){t.taskDate=novaData;t.done=false;t.doneAt='';t.alertFired=false;}
     else if(novaData===hoje&&novoTime&&novoTime>timeNow()){t.taskDate=novaData;t.done=false;t.doneAt='';t.alertFired=false;}
@@ -2657,6 +2679,7 @@ function makeEl(t){
   else chk.style.cursor='default';
   var body=document.createElement('div');body.className='task-body';
   if(t.pinned){var pi=document.createElement('span');pi.style.cssText='font-size:11px;color:var(--amber);margin-right:4px;';pi.textContent='📌';body.appendChild(pi);}
+  if(t.criadaPor){var cpEl=document.createElement('span');cpEl.style.cssText='display:inline-block;font-size:10px;background:#eef5fb;border:1px solid #a8c8e8;color:#1a5276;border-radius:2px;padding:1px 6px;margin-right:5px;font-weight:600;';cpEl.textContent='✍️ '+t.criadaPor;body.appendChild(cpEl);}
   if(t.paraQuem){var pq=document.createElement('div');pq.className='task-para-quem';pq.textContent='👤 '+t.paraQuem;body.appendChild(pq);}
   if(t.priority&&PRIORITY_LABELS[t.priority]){var pb=document.createElement('span');pb.className='priority-badge '+(PRIORITY_CLASS[t.priority]||'');pb.textContent=PRIORITY_LABELS[t.priority];body.appendChild(pb);}
   var txt=document.createElement('div');txt.className='task-text';
@@ -2795,7 +2818,7 @@ function render(){
     });
   }
   if(d.length===0){var e2=document.createElement('div');e2.className='empty';e2.textContent='Nenhuma concluída ainda.';ld.appendChild(e2);}
-  else d.forEach(function(t){ld.appendChild(makeEl(t));});
+  else {var e3=document.createElement('div');e3.className='empty';e3.innerHTML='✔ '+d.length+' tarefa(s) concluída(s) — clique aqui para vê-las na aba <strong>📅 Histórico de Tarefas</strong>.';e3.style.cursor='pointer';e3.title='Abrir Histórico de Tarefas';e3.onclick=function(){mudarAba('historico');};ld.appendChild(e3);}
   var semFuturo=todos.filter(function(t){return!t._futuro;});
   var tot=semFuturo.length,conc=semFuturo.filter(function(t){return t.done;}).length;
   var pct=tot>0?Math.round(conc/tot*100):0;
@@ -5173,6 +5196,12 @@ function notaGetDia(dateStr){
 }
 
 // ── Histórico ──
+function histReabrirTarefa(id){
+  var t=tasks.find(function(x){return x.id===id;});if(!t)return;
+  t.done=false;t.doneAt='';
+  save();render();renderHistorico();
+  mostrarToast('↩ Tarefa reaberta — voltou para Pendentes.',false);
+}
 function histPeriodo(dias){
   var ate=new Date();
   var de=new Date();de.setDate(de.getDate()-dias+1);
@@ -5187,6 +5216,16 @@ function renderHistorico(){
   var busca=(document.getElementById('hist-busca').value||'').toLowerCase().trim();
   var todas=tasks.filter(function(t){return t.done&&!t._futuro;})
     .concat(archived.filter(function(t){return!t._futuro;}));
+  // Popular filtro Para quem / Município / Sede
+  var pqSel=document.getElementById('hist-pq');
+  if(pqSel){
+    var pqAtual=pqSel.value;
+    var pqSet={};
+    todas.forEach(function(t){if(t.paraQuem)pqSet[t.paraQuem.trim()]=true;});
+    var pqOpts=Object.keys(pqSet).sort(function(a,b){return a.localeCompare(b,'pt-BR');});
+    pqSel.innerHTML='<option value="">👤 Todos (Para quem / Município / Sede)</option>'+pqOpts.map(function(v){return '<option value="'+certEsc(v)+'"'+(v===pqAtual?' selected':'')+'>👤 '+certEsc(v)+'</option>';}).join('');
+    if(pqSel.value) todas=todas.filter(function(t){return (t.paraQuem||'').trim()===pqSel.value;});
+  }
   if(de||ate){
     todas=todas.filter(function(t){
       var d=t.taskDate||(t.archivedAt&&t.archivedAt.slice(0,10))||'';
@@ -5210,7 +5249,10 @@ function renderHistorico(){
     if(!grupos[d])grupos[d]=[];
     grupos[d].push(t);
   });
-  var datas=Object.keys(grupos).sort().reverse();
+  var sortSel=document.getElementById('hist-sort');
+  var sortAsc=sortSel&&sortSel.value==='data_asc';
+  var datas=Object.keys(grupos).sort();
+  if(!sortAsc) datas.reverse();
   var html='';
   datas.forEach(function(d){
     var arr=grupos[d];
@@ -5223,12 +5265,15 @@ function renderHistorico(){
     if(nota){html+='<div class="hist-nota"><div class="hist-nota-label">📝 Nota do dia</div>'+certEsc(nota).replace(/\n/g,'<br>')+'</div>';}
     arr.forEach(function(t){
       var pq=t.paraQuem?'<span style="background:var(--navy2);color:#fff;border-radius:2px;padding:1px 6px;font-size:10px;margin-right:4px;">'+certEsc(t.paraQuem)+'</span>':'';
+      var cp=t.criadaPor?'<span style="background:#eef5fb;border:1px solid #a8c8e8;color:#1a5276;border-radius:2px;padding:1px 6px;font-size:10px;margin-right:4px;font-weight:600;">✍️ '+certEsc(t.criadaPor)+'</span>':'';
       var obs=t.obs?'<div style="font-size:11.5px;color:var(--purple);font-style:italic;margin-top:2px;">📝 '+certEsc(t.obs)+'</div>':'';
       var hr=t.doneAt?' · ✓ '+t.doneAt:'';
+      var podeReabrir=tasks.some(function(x){return x.id===t.id;});
+      var btnReabrir=podeReabrir?'<button onclick="histReabrirTarefa('+t.id+')" title="Reabrir tarefa (volta para Pendentes)" style="background:none;border:1px solid var(--border);border-radius:3px;padding:2px 8px;font-size:10.5px;cursor:pointer;color:var(--navy);margin-left:8px;white-space:nowrap;">↩ Reabrir</button>':'';
       html+='<div class="hist-item">'+
         '<div class="hist-item-done">✔</div>'+
         '<div class="hist-item-body">'+
-          '<div class="hist-item-text">'+pq+certEsc(t.text)+'</div>'+
+          '<div class="hist-item-text">'+cp+pq+certEsc(t.text)+btnReabrir+'</div>'+
           '<div class="hist-item-meta">'+(t.schedule?'⏰ '+t.schedule+' ':'')+hr+'</div>'+obs+
         '</div></div>';
     });
@@ -5806,6 +5851,7 @@ function probGerarPauta(){
       html+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">';
       html+='<span style="font-size:10px;font-weight:700;background:'+prioCor+';color:#fff;padding:1px 6px;border-radius:2px;">'+prioLabel+'</span>';
       html+='<span style="font-weight:700;color:#1a5276;">'+(i+1)+'. '+p.titulo+'</span>';
+      if(p.proximaPauta) html+='<span style="font-size:9px;font-weight:700;background:#1a5276;color:#fff;padding:1px 7px;border-radius:10px;margin-left:6px;">⏭ REUNIÃO ANTERIOR</span>';
       html+='</div>';
       if(p.relatou) html+='<div style="font-size:10px;color:#666;margin-bottom:5px;padding-left:4px;">👤 Identificado por: <strong>'+p.relatou+'</strong></div>';
       if(p.descricao) html+='<div style="font-size:11px;color:#444;padding-left:4px;margin-bottom:4px;"><strong>Observação:</strong> '+p.descricao+'</div>';
@@ -6019,12 +6065,15 @@ function probRenderPautaTab(){
     doSetor.forEach(function(p,i){
       var prioCor={alta:'#b03a2e',media:'#c78a1a',baixa:'#2e7d32'}[p.prioridade]||'#555';
       var prioLabel={alta:'ALTA',media:'MÉDIA',baixa:'BAIXA'}[p.prioridade]||'';
-      html+='<div class="cert-card" style="border-left-color:'+prioCor+';padding:10px 14px;margin-bottom:8px;">';
+      var sel=!!p.selAta;
+      html+='<div class="cert-card" style="border-left-color:'+prioCor+';padding:10px 14px;margin-bottom:8px;'+(sel?'background:#f3ecf8;outline:2px solid #6c3483;':'')+'">';
       html+='<div style="display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;">';
       html+='<div><span style="font-size:10px;font-weight:700;background:'+prioCor+';color:#fff;padding:1px 6px;border-radius:2px;margin-right:6px;">'+prioLabel+'</span>';
-      html+='<span style="font-weight:700;color:#1a5276;font-size:13px;">'+(i+1)+'. '+p.titulo+'</span></div>';
-      html+='<div style="display:flex;gap:4px;flex-wrap:wrap;">';
-      html+='<button onclick="pautaEnviarParaAta('+p.id+')" style="background:#6c3483;color:#fff;border:none;border-radius:3px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;">→ Enviar para Ata</button>';
+      html+='<span style="font-weight:700;color:#1a5276;font-size:13px;">'+(i+1)+'. '+p.titulo+'</span>';
+      if(p.proximaPauta) html+=' <span style="font-size:9px;font-weight:700;background:#c78a1a;color:#fff;padding:1px 7px;border-radius:10px;margin-left:4px;">⏭ VEIO DA REUNIÃO ANTERIOR</span>';
+      html+='</div>';
+      html+='<div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;">';
+      html+='<label style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#6c3483;cursor:pointer;border:2px solid #6c3483;border-radius:3px;padding:3px 10px;background:'+(sel?'#6c3483':'#fff')+';'+(sel?'color:#fff;':'')+'"><input type="checkbox" '+(sel?'checked':'')+' onchange="pautaToggleSelAta('+p.id+')" style="accent-color:#6c3483;cursor:pointer;">Discutido → Ata</label>';
       html+='<button onclick="probEditarModal('+p.id+')" style="background:none;border:1px solid #ddd;border-radius:3px;padding:3px 10px;font-size:11px;cursor:pointer;color:#555;">✏️ Editar Assunto</button>';
       html+='<button onclick="pautaExcluirItem('+p.id+')" style="background:none;border:1px solid #f0c674;border-radius:3px;padding:3px 10px;font-size:11px;cursor:pointer;color:#8a6d00;">← Voltar para Registrar</button>';
       html+='</div>';
@@ -6034,12 +6083,50 @@ function probRenderPautaTab(){
       html+='</div>';
     });
   });
-  html+='<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">';
+  var qtdSel=probs.filter(function(p){return p.selAta;}).length;
+  html+='<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap;">';
+  html+='<button onclick="ataGerarDaPauta()" style="background:#6c3483;color:#fff;border:none;padding:7px 16px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;'+(qtdSel===0?'opacity:.55;':'')+'">📄 Gerar Ata com Selecionados ('+qtdSel+')</button>';
   html+='<button onclick="probCopiarPautaTab()" style="background:#1a5276;color:#fff;border:none;padding:7px 16px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;">📋 Copiar</button>';
   html+='<button onclick="probImprimirPautaTab()" style="background:#2c3e50;color:#fff;border:none;padding:7px 16px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;">🖨️ Imprimir</button>';
   if(cab) html+='<button onclick="pautaExcluirCabecalho()" style="background:none;border:1px solid #ffcccc;color:#c0392b;padding:7px 16px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;">× Excluir Pauta</button>';
   html+='</div>';
   el.innerHTML=html;
+}
+function pautaToggleSelAta(id){
+  var probs=probLoad();
+  var p=probs.find(function(x){return x.id===id;});
+  if(!p)return;
+  p.selAta=!p.selAta;
+  probSaveData(probs);
+  probRenderPautaTab();
+}
+var _ataItensPreSelecionados=[];
+function ataGerarDaPauta(){
+  var probs=probLoad();
+  var sel=probs.filter(function(p){return p.selAta&&!p.resolvido;});
+  if(sel.length===0){alert('Marque ao menos um assunto como "Discutido → Ata" antes de gerar a ata.');return;}
+  _ataItensPreSelecionados=sel.map(function(p){return p.id;});
+  // Pré-preencher a Nova Ata com o cabeçalho definido na Pauta (data, horários e participantes)
+  var cab=pautaCabLoad();
+  if(cab){
+    _ataParticipantesSelecionados=cab.participantes.filter(function(p){return ATA_PARTICIPANTES_FIXOS.some(function(f){return f.nome===p.nome;});});
+    _ataParticipantesManuais=cab.participantes.filter(function(p){return !ATA_PARTICIPANTES_FIXOS.some(function(f){return f.nome===p.nome;});});
+    document.getElementById('ata-data').value=cab.data||new Date().toISOString().slice(0,10);
+    document.getElementById('ata-hora-inicio').value=cab.horaInicio||new Date().toTimeString().slice(0,5);
+    document.getElementById('ata-hora-fim').value=cab.horaFim||'';
+  } else {
+    _ataParticipantesSelecionados=[];
+    _ataParticipantesManuais=[];
+    document.getElementById('ata-data').value=new Date().toISOString().slice(0,10);
+    document.getElementById('ata-hora-inicio').value=new Date().toTimeString().slice(0,5);
+    document.getElementById('ata-hora-fim').value='';
+  }
+  document.getElementById('ata-novo-participante').value='';
+  ataRenderParticipantesFixos();
+  ataRenderParticipantesManuais();
+  var aviso=document.getElementById('ata-pre-aviso');
+  if(aviso){aviso.style.display='block';aviso.textContent='📋 '+sel.length+' assunto(s) da Pauta serão incluídos automaticamente nesta ata.';}
+  document.getElementById('ata-nova-modal').style.display='flex';
 }
 function probCopiarPautaTab(){
   probGerarPautaDoc(function(html,txt){
@@ -6089,6 +6176,7 @@ function probGerarPautaDoc(callback){
       html+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">';
       html+='<span style="font-size:10px;font-weight:700;background:'+prioCor+';color:#fff;padding:1px 6px;border-radius:2px;">'+prioLabel+'</span>';
       html+='<span style="font-weight:700;color:#1a5276;">'+(i+1)+'. '+p.titulo+'</span>';
+      if(p.proximaPauta) html+='<span style="font-size:9px;font-weight:700;background:#1a5276;color:#fff;padding:1px 7px;border-radius:10px;margin-left:6px;">⏭ REUNIÃO ANTERIOR</span>';
       html+='</div>';
       if(p.relatou) html+='<div style="font-size:10px;color:#666;margin-bottom:5px;padding-left:4px;">👤 Identificado por: <strong>'+p.relatou+'</strong></div>';
       if(p.descricao) html+='<div style="font-size:11px;color:#444;padding-left:4px;margin-bottom:4px;"><strong>Observação:</strong> '+p.descricao+'</div>';
@@ -6111,11 +6199,11 @@ function probImprimirPauta(){ probImprimirPautaTab(); }
 // ── Atas (persistentes, com histórico) ──
 var ATA_KEY='gc_atas_v1';
 var ATA_PARTICIPANTES_FIXOS=[
-  {nome:'André',cargo:'Gerente'},
   {nome:'Carlos',cargo:'Diretor'},
   {nome:'Lilian',cargo:'Diretora'},
-  {nome:'Thiago',cargo:'Colaborador'},
+  {nome:'André',cargo:'Gerente'},
   {nome:'Tadeu',cargo:'Colaborador'},
+  {nome:'Thiago',cargo:'Colaborador'},
   {nome:'Luis',cargo:'Colaborador'},
   {nome:'Giane',cargo:'Colaborador'}
 ];
@@ -6134,6 +6222,9 @@ function ataSaveData(data){
   }
 }
 function ataNovaModal(){
+  _ataItensPreSelecionados=[];
+  var aviso=document.getElementById('ata-pre-aviso');
+  if(aviso)aviso.style.display='none';
   _ataParticipantesSelecionados=[];
   _ataParticipantesManuais=[];
   document.getElementById('ata-data').value=new Date().toISOString().slice(0,10);
@@ -6183,20 +6274,31 @@ function ataCriar(){
   if(!horaInicio){alert('Informe a hora de início.');return;}
   var horaFim=document.getElementById('ata-hora-fim').value;
   var todosParticipantes=_ataParticipantesSelecionados.concat(_ataParticipantesManuais);
+  var itensIniciais=_ataItensPreSelecionados.slice();
   var nova={
     id:Date.now(),
     data:data,
     horaInicio:horaInicio,
     horaFim:horaFim,
     participantes:todosParticipantes,
-    itensIds:[],
+    itensIds:itensIniciais,
     criadaEm:new Date().toISOString()
   };
   var atas=ataLoad();
   atas.push(nova);
   ataSaveData(atas);
+  // Limpar marcação "Discutido → Ata" dos assuntos incluídos
+  if(itensIniciais.length>0){
+    var probs=probLoad();
+    probs.forEach(function(p){if(itensIniciais.indexOf(p.id)>=0)p.selAta=false;});
+    probSaveData(probs);
+  }
+  _ataItensPreSelecionados=[];
+  var aviso=document.getElementById('ata-pre-aviso');
+  if(aviso)aviso.style.display='none';
   document.getElementById('ata-nova-modal').style.display='none';
-  mostrarToast('📄 Ata criada!',false);
+  mostrarToast(itensIniciais.length>0?'📄 Ata criada com '+itensIniciais.length+' assunto(s) da Pauta!':'📄 Ata criada!',false);
+  probMudarSubAba('atas');
   ataAbrirView(nova.id);
 }
 function ataRenderLista(){
@@ -6319,18 +6421,36 @@ function ataSalvarItem(probId,ataId){
   var probs=probLoad();
   var p=probs.find(function(x){return x.id===probId;});
   if(!p){mostrarToast('Problema não encontrado.',false);return;}
+  var stEl=document.getElementById('ata-it-status-'+probId);
+  var status=stEl?stEl.value:'';
   p.discussoes=discussoes;
   p.analise=analise;
   p.resolucao=decisao;
   p.plano=plano;
   p.responsavel=responsavel;
   p.prazo=prazo;
-  if(decisao&&!p.resolvido){
+  if(status==='resolvido'){
+    if(!decisao){alert('Para marcar como Resolvido, preencha a "Decisão tomada".');return;}
     p.resolvido=true;
-    p.resolvidoEm=new Date().toISOString();
+    p.proximaPauta=false;
+    p.naPauta=false;
+    if(!p.resolvidoEm)p.resolvidoEm=new Date().toISOString();
+  } else if(status==='proxima'){
+    p.resolvido=false;
+    p.resolvidoEm='';
+    p.proximaPauta=true;
+    p.naPauta=true; // permanece na Pauta para a próxima reunião
+  } else {
+    // Compatibilidade: se preencheu decisão sem escolher status, considera resolvido
+    if(decisao&&!p.resolvido){
+      p.resolvido=true;
+      p.proximaPauta=false;
+      p.naPauta=false;
+      p.resolvidoEm=new Date().toISOString();
+    }
   }
   probSaveData(probs);
-  mostrarToast('💾 Resolução salva — '+p.titulo,false);
+  mostrarToast(status==='proxima'?'⏭ "'+p.titulo+'" ficará na próxima Pauta.':'💾 Resolução salva — '+p.titulo,false);
   probGerarAtaDoc(ataId);
 }
 function ataExcluirItem(probId,ataId){
@@ -6374,7 +6494,7 @@ function probGerarAtaDoc(ataId){
     doSetor.forEach(function(p,i){
       var prioCor={alta:'#b03a2e',media:'#c78a1a',baixa:'#2e7d32'}[p.prioridade]||'#555';
       var prioLabel={alta:'ALTA',media:'MÉDIA',baixa:'BAIXA'}[p.prioridade]||'';
-      var statusLbl=p.resolvido?'<span style="font-size:9px;font-weight:700;background:#2e7d32;color:#fff;padding:1px 7px;border-radius:10px;margin-left:6px;">RESOLVIDO</span>':'<span style="font-size:9px;font-weight:700;background:#c78a1a;color:#fff;padding:1px 7px;border-radius:10px;margin-left:6px;">PENDENTE</span>';
+      var statusLbl=p.resolvido?'<span style="font-size:9px;font-weight:700;background:#2e7d32;color:#fff;padding:1px 7px;border-radius:10px;margin-left:6px;">RESOLVIDO</span>':(p.proximaPauta?'<span style="font-size:9px;font-weight:700;background:#1a5276;color:#fff;padding:1px 7px;border-radius:10px;margin-left:6px;">⏭ PRÓXIMA PAUTA</span>':'<span style="font-size:9px;font-weight:700;background:#c78a1a;color:#fff;padding:1px 7px;border-radius:10px;margin-left:6px;">PENDENTE</span>');
       html+='<div style="margin-bottom:12px;padding:8px 10px;border-left:3px solid '+prioCor+';background:#f9f8f6;">';
       html+='<div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:4px;flex-wrap:wrap;">';
       html+='<div><span style="font-size:10px;font-weight:700;background:'+prioCor+';color:#fff;padding:1px 6px;border-radius:2px;">'+prioLabel+'</span> ';
@@ -6401,6 +6521,13 @@ function probGerarAtaDoc(ataId){
         +'<textarea id="ata-it-decisao-'+p.id+'" style="width:100%;padding:6px;border:1px solid #3a8c4a;border-radius:3px;font-size:12px;box-sizing:border-box;min-height:40px;font-family:inherit;">'+(p.resolucao||'')+'</textarea></div>';
       html+='<div style="margin-bottom:6px;"><label style="font-size:10px;font-weight:700;color:#555;display:block;margin-bottom:2px;">📌 Plano de ação</label>'
         +'<textarea id="ata-it-plano-'+p.id+'" style="width:100%;padding:6px;border:1px solid #ccc;border-radius:3px;font-size:12px;box-sizing:border-box;min-height:40px;font-family:inherit;">'+(p.plano||'')+'</textarea></div>';
+      var stAtual=p.resolvido?'resolvido':(p.proximaPauta?'proxima':'');
+      html+='<div style="margin-bottom:6px;"><label style="font-size:10px;font-weight:700;color:#1a5276;display:block;margin-bottom:2px;">🚦 Situação do assunto</label>'
+        +'<select id="ata-it-status-'+p.id+'" style="width:100%;padding:6px;border:1px solid #1a5276;border-radius:3px;font-size:12px;box-sizing:border-box;background:#fff;">'
+        +'<option value=""'+(stAtual===''?' selected':'')+'>— Em discussão / pendente —</option>'
+        +'<option value="resolvido"'+(stAtual==='resolvido'?' selected':'')+'>✅ Resolvido (vai para Prob. Resolvidos)</option>'
+        +'<option value="proxima"'+(stAtual==='proxima'?' selected':'')+'>⏭ Fica para a próxima Pauta</option>'
+        +'</select></div>';
       html+='<div style="display:flex;gap:8px;margin-bottom:8px;">'
         +'<div style="flex:1;"><label style="font-size:10px;font-weight:700;color:#555;display:block;margin-bottom:2px;">🛠 Responsável pela execução</label>'
         +'<input id="ata-it-responsavel-'+p.id+'" type="text" value="'+(p.responsavel||'').replace(/"/g,'&quot;')+'" style="width:100%;padding:6px;border:1px solid #ccc;border-radius:3px;font-size:12px;box-sizing:border-box;"></div>'
@@ -6452,7 +6579,7 @@ function probImprimirAta(){
     doSetor.forEach(function(p,i){
       var prioCor={alta:'#b03a2e',media:'#c78a1a',baixa:'#2e7d32'}[p.prioridade]||'#555';
       var prioLabel={alta:'ALTA',media:'MÉDIA',baixa:'BAIXA'}[p.prioridade]||'';
-      var statusLbl=p.resolvido?'<span style="font-size:9px;font-weight:700;background:#2e7d32;color:#fff;padding:1px 7px;border-radius:10px;margin-left:6px;">RESOLVIDO</span>':'<span style="font-size:9px;font-weight:700;background:#c78a1a;color:#fff;padding:1px 7px;border-radius:10px;margin-left:6px;">PENDENTE</span>';
+      var statusLbl=p.resolvido?'<span style="font-size:9px;font-weight:700;background:#2e7d32;color:#fff;padding:1px 7px;border-radius:10px;margin-left:6px;">RESOLVIDO</span>':(p.proximaPauta?'<span style="font-size:9px;font-weight:700;background:#1a5276;color:#fff;padding:1px 7px;border-radius:10px;margin-left:6px;">⏭ PRÓXIMA PAUTA</span>':'<span style="font-size:9px;font-weight:700;background:#c78a1a;color:#fff;padding:1px 7px;border-radius:10px;margin-left:6px;">PENDENTE</span>');
       html+='<div style="margin-bottom:12px;padding:8px 10px;border-left:3px solid '+prioCor+';background:#f9f8f6;page-break-inside:avoid;">';
       html+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap;">';
       html+='<span style="font-size:10px;font-weight:700;background:'+prioCor+';color:#fff;padding:1px 6px;border-radius:2px;">'+prioLabel+'</span>';
@@ -6468,7 +6595,7 @@ function probImprimirAta(){
       html+='<div style="font-size:11px;color:#333;border-top:1px solid #e8e5dd;padding-top:6px;margin-top:4px;">';
       html+='<div style="margin-bottom:5px;"><strong>Discussões realizadas:</strong> '+(p.discussoes||'<span style="color:#aaa;">— não preenchido —</span>')+'</div>';
       html+='<div style="margin-bottom:5px;"><strong>Análise da equipe:</strong> '+(p.analise||'<span style="color:#aaa;">— não preenchido —</span>')+'</div>';
-      html+='<div style="margin-bottom:5px;color:#2e7d32;"><strong>Decisão tomada:</strong> '+(p.resolucao||'<span style="color:#aaa;">— pendente de resolução —</span>')+'</div>';
+      html+='<div style="margin-bottom:5px;color:#2e7d32;"><strong>Decisão tomada:</strong> '+(p.resolucao||(p.proximaPauta?'<span style="color:#1a5276;font-weight:700;">⏭ Assunto ficou para a próxima pauta</span>':'<span style="color:#aaa;">— pendente de resolução —</span>'))+'</div>';
       html+='<div style="margin-bottom:5px;"><strong>Plano de ação:</strong> '+(p.plano||'<span style="color:#aaa;">— não preenchido —</span>')+'</div>';
       html+='<div style="display:flex;gap:16px;flex-wrap:wrap;"><span><strong>Responsável pela execução:</strong> '+(p.responsavel||'—')+'</span><span><strong>Prazo:</strong> '+(p.prazo?fmtDate(p.prazo):'—')+'</span></div>';
       html+='</div>';
