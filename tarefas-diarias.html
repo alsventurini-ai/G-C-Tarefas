@@ -823,7 +823,8 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
 
     <!-- Sub-aba: Pauta -->
     <div id="subtab-pauta" class="prob-subtab" style="display:none;">
-      <div style="padding:14px 30px 0;display:flex;justify-content:flex-end;">
+      <div style="padding:14px 30px 0;display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;align-items:center;">
+        <div id="pauta-acoes-top" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;"></div>
         <button onclick="pautaNovaModal()" style="background:#1a5276;color:#fff;border:none;border-radius:4px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;">📋 Definir Reunião</button>
       </div>
       <div id="prob-pauta-tab-conteudo" style="padding:14px 30px 24px;"></div>
@@ -5886,6 +5887,8 @@ function probImprimirPauta(){
 // ── Ata da Reunião ──
 // ── Sub-abas de Problemas ──
 function probMudarSubAba(aba){
+  var topEl=document.getElementById('pauta-acoes-top');
+  if(topEl&&aba!=='pauta') topEl.innerHTML='';
   ['registrar','pauta','atas'].forEach(function(a){
     document.getElementById('subtab-'+a).style.display=(a===aba)?'block':'none';
     var btn=document.getElementById('subtab-btn-'+a);
@@ -6040,6 +6043,17 @@ function probRenderPautaTab(){
   var naPauta=todos.filter(function(p){return p.naPauta;});
   var probs=naPauta.length>0?naPauta:todos;
   var cab=pautaCabLoad();
+  // ── Botões de ação no topo, ao lado de "Definir Reunião" ──
+  var qtdSelTop=probs.filter(function(p){return p.selAta;}).length;
+  var acoesTop='';
+  if(probs.length>0){
+    acoesTop+='<button onclick="ataGerarDaPauta()" style="background:#6c3483;color:#fff;border:none;padding:7px 14px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;">📄 Gerar Ata da Reunião →'+(qtdSelTop>0?' ('+qtdSelTop+' selecionado'+(qtdSelTop>1?'s':'')+')':'')+'</button>';
+    acoesTop+='<button onclick="probCopiarPautaTab()" style="background:#1a5276;color:#fff;border:none;padding:7px 14px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;">📋 Copiar</button>';
+    acoesTop+='<button onclick="probImprimirPautaTab()" style="background:#2c3e50;color:#fff;border:none;padding:7px 14px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;">🖨️ Imprimir</button>';
+  }
+  if(cab) acoesTop+='<button onclick="pautaExcluirCabecalho()" style="background:none;border:1px solid #ffcccc;color:#c0392b;padding:7px 14px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;">× Excluir Pauta</button>';
+  var topEl=document.getElementById('pauta-acoes-top');
+  if(topEl) topEl.innerHTML=acoesTop;
   var cabHtml='';
   if(cab){
     var dataFmt=fmtDate(cab.data);
@@ -6084,12 +6098,7 @@ function probRenderPautaTab(){
     });
   });
   var qtdSel=probs.filter(function(p){return p.selAta;}).length;
-  html+='<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap;">';
-  html+='<button onclick="ataGerarDaPauta()" style="background:#6c3483;color:#fff;border:none;padding:7px 16px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;'+(qtdSel===0?'opacity:.55;':'')+'">📄 Gerar Ata com Selecionados ('+qtdSel+')</button>';
-  html+='<button onclick="probCopiarPautaTab()" style="background:#1a5276;color:#fff;border:none;padding:7px 16px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;">📋 Copiar</button>';
-  html+='<button onclick="probImprimirPautaTab()" style="background:#2c3e50;color:#fff;border:none;padding:7px 16px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;">🖨️ Imprimir</button>';
-  if(cab) html+='<button onclick="pautaExcluirCabecalho()" style="background:none;border:1px solid #ffcccc;color:#c0392b;padding:7px 16px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;">× Excluir Pauta</button>';
-  html+='</div>';
+  html+='<div style="background:#f3ecf8;border:1px dashed #c9a8e8;border-radius:6px;padding:8px 12px;margin-top:14px;font-size:11.5px;color:#6c3483;line-height:1.5;">💡 <strong>Como gerar a Ata:</strong> marque <strong>☑ Discutido → Ata</strong> nos assuntos que foram conversados e clique em <strong>📄 Gerar Ata da Reunião</strong> (botão no topo, ao lado de Definir Reunião). A ata abre já com esses assuntos e os dados da reunião. Se não marcar nenhum, o app pergunta se deseja incluir todos.</div>';
   el.innerHTML=html;
 }
 function pautaToggleSelAta(id){
@@ -6103,9 +6112,19 @@ function pautaToggleSelAta(id){
 var _ataItensPreSelecionados=[];
 function ataGerarDaPauta(){
   var probs=probLoad();
+  var pendentesPauta=probs.filter(function(p){return p.naPauta&&!p.resolvido;});
+  var todosPend=probs.filter(function(p){return !p.resolvido;});
+  var base=pendentesPauta.length>0?pendentesPauta:todosPend;
   var sel=probs.filter(function(p){return p.selAta&&!p.resolvido;});
-  if(sel.length===0){alert('Marque ao menos um assunto como "Discutido → Ata" antes de gerar a ata.');return;}
-  _ataItensPreSelecionados=sel.map(function(p){return p.id;});
+  var idsUsar;
+  if(sel.length>0){
+    idsUsar=sel.map(function(p){return p.id;});
+  } else {
+    if(base.length===0){alert('Não há assuntos na pauta para gerar a ata.\nMarque ☑ Pauta em algum problema na aba "Registrar".');return;}
+    if(!confirm('Nenhum assunto foi marcado como "Discutido → Ata".\n\nDeseja gerar a ata já com TODOS os '+base.length+' assunto(s) da pauta?\n(Você poderá editar / detalhar cada um dentro da ata.)')) return;
+    idsUsar=base.map(function(p){return p.id;});
+  }
+  _ataItensPreSelecionados=idsUsar;
   // Pré-preencher a Nova Ata com o cabeçalho definido na Pauta (data, horários e participantes)
   var cab=pautaCabLoad();
   if(cab){
@@ -6125,7 +6144,7 @@ function ataGerarDaPauta(){
   ataRenderParticipantesFixos();
   ataRenderParticipantesManuais();
   var aviso=document.getElementById('ata-pre-aviso');
-  if(aviso){aviso.style.display='block';aviso.textContent='📋 '+sel.length+' assunto(s) da Pauta serão incluídos automaticamente nesta ata.';}
+  if(aviso){aviso.style.display='block';aviso.textContent='📋 '+idsUsar.length+' assunto(s) da Pauta serão incluídos automaticamente nesta ata.';}
   document.getElementById('ata-nova-modal').style.display='flex';
 }
 function probCopiarPautaTab(){
