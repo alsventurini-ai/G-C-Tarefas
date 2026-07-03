@@ -2774,18 +2774,29 @@ function makeEl(t){
     var _munProg=_progData[_munLic]||[];
     var _jaPartic=_munProg.indexOf('✅ Participamos')>=0;
     var _jaNaoPartic=_munProg.indexOf('❌ Não participamos')>=0;
-    var _licBtns=document.createElement('div');
-    _licBtns.style.cssText='display:flex;gap:6px;margin-top:7px;flex-wrap:wrap;';
-    var _bSim=document.createElement('button');
-    _bSim.style.cssText='padding:4px 14px;border-radius:20px;border:2px solid #3a8c4a;font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif;'+(_jaPartic?'background:#3a8c4a;color:#fff;':'background:#fff;color:#3a8c4a;');
-    _bSim.textContent='✅ Participar';
-    _bSim.onclick=(function(mun){return function(){licDecisaoParticipar(mun);render();};}(_munLic));
-    var _bNao=document.createElement('button');
-    _bNao.style.cssText='padding:4px 14px;border-radius:20px;border:2px solid #b03a2e;font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif;'+(_jaNaoPartic?'background:#b03a2e;color:#fff;':'background:#fff;color:#b03a2e;');
-    _bNao.textContent='❌ Não Participar';
-    _bNao.onclick=(function(mun,tid){return function(){licNaoParticiparTarefas(mun,tid);};}(_munLic,t.id));
-    _licBtns.appendChild(_bSim);_licBtns.appendChild(_bNao);
-    body.appendChild(_licBtns);
+    if(_jaPartic||_jaNaoPartic){
+      // JÁ DECIDIU: botões somem, tarefa ganha aparência de concluída + selo
+      div.className+=' done';
+      var _selo=document.createElement('div');
+      _selo.style.cssText='display:inline-block;margin-top:7px;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700;font-family:sans-serif;'
+        +(_jaPartic?'background:#e8f5e9;color:#2e7d32;border:1.5px solid #3a8c4a;':'background:#fde8e8;color:#b03a2e;border:1.5px solid #b03a2e;');
+      _selo.textContent=_jaPartic?'✅ Participando':'❌ Não participando';
+      body.appendChild(_selo);
+    } else {
+      // AINDA NÃO DECIDIU: mostra os botões
+      var _licBtns=document.createElement('div');
+      _licBtns.style.cssText='display:flex;gap:6px;margin-top:7px;flex-wrap:wrap;';
+      var _bSim=document.createElement('button');
+      _bSim.style.cssText='padding:4px 14px;border-radius:20px;border:2px solid #3a8c4a;font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif;background:#fff;color:#3a8c4a;';
+      _bSim.textContent='✅ Participar';
+      _bSim.onclick=(function(mun){return function(){licDecisaoParticipar(mun);render();};}(_munLic));
+      var _bNao=document.createElement('button');
+      _bNao.style.cssText='padding:4px 14px;border-radius:20px;border:2px solid #b03a2e;font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif;background:#fff;color:#b03a2e;';
+      _bNao.textContent='❌ Não Participar';
+      _bNao.onclick=(function(mun,tid){return function(){licNaoParticiparTarefas(mun,tid);};}(_munLic,t.id));
+      _licBtns.appendChild(_bSim);_licBtns.appendChild(_bNao);
+      body.appendChild(_licBtns);
+    }
   }
   var tm=document.createElement('div');tm.className='task-time';
   tm.textContent=t.done&&t.doneAt?'✓ '+t.doneAt:(t.addedAt?t.addedAt:'');
@@ -2931,6 +2942,11 @@ function agruparTarefasLicitacao(lista){
       if(jaProcessado[mun]) return; // já inserido
       jaProcessado[mun]=true;
       var membros=grupos[mun].slice().sort(function(a,b){
+        // Principal (data da disputa) sempre em PRIMEIRO
+        var pa=(/^licita[çc][aã]o\b/i.test((a.text||'').trim())||!!(a._licPlataforma||a._licQuemFaz))?0:1;
+        var pb=(/^licita[çc][aã]o\b/i.test((b.text||'').trim())||!!(b._licPlataforma||b._licQuemFaz))?0:1;
+        if(pa!==pb) return pa-pb;
+        // Demais: por data crescente, depois hora, depois id
         var da=a.taskDate||'9999-99-99',db=b.taskDate||'9999-99-99';
         if(da!==db) return da<db?-1:1;
         var ha=a.schedule||'99:99',hb=b.schedule||'99:99';
