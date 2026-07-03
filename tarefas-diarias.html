@@ -2952,16 +2952,25 @@ function agruparTarefasLicitacao(lista){
         var ha=a.schedule||'99:99',hb=b.schedule||'99:99';
         return ha<hb?-1:(ha>hb?1:a.id-b.id);
       });
-      membros[0]._licGrupoInicio=true;
-      membros[membros.length-1]._licGrupoFim=true;
-      membros.forEach(function(m){m._licGrupoMun=mun;});
-      membros.forEach(function(m){resultado.push(m);});
+      // MOSTRAR SÓ A PRÓXIMA ETAPA PENDENTE dentro do bloco:
+      // mantém a(s) principal(is) sempre; das filhas pendentes, exibe apenas a primeira (menor data).
+      var _ehPrinc=function(t){return /^licita[çc][aã]o\b/i.test((t.text||'').trim())||!!(t._licPlataforma||t._licQuemFaz);};
+      var _principais=membros.filter(function(m){return _ehPrinc(m);});
+      var _filhasPend=membros.filter(function(m){return !_ehPrinc(m)&&!m.done;});
+      // _filhasPend já está ordenada por data (herda o sort acima). Pega só a primeira.
+      var _proxima=_filhasPend.length>0?[_filhasPend[0]]:[];
+      var _visiveis=_principais.concat(_proxima);
+      _visiveis[0]._licGrupoInicio=true;
+      _visiveis[_visiveis.length-1]._licGrupoFim=true;
+      _visiveis.forEach(function(m){m._licGrupoMun=mun;});
+      _visiveis.forEach(function(m){resultado.push(m);});
     } else {
       resultado.push(t);
     }
   });
-  // Reordenar: blocos de licitação ordenados pela data da disputa; tarefas soltas mantêm posição relativa.
-  // Estratégia: separar em "grupos" (com _licGrupoMun) e "soltas", depois intercalar por data.
+  // Reordenar: cada BLOCO de licitação e cada tarefa SOLTA são posicionados juntos,
+  // pela data (bloco = data da disputa; solta = data da própria tarefa). Assim o bloco
+  // respeita a ordenação geral e não se sobrepõe às demais tarefas.
   var blocos={};var ordemBlocos=[];var soltas=[];
   resultado.forEach(function(t){
     if(t._licGrupoMun){
@@ -2971,15 +2980,24 @@ function agruparTarefasLicitacao(lista){
       soltas.push(t);
     }
   });
-  ordemBlocos.sort(function(a,b){
-    var da=(blocos[a][0]&&blocos[a][0]._licGrupoDataDisputa)||'9999-99-99';
-    var db=(blocos[b][0]&&blocos[b][0]._licGrupoDataDisputa)||'9999-99-99';
-    return da<db?-1:(da>db?1:a.localeCompare(b));
+  // Montar unidades ordenáveis: cada bloco vira 1 unidade (com sua data de disputa),
+  // cada tarefa solta vira 1 unidade (com sua própria data). Mantém a ordem original
+  // como desempate (índice de chegada), para soltas sem data não "pularem" posição.
+  var unidades=[];
+  ordemBlocos.forEach(function(mun){
+    var membros=blocos[mun];
+    var dd=(membros[0]&&membros[0]._licGrupoDataDisputa)||'9999-99-99';
+    unidades.push({data:dd,itens:membros,_ord:resultado.indexOf(membros[0])});
+  });
+  soltas.forEach(function(t){
+    unidades.push({data:t.taskDate||'9999-99-99',itens:[t],_ord:resultado.indexOf(t)});
+  });
+  unidades.sort(function(a,b){
+    if(a.data!==b.data) return a.data<b.data?-1:1;
+    return a._ord-b._ord;
   });
   var finalArr=[];
-  ordemBlocos.forEach(function(mun){blocos[mun].forEach(function(t){finalArr.push(t);});});
-  // tarefas soltas vão depois dos blocos de licitação
-  soltas.forEach(function(t){finalArr.push(t);});
+  unidades.forEach(function(u){u.itens.forEach(function(t){finalArr.push(t);});});
   return finalArr;
 }
 function abrirModalLicitacao(){
