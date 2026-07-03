@@ -2709,8 +2709,14 @@ function makeEl(t){
   // Detectar município pelo _licMunicipio ou pelo texto da tarefa
   var _munLic=t._licMunicipio;
   if(!_munLic){var _mLic=t.text.match(/^licita[çc][aã]o\s*[-—]\s*(.+)$/i);if(_mLic)_munLic=_mLic[1].trim();}
-  // Só é a tarefa PRINCIPAL da licitação se o texto começa com "Licitação -"
-  var _ehTarefaPrincipalLic=/^licita[çc][aã]o\s*[-—]/i.test(t.text||'');
+  // Só é a tarefa PRINCIPAL da licitação se:
+  //  - o texto começa com "Licitação" (padrão "Licitação - Cidade" ou renomeações como "Licitação Cidade - ..."), OU
+  //  - carrega campos internos que SÓ a principal tem (_licPlataforma/_licQuemFaz).
+  // (_licTipo e _licNumero também existem nas tarefas-filhas, por isso não servem aqui.
+  //  As filhas começam com emoji + nome da etapa: ⚠️ Impugnação, 📋 Análise, 📤 Prazo, 📨 Início, ⚖️ Prazo, 📩 Prazo.)
+  var _txtLic=(t.text||'').trim();
+  var _ehTarefaPrincipalLic=/^licita[çc][aã]o\b/i.test(_txtLic)
+    || !!(t._licPlataforma||t._licQuemFaz);
   if(_munLic&&!t.done&&_ehTarefaPrincipalLic){
     var KEY_PROG='gc_lic_prog_v1';
     var _progData={};try{_progData=JSON.parse(localStorage.getItem(KEY_PROG)||'{}');}catch(e){}
