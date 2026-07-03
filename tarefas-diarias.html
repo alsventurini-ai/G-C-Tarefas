@@ -2709,7 +2709,9 @@ function makeEl(t){
   // Detectar município pelo _licMunicipio ou pelo texto da tarefa
   var _munLic=t._licMunicipio;
   if(!_munLic){var _mLic=t.text.match(/^licita[çc][aã]o\s*[-—]\s*(.+)$/i);if(_mLic)_munLic=_mLic[1].trim();}
-  if(_munLic&&!t.done){
+  // Só é a tarefa PRINCIPAL da licitação se o texto começa com "Licitação -"
+  var _ehTarefaPrincipalLic=/^licita[çc][aã]o\s*[-—]/i.test(t.text||'');
+  if(_munLic&&!t.done&&_ehTarefaPrincipalLic){
     var KEY_PROG='gc_lic_prog_v1';
     var _progData={};try{_progData=JSON.parse(localStorage.getItem(KEY_PROG)||'{}');}catch(e){}
     var _munProg=_progData[_munLic]||[];
