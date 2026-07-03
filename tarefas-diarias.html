@@ -658,6 +658,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
       <option value="ganhou">✅ Ganhamos</option>
       <option value="perdeu">❌ Perdemos</option>
       <option value="deserto">— Deserto/Cancelado</option>
+      <option value="suspensa">⏸ Suspensa</option>
     </select>
   </div>
   <div id="lic-hist-lista" style="padding:0 30px 24px;background:var(--cream);"></div>
@@ -3879,10 +3880,11 @@ function _renderLicGrupoHTML(mun, ts, etapasData, mostrarEtapas, histRegs){
       var naoParticipou=munProg.indexOf('❌ Não participamos')>=0;
       var btnParticipar='<button onclick="licDecisaoParticipar(\''+munEscProg+'\')" style="padding:5px 16px;border-radius:20px;border:2px solid #3a8c4a;font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif;'+(jaParticipou?'background:#3a8c4a;color:#fff;':'background:#fff;color:#3a8c4a;')+'">✅ Participaremos</button>';
       var btnNaoParticipar='<button onclick="licNaoParticipar(\''+munEscProg+'\')" style="padding:5px 16px;border-radius:20px;border:2px solid #b03a2e;font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif;'+(naoParticipou?'background:#b03a2e;color:#fff;':'background:#fff;color:#b03a2e;')+'">❌ Não Participaremos</button>';
+      var btnSuspender='<button onclick="licSuspender(\''+munEscProg+'\')" style="padding:5px 16px;border-radius:20px;border:2px solid #8a6d3b;font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif;background:#fff;color:#8a6d3b;">⏸ Suspender</button>';
       progHtml='<div style="margin-top:10px;border-top:1px solid var(--border);padding-top:8px;">'
         +'<div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">📋 Etapas — clique para registrar no histórico</div>'
         +'<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;">'+checkboxes+'</div>'
-        +'<div style="display:flex;gap:6px;flex-wrap:wrap;">'+btnParticipar+btnNaoParticipar+'</div>'
+        +'<div style="display:flex;gap:6px;flex-wrap:wrap;">'+btnParticipar+btnNaoParticipar+btnSuspender+'</div>'
         +'</div>';
     }
     html+='<div class="cert-card" style="border-left-color:'+statusCor+';">'+
@@ -4755,6 +4757,47 @@ function licNaoParticipar(mun){
   mostrarToast('📋 Registrado: não participação em '+mun,false);
   renderLicitacoes();
 }
+function licSuspender(mun){
+  if(!confirm('Suspender a licitação de '+mun+'?\n\nATENÇÃO: todas as tarefas desta licitação (inclusive a anotação principal) serão APAGADAS da aba Tarefas e não poderão ser recuperadas. A licitação irá para a aba Hist. Licitações como SUSPENSA.')) return;
+  var motivo=prompt('Motivo / observação da suspensão (opcional):','');
+  if(motivo===null) return; // cancelou
+  var munNorm=_normMun(mun);
+  // Pegar dados da tarefa principal (antes de apagar) para alimentar o histórico
+  var grupos=_getLicGrupos();
+  var ts=grupos[mun]||[];
+  var tDisp=ts.find(function(t){return /^licita/i.test(t.text.normalize('NFD').replace(/[\u0300-\u036f]/g,''));});
+  var dataDisp=tDisp&&tDisp.taskDate?tDisp.taskDate:'';
+  var numPregao=tDisp&&tDisp._licNumero?tDisp._licNumero:'';
+  var pregaoLabel=(tDisp&&tDisp._licTipo?tDisp._licTipo+(numPregao?' '+numPregao:''):'');
+  var linkDisp=(tDisp&&tDisp.link?tDisp.link:'');
+  // APAGAR de vez todas as tarefas daquela licitação (inclusive a tarefa-mãe)
+  tasks=tasks.filter(function(t){
+    var tMun=t._licMunicipio||'';
+    if(!tMun){var m=t.text.match(/[-—]\s*(.+)$/);if(m)tMun=m[1].trim();}
+    var ehDaLic=t._licMunicipio||(t.tags&&t.tags.indexOf('licitação')>=0);
+    return !(ehDaLic&&_normMun(tMun)===munNorm);
+  });
+  // Alimentar Hist. Licitações
+  var listaHist=licHistLoad();
+  var jaExiste=listaHist.find(function(r){return _normMun(r.municipio)===munNorm&&r.data===dataDisp;});
+  if(jaExiste){
+    jaExiste.participou='nao';
+    jaExiste.resultado='suspensa';
+    if(motivo) jaExiste.motivo=motivo;
+  } else {
+    listaHist.push({id:Date.now(),municipio:mun,data:dataDisp,pregao:pregaoLabel,resultado:'suspensa',motivo:motivo||'Licitação suspensa',quemFaz:'',vencedor:'',participou:'nao',obs:'',link:linkDisp,criadoEm:new Date().toISOString(),_licTipo:tDisp&&tDisp._licTipo?tDisp._licTipo:'',_licNumero:numPregao});
+  }
+  licHistSave(listaHist);
+  // Registrar evento no log do histórico
+  licLogRegistrar(mun,'⏸ Suspensa',motivo||'Licitação suspensa');
+  // Limpar marcações de progresso da licitação
+  var KEY_PROG='gc_lic_prog_v1';
+  var dataProg={};try{dataProg=JSON.parse(localStorage.getItem(KEY_PROG)||'{}');}catch(e){}
+  if(dataProg[mun]){delete dataProg[mun];localStorage.setItem(KEY_PROG,JSON.stringify(dataProg));}
+  save();render();
+  mostrarToast('⏸ Licitação suspensa — '+mun+' | Tarefas removidas e histórico atualizado.',false);
+  setTimeout(function(){mudarAba('lic-historico');},500);
+}
 function licRegistrarEvento(mun,tipo,descricao){
   licLogRegistrar(mun,tipo,descricao||'');
   mostrarToast('📋 Evento registrado: '+tipo+' — '+mun,false);
@@ -4942,8 +4985,8 @@ function licHistRender(){
     });
     // Registros do histórico (pregão completo)
     mun.regs.forEach(function(r){
-      var resLbl={ganhou:'✅ Ganhamos',perdeu:'❌ Perdemos',deserto:'— Deserto/Cancelado'}[r.resultado]||'';
-      var resCor=r.resultado==='ganhou'?'#2e7d32':r.resultado==='perdeu'?'#b03a2e':'#777';
+      var resLbl={ganhou:'✅ Ganhamos',perdeu:'❌ Perdemos',deserto:'— Deserto/Cancelado',suspensa:'⏸ Suspensa'}[r.resultado]||'';
+      var resCor=r.resultado==='ganhou'?'#2e7d32':r.resultado==='perdeu'?'#b03a2e':r.resultado==='suspensa'?'#8a6d3b':'#777';
       var partLbl=r.participou==='sim'?'✅ Participamos':r.participou==='nao'?'❌ Não participamos':'';
       var partCor=r.participou==='sim'?'#2e7d32':r.participou==='nao'?'#b03a2e':'#777';
       var dStr=r.data?fmtDate(r.data):'';
@@ -5059,7 +5102,7 @@ function licHistRelatorio(){
   function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
   var rows=regs.sort(function(a,b){return b.data<a.data?-1:1;}).map(function(r){
     var resCor={ganhou:'#e8f5e9',perdeu:'#fde8e8',deserto:'#f5f5f5'}[r.resultado]||'#fff';
-    var resLbl={ganhou:'✅ Ganhamos',perdeu:'❌ Perdemos',deserto:'— Deserto'}[r.resultado]||'—';
+    var resLbl={ganhou:'✅ Ganhamos',perdeu:'❌ Perdemos',deserto:'— Deserto',suspensa:'⏸ Suspensa'}[r.resultado]||'—';
     return'<tr style="background:'+resCor+';">'+
       '<td style="padding:7px 10px;border-bottom:1px solid #e0dbd2;font-size:13px;">'+esc(r.municipio)+'</td>'+
       '<td style="padding:7px 10px;border-bottom:1px solid #e0dbd2;font-size:12px;">'+esc(fmtDate(r.data))+'</td>'+
