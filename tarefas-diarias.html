@@ -2792,31 +2792,12 @@ function render(){
   atualizarTitulo();
   var todos=tasks;var visiveis=filtrarLista(todos);
   var p=sortTasks(visiveis.filter(function(x){return!x.done;}),false);
-  p=agruparTarefasLicitacao(p);
   var d=sortTasks(visiveis.filter(function(x){return x.done&&!x._futuro;}),true);
   var lp=document.getElementById('list-p'),ld=document.getElementById('list-d');
   lp.innerHTML='';ld.innerHTML='';
   if(p.length===0){var e=document.createElement('div');e.className='empty';e.textContent=todos.length===0?'Nenhuma tarefa ainda.':'Nenhuma tarefa corresponde ao filtro.';lp.appendChild(e);}
   else {
-    var _grupoAtual=null;
-    p.forEach(function(t){
-      if(t._licGrupoMun&&t._licGrupoInicio){
-        _grupoAtual=document.createElement('div');
-        _grupoAtual.style.cssText='background:linear-gradient(to right,rgba(108,52,131,.06),transparent);';
-        var grpHdr=document.createElement('div');
-        grpHdr.className='lic-grupo-hdr';
-        grpHdr.style.padding='8px 0 2px 12px';
-        grpHdr.textContent='🏛 Licitação — '+t._licGrupoMun;
-        _grupoAtual.appendChild(grpHdr);
-        lp.appendChild(_grupoAtual);
-      }
-      if(t._licGrupoMun&&_grupoAtual){
-        _grupoAtual.appendChild(makeEl(t));
-        if(t._licGrupoFim) _grupoAtual=null;
-      } else {
-        lp.appendChild(makeEl(t));
-      }
-    });
+    p.forEach(function(t){ lp.appendChild(makeEl(t)); });
   }
   if(d.length===0){var e2=document.createElement('div');e2.className='empty';e2.textContent='Nenhuma concluída ainda.';ld.appendChild(e2);}
   else {var e3=document.createElement('div');e3.className='empty';e3.innerHTML='✔ '+d.length+' tarefa(s) concluída(s) — clique aqui para vê-las na aba <strong>📅 Histórico de Tarefas</strong>.';e3.style.cursor='pointer';e3.title='Abrir Histórico de Tarefas';e3.onclick=function(){mudarAba('historico');};ld.appendChild(e3);}
@@ -3531,32 +3512,26 @@ function certRender(){
 function certRenovar(idx){
   var c=certidoes[idx];
   if(!c) return;
-  var hoje=new Date().toISOString().slice(0,10);
-  if(c.tipo==='mensal'||c.tipo==='licitacao'){
-    // Renovação rotineira: nova emissão = hoje, vencimento = +30 dias
-    var venc=new Date(hoje+'T00:00:00');
-    venc.setDate(venc.getDate()+30);
-    if(!confirm('Renovar "'+c.nome+'"?\nNova emissão: '+certFmtDate(hoje)+'\nNovo vencimento: '+certFmtDate(venc.toISOString().slice(0,10)))) return;
-    if(!c.historico) c.historico=[];
-    c.historico.push({renovadoEm:hoje,emissaoAnterior:c.emissao||null,vencimentoAnterior:c.vencimento||null});
-    c.emissao=hoje;
-    c.vencimento=venc.toISOString().slice(0,10);
-  } else if(c.tipo==='validade'){
-    var novaData=prompt('Nova data de vencimento (AAAA-MM-DD) para "'+c.nome+'":',c.vencimento||'');
-    if(!novaData) return;
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(novaData)){alert('Data inválida. Use o formato AAAA-MM-DD.');return;}
-    if(!c.historico) c.historico=[];
-    c.historico.push({renovadoEm:hoje,emissaoAnterior:c.emissao||null,vencimentoAnterior:c.vencimento||null});
-    c.emissao=hoje;
-    c.vencimento=novaData;
-  } else {
+  if(c.tipo==='permanente'){
     mostrarToast('Certidões permanentes não precisam de renovação.',false);
     return;
   }
+  var hoje=new Date().toISOString().slice(0,10);
+  // Regra automática: FGTS renova a cada 15 dias; as demais, no máximo 20 dias
+  var ehFGTS=/fgts/i.test(c.nome||'');
+  var dias=ehFGTS?15:20;
+  var venc=new Date(hoje+'T00:00:00');
+  venc.setDate(venc.getDate()+dias);
+  var vencStr=venc.toISOString().slice(0,10);
+  if(!confirm('Renovar "'+c.nome+'"?\n\nNova emissão: '+certFmtDate(hoje)+'\nNovo prazo de renovação: '+certFmtDate(vencStr)+'\n('+dias+' dias'+(ehFGTS?' — regra automática FGTS':' — regra automática, máx. 20 dias')+')')) return;
+  if(!c.historico) c.historico=[];
+  c.historico.push({renovadoEm:hoje,emissaoAnterior:c.emissao||null,vencimentoAnterior:c.vencimento||null});
+  c.emissao=hoje;
+  c.vencimento=vencStr;
   c.atualizadoEm=hoje;
   certSave();certRender();
   if(window._fbSave) window._fbSave(tasks,recorrencias,archived,templates);
-  mostrarToast('✅ '+c.nome+' renovada! Próximo vencimento: '+certFmtDate(c.vencimento),false);
+  mostrarToast('✅ '+c.nome+' renovada! Próxima renovação: '+certFmtDate(c.vencimento)+' ('+dias+' dias)',false);
 }
 function certRemove(idx){
   if(confirm('Remover esta certidão?')){certidoes.splice(idx,1);certSave();certRender();}
@@ -4891,6 +4866,10 @@ function licHistRender(){
   var munMap={};
   // Do log de eventos
   log.forEach(function(e){
+    // A decisão de participar NÃO entra no histórico por si só. A participação
+    // só é registrada aqui no encerramento (aba Participando) ou manualmente.
+    // Portanto, ignoramos o carimbo "✅ Participamos" (mantendo "❌ Não participamos").
+    if(e.tipo.indexOf('Participamos')>=0 && e.tipo.indexOf('Não')<0) return;
     var norm=_normMun(e.municipio);
     if(!munMap[norm]){munMap[norm]={nome:e.municipio,eventos:[],regs:[]};}
     if(e.municipio.length>munMap[norm].nome.length) munMap[norm].nome=e.municipio;
@@ -4916,8 +4895,10 @@ function licHistRender(){
   });}
   // Stats
   var totalMun=munKeys.length;
-  var totalEventos=log.length;
-  var participamos=log.filter(function(e){return e.tipo.indexOf('Participamos')>=0;}).length;
+  var totalEventos=log.filter(function(e){return !(e.tipo.indexOf('Participamos')>=0&&e.tipo.indexOf('Não')<0);}).length;
+  var _partSet={};
+  regsAntigos.forEach(function(r){if(r.participou==='sim')_partSet[_normMun(r.municipio)]=true;});
+  var participamos=Object.keys(_partSet).length;
   var ganhou=regsAntigos.filter(function(r){return r.resultado==='ganhou';}).length;
   stats.innerHTML='<div class="cert-stat"><div class="cert-stat-num" style="color:var(--navy)">'+totalMun+'</div><div class="cert-stat-lbl">Municípios</div></div>'+
     '<div class="cert-stat"><div class="cert-stat-num" style="color:var(--amber)">'+totalEventos+'</div><div class="cert-stat-lbl">Eventos</div></div>'+
@@ -4928,7 +4909,7 @@ function licHistRender(){
   munKeys.forEach(function(norm){
     var mun=munMap[norm];
     // Cor do card — se tem participação, verde; não participou, vermelho; sem decisão, neutro
-    var temPartic=mun.eventos.some(function(e){return e.tipo.indexOf('Participamos')>=0&&e.tipo.indexOf('Não')<0;});
+    var temPartic=mun.eventos.some(function(e){return e.tipo.indexOf('Participamos')>=0&&e.tipo.indexOf('Não')<0;})||mun.regs.some(function(r){return r.participou==='sim';});
     var temNaoPartic=mun.eventos.some(function(e){return e.tipo.indexOf('Não participou')>=0||e.tipo.indexOf('Não participamos')>=0;});
     var bordCor=temPartic?'var(--green)':temNaoPartic?'var(--red)':'var(--border)';
     var munEsc=mun.nome.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
@@ -6021,11 +6002,37 @@ function pautaEnviarParaAta(probId){
   }
   _ataAtualId=ata.id;
 }
+function ataAno(ata){
+  var d=(ata&&(ata.data||ata.criadaEm))||'';
+  var ano=(d||'').slice(0,4);
+  return /^\d{4}$/.test(ano)?ano:String(new Date().getFullYear());
+}
+function ataNumeroInfo(ataId){
+  var atas=ataLoad();
+  var ata=atas.find(function(a){return a.id===ataId;});
+  if(!ata) return {num:atas.length+1,ano:String(new Date().getFullYear())};
+  var ano=ataAno(ata);
+  var doAno=atas.filter(function(a){return ataAno(a)===ano;}).sort(function(a,b){return a.criadaEm.localeCompare(b.criadaEm);});
+  var idx=doAno.findIndex(function(a){return a.id===ataId;});
+  return {num:(idx>=0?idx+1:doAno.length),ano:ano};
+}
 function ataNumeroLabel(ataId){
-  var atas=ataLoad().slice().sort(function(a,b){return a.criadaEm.localeCompare(b.criadaEm);});
-  var idx=atas.findIndex(function(a){return a.id===ataId;});
-  var num=idx>=0?idx+1:atas.length;
-  return num+'ª Ata';
+  var info=ataNumeroInfo(ataId);
+  return 'Ata nº '+('000'+info.num).slice(-3)+'/'+info.ano;
+}
+function ataAssinaturasHtml(ata){
+  var parts=(ata&&ata.participantes)||[];
+  if(parts.length===0) return '';
+  var h='<div style="margin-top:30px;page-break-inside:avoid;">';
+  h+='<div style="font-size:11px;font-weight:700;color:#1a5276;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid #1a5276;padding-bottom:4px;margin-bottom:10px;">Assinaturas dos participantes</div>';
+  h+='<div style="display:flex;flex-wrap:wrap;gap:10px 40px;">';
+  parts.forEach(function(p){
+    h+='<div style="flex:1 1 210px;min-width:210px;text-align:center;margin-top:30px;">'
+      +'<div style="border-top:1px solid #333;padding-top:5px;font-size:11px;color:#222;"><strong>'+p.nome+'</strong>'+(p.cargo?'<br><span style="font-size:10px;color:#666;">'+p.cargo+'</span>':'')+'</div>'
+      +'</div>';
+  });
+  h+='</div></div>';
+  return h;
 }
 function ataExcluir(ataId){
   if(!confirm('Excluir esta ata inteira?\nOs problemas continuam salvos em "Registrar", apenas a ata será removida.')) return;
@@ -6071,6 +6078,19 @@ function probRenderPautaTab(){
   var ordemPrio={alta:0,media:1,baixa:2};
   probs.sort(function(a,b){return (ordemPrio[a.prioridade]||1)-(ordemPrio[b.prioridade]||1)||a.criadoEm.localeCompare(b.criadoEm);});
   var html=cabHtml;
+  var pendAnt=probs.filter(function(p){return p.proximaPauta;});
+  if(pendAnt.length>0){
+    html+='<div style="background:#fff8e1;border:1px solid #f0d878;border-left:4px solid #c78a1a;border-radius:6px;padding:10px 14px;margin-bottom:14px;">';
+    html+='<div style="font-size:11px;font-weight:700;color:#8a6d00;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">⏭ Pendências da reunião anterior ('+pendAnt.length+')</div>';
+    html+='<div style="font-size:12px;color:#6b5500;line-height:1.7;">';
+    pendAnt.forEach(function(p){
+      var prioLabel={alta:'🔴',media:'🟡',baixa:'🟢'}[p.prioridade]||'';
+      html+='• '+prioLabel+' <strong>'+p.titulo+'</strong> <span style="font-size:10px;color:#a08800;">('+p.setor+')</span><br>';
+    });
+    html+='</div>';
+    html+='<div style="font-size:10.5px;color:#8a6d00;margin-top:6px;font-style:italic;">Revise estes assuntos que ficaram em aberto antes de abrir os novos.</div>';
+    html+='</div>';
+  }
   var setores=['Administrativo','Produção'];
   setores.forEach(function(setor){
     var doSetor=probs.filter(function(p){return p.setor===setor;});
@@ -6338,7 +6358,7 @@ function ataRenderLista(){
     var partTxt=ata.participantes.map(function(p){return p.nome;}).join(', ');
     html+='<div class="cert-card" style="border-left-color:#6c3483;padding:12px 16px;margin-bottom:10px;">';
     html+='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">';
-    html+='<span style="font-size:13px;font-weight:700;color:#6c3483;cursor:pointer;" onclick="ataAbrirView('+ata.id+')">📄 '+numero+'ª Ata — '+dataFmt+'</span>';
+    html+='<span style="font-size:13px;font-weight:700;color:#6c3483;cursor:pointer;" onclick="ataAbrirView('+ata.id+')">📄 '+ataNumeroLabel(ata.id)+' — '+dataFmt+'</span>';
     html+='<div style="display:flex;align-items:center;gap:8px;">';
     html+='<span style="font-size:11px;color:var(--muted);">'+ata.horaInicio+(ata.horaFim?' às '+ata.horaFim:'')+'</span>';
     html+='<button onclick="event.stopPropagation();ataExcluir('+ata.id+')" style="background:none;border:1px solid #ffcccc;border-radius:3px;padding:2px 8px;font-size:11px;cursor:pointer;color:#c0392b;">× Excluir</button>';
@@ -6453,12 +6473,14 @@ function ataSalvarItem(probId,ataId){
     p.resolvido=true;
     p.proximaPauta=false;
     p.naPauta=false;
+    p.selAta=false;
     if(!p.resolvidoEm)p.resolvidoEm=new Date().toISOString();
   } else if(status==='proxima'){
     p.resolvido=false;
     p.resolvidoEm='';
     p.proximaPauta=true;
     p.naPauta=true; // permanece na Pauta para a próxima reunião
+    p.selAta=false; // desmarca a seleção para a próxima geração de ata
   } else {
     // Compatibilidade: se preencheu decisão sem escolher status, considera resolvido
     if(decisao&&!p.resolvido){
@@ -6498,7 +6520,7 @@ function probGerarAtaDoc(ataId){
   html+='<div style="text-align:center;padding:8px 0;border-bottom:2px solid #1a5276;margin-bottom:14px;"><div style="font-size:18px;font-weight:700;color:#1a5276;">GALHARDO &amp; CANALES</div></div>';
   html+='<div style="padding:0 20px;">';
   html+='<div style="text-align:center;padding:8px 0;border-top:2px solid #1a5276;border-bottom:2px solid #1a5276;margin-bottom:14px;">';
-  html+='<div style="font-size:14px;font-weight:700;color:#1a5276;text-transform:uppercase;letter-spacing:1px;">'+ataNumeroLabel(ata.id)+' de Reunião</div>';
+  html+='<div style="font-size:14px;font-weight:700;color:#1a5276;text-transform:uppercase;letter-spacing:1px;">'+ataNumeroLabel(ata.id)+'</div>';html+='<div style="font-size:10px;color:#666;margin-top:2px;letter-spacing:.5px;">ATA DE REUNIÃO INTERNA</div>';
   html+='</div>';
   html+='<div style="font-size:12px;color:#333;margin-bottom:16px;line-height:1.6;">'+introTxt+'</div>';
   if(doAta.length===0){
@@ -6559,7 +6581,7 @@ function probGerarAtaDoc(ataId){
     });
     html+='</div>';
   });
-  html+='<div style="margin-top:10px;font-size:10px;color:#777;text-align:right;">Total: '+doAta.length+' item(ns) na ata</div>';
+  html+=ataAssinaturasHtml(ata);html+='<div style="margin-top:10px;font-size:10px;color:#777;text-align:right;">Total: '+doAta.length+' item(ns) na ata</div>';
   html+='</div></div>';
   document.getElementById('prob-ata-conteudo').innerHTML=html;
 }
@@ -6586,7 +6608,7 @@ function probImprimirAta(){
   html+='<div style="text-align:center;padding:8px 0;border-bottom:2px solid #1a5276;margin-bottom:14px;"><div style="font-size:18px;font-weight:700;color:#1a5276;">GALHARDO &amp; CANALES</div></div>';
   html+='<div style="padding:0 20px;">';
   html+='<div style="text-align:center;padding:8px 0;border-top:2px solid #1a5276;border-bottom:2px solid #1a5276;margin-bottom:14px;">';
-  html+='<div style="font-size:14px;font-weight:700;color:#1a5276;text-transform:uppercase;letter-spacing:1px;">'+ataNumeroLabel(ata.id)+' de Reunião</div>';
+  html+='<div style="font-size:14px;font-weight:700;color:#1a5276;text-transform:uppercase;letter-spacing:1px;">'+ataNumeroLabel(ata.id)+'</div>';html+='<div style="font-size:10px;color:#666;margin-top:2px;letter-spacing:.5px;">ATA DE REUNIÃO INTERNA</div>';
   html+='</div>';
   html+='<div style="font-size:12px;color:#333;margin-bottom:16px;line-height:1.6;">'+introTxt+'</div>';
   var setores=['Administrativo','Produção'];
@@ -6622,7 +6644,7 @@ function probImprimirAta(){
     });
     html+='</div>';
   });
-  html+='<div style="margin-top:10px;font-size:10px;color:#777;text-align:right;">Total: '+doAta.length+' item(ns) na ata</div>';
+  html+=ataAssinaturasHtml(ata);html+='<div style="margin-top:10px;font-size:10px;color:#777;text-align:right;">Total: '+doAta.length+' item(ns) na ata</div>';
   html+='</div></div>';
   var w=window.open('','_blank','width=800,height=900');
   w.document.write('<html><head><title>Ata G&C</title><style>body{margin:0;padding:0;font-family:Segoe UI,Tahoma,sans-serif;}@media print{@page{size:A4 portrait;margin:0;}}</style></head><body>'+html+'</body></html>');
