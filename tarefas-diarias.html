@@ -134,7 +134,7 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
 .task-item.atrasada{background:linear-gradient(to right,rgba(176,58,46,.05),transparent);}
 .task-item.atrasada .task-text{color:#8b2018;}
 .task-item.lic-grupo{background:linear-gradient(to right,rgba(108,52,131,.06),transparent);}
-.lic-grupo-hdr{font-size:10px;font-weight:700;color:#6c3483;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+.lic-grupo-hdr{font-size:11px;font-weight:700;color:#6c3483;text-transform:uppercase;letter-spacing:.5px;margin:10px 0 4px;padding:5px 10px;background:linear-gradient(to right,rgba(108,52,131,.12),rgba(108,52,131,.02));border-left:3px solid #6c3483;border-radius:3px;}
 .task-atrasada-badge{display:inline-block;font-size:10px;font-weight:700;color:#b03a2e;background:#fde8e8;border:1px solid #f5c6c6;border-radius:10px;padding:1px 7px;margin-left:6px;vertical-align:middle;}
 .chk{width:22px;height:22px;border:2px solid var(--border);border-radius:2px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;background:var(--white);transition:border-color .12s,background .12s;user-select:none;font-size:13px;font-weight:700;}
 .chk:hover{border-color:var(--navy);}
@@ -2672,7 +2672,7 @@ function makeEl(t){
   var div=document.createElement('div');
   var _hoje=new Date();_hoje.setHours(0,0,0,0);
   var _atrasada=!t.done&&!t._futuro&&t.taskDate&&new Date(t.taskDate+'T00:00:00')<_hoje;
-  div.className='task-item'+(t.done?' done':'')+(t.pinned?' pinned':'')+(t._futuro?' futuro':'')+(_atrasada?' atrasada':'');
+  div.className='task-item'+(t.done?' done':'')+(t.pinned?' pinned':'')+(t._futuro?' futuro':'')+(_atrasada?' atrasada':'')+(t._licGrupoMun?' lic-grupo':'');
   div.id='task-'+t.id;
   var chk=document.createElement('div');
   chk.className='chk'+(t.done?' done':'');chk.textContent=t.done?'✕':'';
@@ -2762,6 +2762,16 @@ function makeEl(t){
       else if(dx<-60&&!t.done){_swipeLocked=true;arquivarTarefa(t.id);}// swipe esquerda → arquivar
     });
   }
+  if(t._licGrupoInicio&&t._licGrupoMun){
+    var frag=document.createDocumentFragment();
+    var hdr=document.createElement('div');
+    hdr.className='lic-grupo-hdr';
+    var _ddDisp=t._licGrupoDataDisputa&&t._licGrupoDataDisputa!=='9999-99-99'?(' — 📅 '+fmtDate(t._licGrupoDataDisputa)):'';
+    hdr.textContent='🏛 Licitação — '+t._licGrupoMun+_ddDisp;
+    frag.appendChild(hdr);
+    frag.appendChild(div);
+    return frag;
+  }
   return div;
 }
 function abrirObsInline(id,task){
@@ -2793,6 +2803,8 @@ function render(){
   atualizarTitulo();
   var todos=tasks;var visiveis=filtrarLista(todos);
   var p=sortTasks(visiveis.filter(function(x){return!x.done;}),false);
+  // AGRUPAMENTO: reunir as tarefas de cada licitação num bloco, ordenado pela data da disputa
+  p=agruparTarefasLicitacao(p);
   var d=sortTasks(visiveis.filter(function(x){return x.done&&!x._futuro;}),true);
   var lp=document.getElementById('list-p'),ld=document.getElementById('list-d');
   lp.innerHTML='';ld.innerHTML='';
@@ -2838,6 +2850,19 @@ function agruparTarefasLicitacao(lista){
     if(!grupos[mun]){grupos[mun]=[];ordem.push(mun);}
     grupos[mun].push(t);
   });
+  // Data da disputa de cada grupo = data da tarefa-mãe "Licitação -" (ou a menor data do grupo)
+  function _dataDisputaGrupo(mun){
+    var membros=grupos[mun]||[];
+    var mae=membros.find(function(t){return /^licita[çc][aã]o\s*[-—]/i.test(t.text);});
+    if(mae&&(mae._licDataDisputa||mae.taskDate)) return mae._licDataDisputa||mae.taskDate;
+    // fallback: menor data do grupo
+    return membros.map(function(t){return t.taskDate||'9999-99-99';}).sort()[0]||'9999-99-99';
+  }
+  // Marcar cada tarefa com a data de disputa do seu grupo, para ordenar o bloco inteiro por ela
+  Object.keys(grupos).forEach(function(mun){
+    var dd=_dataDisputaGrupo(mun);
+    grupos[mun].forEach(function(t){t._licGrupoDataDisputa=dd;});
+  });
   // Para cada item da lista original, se já fizer parte de um grupo processado, pular;
   // senão, se for o primeiro membro do grupo encontrado, inserir o grupo inteiro (ordenado por data)
   lista.forEach(function(t){
@@ -2860,7 +2885,27 @@ function agruparTarefasLicitacao(lista){
       resultado.push(t);
     }
   });
-  return resultado;
+  // Reordenar: blocos de licitação ordenados pela data da disputa; tarefas soltas mantêm posição relativa.
+  // Estratégia: separar em "grupos" (com _licGrupoMun) e "soltas", depois intercalar por data.
+  var blocos={};var ordemBlocos=[];var soltas=[];
+  resultado.forEach(function(t){
+    if(t._licGrupoMun){
+      if(!blocos[t._licGrupoMun]){blocos[t._licGrupoMun]=[];ordemBlocos.push(t._licGrupoMun);}
+      blocos[t._licGrupoMun].push(t);
+    } else {
+      soltas.push(t);
+    }
+  });
+  ordemBlocos.sort(function(a,b){
+    var da=(blocos[a][0]&&blocos[a][0]._licGrupoDataDisputa)||'9999-99-99';
+    var db=(blocos[b][0]&&blocos[b][0]._licGrupoDataDisputa)||'9999-99-99';
+    return da<db?-1:(da>db?1:a.localeCompare(b));
+  });
+  var finalArr=[];
+  ordemBlocos.forEach(function(mun){blocos[mun].forEach(function(t){finalArr.push(t);});});
+  // tarefas soltas vão depois dos blocos de licitação
+  soltas.forEach(function(t){finalArr.push(t);});
+  return finalArr;
 }
 function abrirModalLicitacao(){
   document.getElementById('lic-municipio').value='';
