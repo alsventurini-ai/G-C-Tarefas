@@ -4863,28 +4863,30 @@ function licConcEditarModal(mun){
   };
 }
 function licConcExcluir(mun){
-  if(!confirm('Remover "'+mun+'" da lista de Participando?\\nIsso vai apagar a decisão de participação (volta a aparecer como pendente em Licitações, se houver tarefas).')) return;
+  if(!confirm('EXCLUIR a licitação "'+mun+'" de TUDO?\n\nIsto vai apagar:\n• Todas as tarefas (principal + etapas) de todas as abas\n• A decisão de participação\n• Os dados de vencedor/progresso\n• O registro no Histórico de Licitações\n\nEsta ação NÃO pode ser desfeita.')) return;
   var norm=_normMun(mun);
-  // Remover do licVencedor
-  var vd=licVencedorLoad();
-  var chave=Object.keys(vd).find(function(k){return _normMun(k)===norm;});
-  if(chave) delete vd[chave];
-  licVencedorSave(vd);
-  // Remover marcação de participação do log e prog
-  var KEY_PROG='gc_lic_prog_v1';
-  var data={};try{data=JSON.parse(localStorage.getItem(KEY_PROG)||'{}');}catch(e){}
-  var chaveProg=Object.keys(data).find(function(k){return _normMun(k)===norm;});
-  if(chaveProg) data[chaveProg]=data[chaveProg].filter(function(s){return s.indexOf('Participamos')<0;});
-  localStorage.setItem(KEY_PROG,JSON.stringify(data));
-  if(window._fbSave){
-    var t=JSON.parse(localStorage.getItem('gc_tarefas_v3')||'[]');
-    var r=JSON.parse(localStorage.getItem('gc_recorrencias')||'[]');
-    var a=JSON.parse(localStorage.getItem('gc_archived')||'[]');
-    var tp=JSON.parse(localStorage.getItem('gc_templates')||'[]');
-    window._fbSave(t,r,a,tp);
-  }
-  mostrarToast('🗑️ Removido de Participando — '+mun,false);
-  renderLicitacoesConcluidas();
+  // 1) Apagar TODAS as tarefas da licitação (principal + filhas)
+  tasks=tasks.filter(function(x){
+    var xm=x._licMunicipio||'';
+    if(!xm){var mm=(x.text||'').match(/[-—]\s*(.+)$/);if(mm&&/^licita/i.test((x.text||'').trim()))xm=mm[1].trim();}
+    var xEhLic=x._licMunicipio||(x.tags&&x.tags.indexOf('licitação')>=0);
+    return !(xEhLic && xm && _normMun(xm)===norm);
+  });
+  // 2) Remover do licVencedor (Participando)
+  try{var vd=licVencedorLoad();var chave=Object.keys(vd).find(function(k){return _normMun(k)===norm;});if(chave){delete vd[chave];licVencedorSave(vd);}}catch(e){}
+  // 3) Remover progresso/decisão
+  try{var pg=JSON.parse(localStorage.getItem('gc_lic_prog_v1')||'{}');var kp=Object.keys(pg).find(function(k){return _normMun(k)===norm;});if(kp){delete pg[kp];localStorage.setItem('gc_lic_prog_v1',JSON.stringify(pg));}}catch(e){}
+  // 4) Remover etapas
+  try{var et=JSON.parse(localStorage.getItem('gc_lic_etapas_v1')||'{}');var ke=Object.keys(et).find(function(k){return _normMun(k)===norm;});if(ke){delete et[ke];localStorage.setItem('gc_lic_etapas_v1',JSON.stringify(et));}}catch(e){}
+  // 5) Remover do log de eventos
+  try{var lg=JSON.parse(localStorage.getItem('gc_lic_log_v1')||'[]');lg=lg.filter(function(e){return _normMun(e.municipio||'')!==norm;});localStorage.setItem('gc_lic_log_v1',JSON.stringify(lg));}catch(e){}
+  // 6) Remover do Hist. Licitações (você pediu para apagar do histórico também)
+  try{var hist=licHistLoad();hist=hist.filter(function(r){return _normMun(r.municipio||'')!==norm;});licHistSave(hist);}catch(e){}
+  save();render();
+  if(typeof renderLicitacoes==='function')renderLicitacoes();
+  if(typeof renderLicitacoesConcluidas==='function')renderLicitacoesConcluidas();
+  if(typeof licHistRender==='function')licHistRender();
+  mostrarToast('🗑️ Licitação "'+mun+'" excluída de tudo.',false);
 }
 function imprimirLicitacoesConcluidas(){
   var grupos=_getLicGrupos();
