@@ -2191,6 +2191,40 @@ function del(id){
     tasks=tasks.filter(function(x){return x.id!==id;});save();render();return;
   }
   if(!confirm('Remover esta tarefa?'))return;
+  // Se for tarefa de LICITAÇÃO, apagar TODO o conjunto (principal + etapas) daquele município
+  var _munDel=t._licMunicipio||'';
+  if(!_munDel && /^licita[çc][aã]o\b/i.test((t.text||'').trim())){var _m=(t.text||'').match(/[-—]\s*(.+)$/);if(_m)_munDel=_m[1].trim();}
+  var _ehLicDel=_munDel||(t.tags&&t.tags.indexOf('licitação')>=0);
+  if(_ehLicDel && _munDel){
+    var _norm=_normMun(_munDel);
+    var _relacionadas=tasks.filter(function(x){
+      var xm=x._licMunicipio||'';
+      if(!xm){var mm=(x.text||'').match(/[-—]\s*(.+)$/);if(mm&&(/^licita/i.test((x.text||'').trim())))xm=mm[1].trim();}
+      var xEhLic=x._licMunicipio||(x.tags&&x.tags.indexOf('licitação')>=0);
+      return xEhLic && xm && _normMun(xm)===_norm;
+    });
+    if(_relacionadas.length>1){
+      if(!confirm('Esta é uma licitação com '+_relacionadas.length+' tarefas vinculadas ('+_munDel+').\n\nApagar TODAS as tarefas desta licitação (principal + etapas) de todas as abas?\n\n(O Histórico de Licitações será preservado.)')){
+        // Se recusar o conjunto, apaga só esta
+        tasks=tasks.filter(function(x){return x.id!==id;});save();render();return;
+      }
+      // Apagar todas as relacionadas
+      tasks=tasks.filter(function(x){
+        var xm=x._licMunicipio||'';
+        if(!xm){var mm=(x.text||'').match(/[-—]\s*(.+)$/);if(mm&&(/^licita/i.test((x.text||'').trim())))xm=mm[1].trim();}
+        var xEhLic=x._licMunicipio||(x.tags&&x.tags.indexOf('licitação')>=0);
+        return !(xEhLic && xm && _normMun(xm)===_norm);
+      });
+      // Limpar decisões/progresso/vencedor desta licitação (preserva Hist. Licitações)
+      try{var _pg=JSON.parse(localStorage.getItem('gc_lic_prog_v1')||'{}');var _k=Object.keys(_pg).find(function(k){return _normMun(k)===_norm;});if(_k){delete _pg[_k];localStorage.setItem('gc_lic_prog_v1',JSON.stringify(_pg));}}catch(e){}
+      try{var _vc=JSON.parse(localStorage.getItem('gc_lic_vencedor_v1')||'{}');var _kv=Object.keys(_vc).find(function(k){return _normMun(k)===_norm;});if(_kv){delete _vc[_kv];localStorage.setItem('gc_lic_vencedor_v1',JSON.stringify(_vc));}}catch(e){}
+      save();render();
+      if(typeof renderLicitacoes==='function')renderLicitacoes();
+      if(typeof renderLicitacoesConcluidas==='function')renderLicitacoesConcluidas();
+      mostrarToast('🗑️ Licitação '+_munDel+' e suas '+_relacionadas.length+' tarefas foram removidas.',false);
+      return;
+    }
+  }
   tasks=tasks.filter(function(x){return x.id!==id;});save();render();
 }
 
@@ -2699,39 +2733,6 @@ function makeEl(t){
   if(!t._futuro)chk.onclick=(function(id){return function(){toggle(id);};})(t.id);
   else chk.style.cursor='default';
   var body=document.createElement('div');body.className='task-body';
-  // ── RENDER ENXUTO das tarefas-FILHAS de licitação (dentro do bloco agrupado) ──
-  // Filha = pertence a um grupo de licitação (_licGrupoMun) e NÃO é a principal.
-  var _txtF=(t.text||'').trim();
-  var _ehPrincipalF=/^licita[çc][aã]o\b/i.test(_txtF)||!!(t._licPlataforma||t._licQuemFaz);
-  if(t._licGrupoMun && !_ehPrincipalF){
-    // título limpo (sem " — Município" no fim)
-    var _tituloF=_txtF.replace(/\s*[-—]\s*[^-—]*$/,'').trim()||_txtF;
-    var _linha=document.createElement('div');
-    _linha.style.cssText='display:flex;align-items:center;gap:8px;flex:1;min-width:0;';
-    var _txtWrap=document.createElement('div');_txtWrap.style.cssText='flex:1;min-width:0;';
-    var _tt=document.createElement('div');
-    _tt.style.cssText='font-size:12.5px;color:'+(t.done?'#9a9a9a':'#333')+';font-weight:600;white-space:normal;';
-    _tt.textContent=_tituloF;
-    _txtWrap.appendChild(_tt);
-    if(t.taskDate){
-      var _dd=document.createElement('div');
-      _dd.style.cssText='font-size:11px;color:var(--navy);margin-top:2px;';
-      var _atrasadaF=!t.done&&t.taskDate&&new Date(t.taskDate+'T00:00:00')<_hoje;
-      _dd.textContent='📅 '+fmtDate(t.taskDate)+(_atrasadaF?' ⚠':'');
-      _txtWrap.appendChild(_dd);
-    }
-    _linha.appendChild(_txtWrap);
-    // botão concluir (ou marca de concluída)
-    var _bC=document.createElement('button');
-    _bC.style.cssText='flex:0 0 auto;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:sans-serif;border:1.5px solid '+(t.done?'#3a8c4a':'#c78a1a')+';background:'+(t.done?'#e8f5e9':'#fff8e1')+';color:'+(t.done?'#2e7d32':'#c78a1a')+';';
-    _bC.textContent=t.done?'✔ Concluída':'⏳ Concluir';
-    _bC.onclick=(function(id){return function(){toggle(id);};})(t.id);
-    div.className='task-item lic-grupo lic-filha'+(t.done?' done':'');
-    div.style.cssText='padding:7px 12px;';
-    div.appendChild(_linha);
-    div.appendChild(_bC);
-    return div;
-  }
   if(t.pinned){var pi=document.createElement('span');pi.style.cssText='font-size:11px;color:var(--amber);margin-right:4px;';pi.textContent='📌';body.appendChild(pi);}
   if(t.criadaPor){var cpEl=document.createElement('span');cpEl.style.cssText='display:inline-block;font-size:10px;background:#eef5fb;border:1px solid #a8c8e8;color:#1a5276;border-radius:2px;padding:1px 6px;margin-right:5px;font-weight:600;';cpEl.textContent='✍️ '+t.criadaPor;body.appendChild(cpEl);}
   if(t.paraQuem){var pq=document.createElement('div');pq.className='task-para-quem';pq.textContent='👤 '+t.paraQuem;body.appendChild(pq);}
@@ -3021,14 +3022,8 @@ function agruparTarefasLicitacao(lista){
         var ha=a.schedule||'99:99',hb=b.schedule||'99:99';
         return ha<hb?-1:(ha>hb?1:a.id-b.id);
       });
-      // MOSTRAR SÓ A PRÓXIMA ETAPA PENDENTE dentro do bloco:
-      // mantém a(s) principal(is) sempre; das filhas pendentes, exibe apenas a primeira (menor data).
-      var _ehPrinc=function(t){return /^licita[çc][aã]o\b/i.test((t.text||'').trim())||!!(t._licPlataforma||t._licQuemFaz);};
-      var _principais=membros.filter(function(m){return _ehPrinc(m);});
-      var _filhasPend=membros.filter(function(m){return !_ehPrinc(m)&&!m.done;});
-      // _filhasPend já está ordenada por data (herda o sort acima). Pega só a primeira.
-      var _proxima=_filhasPend.length>0?[_filhasPend[0]]:[];
-      var _visiveis=_principais.concat(_proxima);
+      // MOSTRAR TODAS as tarefas da licitação (principal + todas as etapas), na ordem já definida.
+      var _visiveis=membros;
       _visiveis[0]._licGrupoInicio=true;
       _visiveis[_visiveis.length-1]._licGrupoFim=true;
       _visiveis.forEach(function(m){m._licGrupoMun=mun;});
