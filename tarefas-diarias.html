@@ -2070,6 +2070,16 @@ function addTask(){
       tasks.push({id:tid+5,text:'📨 Início Envio da Proposta — '+munAuto,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:somarDiasUteis_subtrair(dataTask,4),alertFired:false,paraQuem:pq||'Licitações',obs:'Iniciar elaboração e envio da proposta — '+munAuto,priority:'alta',duracao:'',pinned:false,criadaPor:criadaPor,_licMunicipio:munAuto,_licDataDisputa:dataTask});
       tasks.push({id:tid+4,text:'⚖️ Prazo Final de Impugnação — '+munAuto,done:false,addedAt:timeNow(),doneAt:'',schedule:horaTask,taskDate:dataImpugAuto,alertFired:false,paraQuem:pq||'Licitações',obs:'ATENÇÃO: encerra hoje o prazo de impugnação ao edital — '+munAuto+'\nDe acordo com a Lei nº 14.133/2021, Art. 164: a impugnação deverá ser protocolada até 3 (três) dias úteis antes da data de abertura do certame.',priority:'alta',duracao:'',pinned:false,criadaPor:criadaPor,_licMunicipio:munAuto,_licDataDisputa:dataTask,_licHoraDisputa:horaTask});
       mostrarToast('✅ 5 tarefas criadas para '+munAuto+'!',false);
+      // Registrar automaticamente no Hist. Licitações (mesmo comportamento do modal Nova Licitação)
+      try{
+        var _lh=licHistLoad();
+        var _jaTem=_lh.some(function(r){return _normMun(r.municipio)===_normMun(munAuto)&&r.data===dataTask;});
+        if(!_jaTem){
+          _lh.push({id:Date.now(),municipio:munAuto,data:dataTask,pregao:'',resultado:'',vencedor:'',obs:obsVal||'',link:'',plataforma:'',criadoEm:new Date().toISOString()});
+          licHistSave(_lh);
+        }
+        licLogRegistrar(munAuto,'📌 Licitação cadastrada','Disputa em '+fmtDate(dataTask)+(horaTask?' às '+horaTask:''));
+      }catch(e){}
     }
   }
   inp.value='';timeSel.value='';dateSel.value='';pqInp.value='';if(cpInp)cpInp.value='';repeatSel.value='none';
@@ -5177,6 +5187,25 @@ function licHistSalvar(){
   licHistRender();
   mostrarToast('✅ Registro salvo — '+mun,false);
 }
+function licHistNaoAconteceu(id){
+  var lista=licHistLoad();
+  var reg=lista.find(function(r){return r.id===id;});
+  if(!reg)return;
+  if(reg.resultado==='nao_aconteceu'){
+    // Já estava marcado: desmarca (volta a ficar sem resultado)
+    reg.resultado='';reg.motivo='';
+    licHistSave(lista);licHistRender();
+    mostrarToast('Marcação "Não Aconteceu" removida.',false);
+    return;
+  }
+  var motivo=prompt('Marcar "'+reg.municipio+'" como NÃO ACONTECEU.\nMotivo (opcional): cancelada, adiada, deserta...','');
+  if(motivo===null)return; // cancelou
+  reg.resultado='nao_aconteceu';
+  reg.participou='nao';
+  if(motivo)reg.motivo=motivo;
+  licHistSave(lista);licHistRender();
+  mostrarToast('⊘ '+reg.municipio+' marcada como Não Aconteceu.',false);
+}
 function licHistExcluir(id){
   if(!confirm('Excluir este registro do histórico?'))return;
   var lista=licHistLoad().filter(function(r){return r.id!==id;});
@@ -5274,7 +5303,7 @@ function licHistRender(){
     });
     // Registros do histórico (pregão completo)
     mun.regs.forEach(function(r){
-      var resLbl={ganhou:'✅ Ganhamos',perdeu:'❌ Perdemos',deserto:'— Deserto/Cancelado',suspensa:'⏸ Suspensa'}[r.resultado]||'';
+      var resLbl={ganhou:'✅ Ganhamos',perdeu:'❌ Perdemos',deserto:'— Deserto/Cancelado',suspensa:'⏸ Suspensa',nao_aconteceu:'⊘ Não Aconteceu'}[r.resultado]||'';
       var resCor=r.resultado==='ganhou'?'#2e7d32':r.resultado==='perdeu'?'#b03a2e':r.resultado==='suspensa'?'#8a6d3b':'#777';
       var partLbl=r.participou==='sim'?'✅ Participamos':r.participou==='nao'?'❌ Não participamos':'';
       var partCor=r.participou==='sim'?'#2e7d32':r.participou==='nao'?'#b03a2e':'#777';
@@ -5283,7 +5312,7 @@ function licHistRender(){
       html+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px;">';
       html+='<span style="font-size:12px;font-weight:700;color:var(--navy);">📊 '+(r.pregao||'Pregão')+(dStr?' — '+dStr:'')+'</span>';
       if(partLbl) html+='<span style="font-size:10px;font-weight:700;color:'+partCor+';background:'+(r.participou==='sim'?'#e8f5e9':'#fde8e8')+';padding:1px 8px;border-radius:10px;">'+partLbl+'</span>';
-      if(r.participou==='sim'&&resLbl) html+='<span style="font-size:10px;font-weight:700;color:'+resCor+';background:'+(r.resultado==='ganhou'?'#e8f5e9':r.resultado==='perdeu'?'#fde8e8':'#f5f5f5')+';padding:1px 8px;border-radius:10px;">'+resLbl+'</span>';
+      if((r.participou==='sim'||r.resultado==='nao_aconteceu'||r.resultado==='suspensa'||r.resultado==='deserto')&&resLbl) html+='<span style="font-size:10px;font-weight:700;color:'+resCor+';background:'+(r.resultado==='ganhou'?'#e8f5e9':r.resultado==='perdeu'?'#fde8e8':'#f5f5f5')+';padding:1px 8px;border-radius:10px;">'+resLbl+'</span>';
       html+='</div>';
       if(r.participou==='nao'&&r.motivo) html+='<div style="font-size:11px;color:#b03a2e;margin-bottom:2px;">❓ <strong>Motivo:</strong> '+r.motivo+'</div>';
       if(r.quemFaz||r.vencedor){
@@ -5293,8 +5322,9 @@ function licHistRender(){
         html+='</div>';
       }
       if(r.obs) html+='<div style="font-size:11px;color:var(--muted);font-style:italic;">📝 '+r.obs+'</div>';
-      html+='<div style="display:flex;gap:4px;margin-top:4px;">';
+      html+='<div style="display:flex;gap:4px;margin-top:4px;flex-wrap:wrap;">';
       html+='<button onclick="licHistEditarModal('+r.id+')" style="background:none;border:1px solid #ddd;border-radius:3px;padding:1px 8px;font-size:11px;cursor:pointer;color:#555;">✏️ Editar</button>';
+      html+='<button onclick="licHistNaoAconteceu('+r.id+')" style="background:'+(r.resultado==='nao_aconteceu'?'#8a6d3b':'none')+';border:1px solid #8a6d3b;border-radius:3px;padding:1px 8px;font-size:11px;cursor:pointer;color:'+(r.resultado==='nao_aconteceu'?'#fff':'#8a6d3b')+';">⊘ Não Aconteceu</button>';
       html+='<button onclick="licHistExcluir('+r.id+')" style="background:none;border:1px solid #ffcccc;border-radius:3px;padding:1px 8px;font-size:11px;cursor:pointer;color:#c0392b;">× Excluir</button>';
       html+='</div>';
       html+='</div>';
