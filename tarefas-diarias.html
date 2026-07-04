@@ -539,6 +539,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
     <button class="btn btn-resumo" onclick="mostrarResumo()">📊 Resumo</button>
     <button class="btn" onclick="clearDone()">✕ Concluídas</button>
     <button class="btn btn-danger" onclick="recuperarBackupFirebase()">🆘 Recuperar Backup</button>
+    <button class="btn btn-danger" onclick="limparLicitacoes()" style="border-color:#8e44ad;color:#8e44ad;">🗑 Limpar Licitações</button>
     <button class="btn btn-danger" onclick="clearAll()">🗑 Limpar tudo</button>
   </div>
 
@@ -2775,8 +2776,7 @@ function makeEl(t){
     var _jaPartic=_munProg.indexOf('✅ Participamos')>=0;
     var _jaNaoPartic=_munProg.indexOf('❌ Não participamos')>=0;
     if(_jaPartic||_jaNaoPartic){
-      // JÁ DECIDIU: botões somem, tarefa ganha aparência de concluída + selo
-      div.className+=' done';
+      // JÁ DECIDIU: botões somem, mostra apenas o selo (SEM riscar o texto)
       var _selo=document.createElement('div');
       _selo.style.cssText='display:inline-block;margin-top:7px;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700;font-family:sans-serif;'
         +(_jaPartic?'background:#e8f5e9;color:#2e7d32;border:1.5px solid #3a8c4a;':'background:#fde8e8;color:#b03a2e;border:1.5px solid #b03a2e;');
@@ -2816,6 +2816,14 @@ function makeEl(t){
   bprob.onclick=(function(task){return function(){probEnviarDeTarefa(task);};})(t);
   acts.appendChild(be);acts.appendChild(bdup);acts.appendChild(bo);acts.appendChild(bpin);acts.appendChild(ba);acts.appendChild(bprob);acts.appendChild(bd);
   div.appendChild(chk);div.appendChild(body);div.appendChild(tm);div.appendChild(acts);
+  // Botão CONCLUÍDO explícito (todas as tarefas não concluídas) — conclui e vai ao Histórico de Tarefas
+  if(!t.done && !t._futuro){
+    var bconc=document.createElement('button');
+    bconc.textContent='✔ CONCLUÍDO';
+    bconc.style.cssText='display:block;width:100%;margin-top:8px;padding:6px;border-radius:6px;border:2px solid #3a8c4a;background:#3a8c4a;color:#fff;font-size:12px;font-weight:800;letter-spacing:.5px;cursor:pointer;font-family:sans-serif;';
+    bconc.onclick=(function(id){return function(e){e.stopPropagation();toggle(id);};})(t.id);
+    body.appendChild(bconc);
+  }
   // ── Swipe mobile (touch) ──
   if(!t._futuro){
     var _tx0=0,_swipeLocked=false;
@@ -2893,6 +2901,28 @@ function mudarSubTarefas(qual){
     var corA=qual==='p'?'var(--navy)':(qual==='pp'?'#b03a2e':'#3a8c4a');
     btnAtivo.style.background=corA;btnAtivo.style.color='#fff';
   }
+}
+function limparLicitacoes(){
+  if(!confirm('⚠️ LIMPAR TODAS AS LICITAÇÕES?\n\nIsto vai APAGAR:\n• Todas as tarefas de licitação (principal e etapas)\n• Decisões de Participar/Não Participar\n• Dados de Participando/Vencedor\n• Etapas e log de eventos\n\nSERÁ PRESERVADO:\n• O Histórico de Licitações (aba Hist. Licitações)\n\nEsta ação NÃO pode ser desfeita. Continuar?')) return;
+  if(!confirm('Confirma mesmo? Esta é a última chance antes de apagar as licitações ativas.')) return;
+  // 1) Remover tarefas de licitação do array tasks
+  var antes=tasks.length;
+  tasks=tasks.filter(function(t){
+    var ehLic=t._licMunicipio||(t.tags&&t.tags.indexOf('licitação')>=0)||/^licita[çc][aã]o\b/i.test((t.text||'').trim());
+    return !ehLic;
+  });
+  var removidas=antes-tasks.length;
+  // 2) Limpar chaves de licitação — MENOS o histórico (gc_lic_historico_v1)
+  try{localStorage.removeItem('gc_lic_etapas_v1');}catch(e){}
+  try{localStorage.removeItem('gc_lic_prog_v1');}catch(e){}
+  try{localStorage.removeItem('gc_lic_vencedor_v1');}catch(e){}
+  try{localStorage.removeItem('gc_lic_log_v1');}catch(e){}
+  // (gc_lic_historico_v1 é PRESERVADO de propósito)
+  save();
+  if(typeof render==='function') render();
+  if(typeof renderLicitacoes==='function') renderLicitacoes();
+  if(typeof renderLicitacoesConcluidas==='function') renderLicitacoesConcluidas();
+  mostrarToast('🗑 Licitações limpas ('+removidas+' tarefa(s) removida(s)). Histórico de Licitações preservado.',false);
 }
 function render(){
   atualizarTitulo();
