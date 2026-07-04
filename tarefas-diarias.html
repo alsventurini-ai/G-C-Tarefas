@@ -2786,27 +2786,14 @@ function makeEl(t){
     var _munProg=_progData[_munLic]||[];
     var _jaPartic=_munProg.indexOf('✅ Participamos')>=0;
     var _jaNaoPartic=_munProg.indexOf('❌ Não participamos')>=0;
+    // A decisão de participar é feita na aba "Licitações em Análise".
+    // Na aba Tarefas mostramos apenas o SELO do que já foi decidido (sem botões).
     if(_jaPartic||_jaNaoPartic){
-      // JÁ DECIDIU: botões somem, mostra apenas o selo (SEM riscar o texto)
       var _selo=document.createElement('div');
       _selo.style.cssText='display:inline-block;margin-top:7px;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700;font-family:sans-serif;'
         +(_jaPartic?'background:#e8f5e9;color:#2e7d32;border:1.5px solid #3a8c4a;':'background:#fde8e8;color:#b03a2e;border:1.5px solid #b03a2e;');
       _selo.textContent=_jaPartic?'✅ Participando':'❌ Não participando';
       body.appendChild(_selo);
-    } else {
-      // AINDA NÃO DECIDIU: mostra os botões
-      var _licBtns=document.createElement('div');
-      _licBtns.style.cssText='display:flex;gap:6px;margin-top:7px;flex-wrap:wrap;';
-      var _bSim=document.createElement('button');
-      _bSim.style.cssText='padding:4px 14px;border-radius:20px;border:2px solid #3a8c4a;font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif;background:#fff;color:#3a8c4a;';
-      _bSim.textContent='✅ Participar';
-      _bSim.onclick=(function(mun){return function(){licDecisaoParticipar(mun);render();};}(_munLic));
-      var _bNao=document.createElement('button');
-      _bNao.style.cssText='padding:4px 14px;border-radius:20px;border:2px solid #b03a2e;font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif;background:#fff;color:#b03a2e;';
-      _bNao.textContent='❌ Não Participar';
-      _bNao.onclick=(function(mun,tid){return function(){licNaoParticiparTarefas(mun,tid);};}(_munLic,t.id));
-      _licBtns.appendChild(_bSim);_licBtns.appendChild(_bNao);
-      body.appendChild(_licBtns);
     }
   }
   var tm=document.createElement('div');tm.className='task-time';
@@ -4242,6 +4229,7 @@ function licEtapaClicar(mun, step){
     data[mun].splice(data[mun].indexOf(step),1);
     localStorage.setItem(KEY_PROG,JSON.stringify(data));
     renderLicitacoes();
+    if(typeof renderLicitacoesConcluidas==='function')renderLicitacoesConcluidas();
     return;
   }
   licEtapaModal(mun, step);
@@ -4373,6 +4361,7 @@ function licEtapaConfirmar(mun, step, dataReg, horaReg, obs, prazoRecurso, prazo
   }
   if(prazoRecurso||prazoContra||prazoAmostra) save();
   renderLicitacoes();
+  if(typeof renderLicitacoesConcluidas==='function')renderLicitacoesConcluidas();
 }
 function licConcluirTarefa(id, mun){
   var t=tasks.find(function(x){return x.id===id;});
