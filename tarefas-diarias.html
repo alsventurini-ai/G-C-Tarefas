@@ -591,6 +591,11 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
     </div>
     <div id="list-p"></div>
     <div class="section-head" style="margin-top:6px;">
+      <span>⏰ Datas Passadas</span>
+      <span class="section-count" id="cnt-pp" style="background:#b03a2e;color:#fff;">0</span>
+    </div>
+    <div id="list-pp"></div>
+    <div class="section-head" style="margin-top:6px;">
       <span>Concluídas</span>
       <span class="section-count green" id="cnt-d">0</span>
       <button onclick="mudarAba('historico')" style="margin-left:auto;background:none;border:1px solid var(--navy);color:var(--navy);border-radius:3px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Segoe UI',Tahoma,sans-serif;">📅 Ver no Histórico de Tarefas →</button>
@@ -2872,15 +2877,27 @@ function atualizarBadgesLic(){
 function render(){
   atualizarTitulo();
   var todos=tasks;var visiveis=filtrarLista(todos);
-  var p=sortTasks(visiveis.filter(function(x){return!x.done;}),false);
+  var _hojeStr=(function(){var h=new Date();h.setHours(0,0,0,0);var y=h.getFullYear(),m=('0'+(h.getMonth()+1)).slice(-2),d=('0'+h.getDate()).slice(-2);return y+'-'+m+'-'+d;})();
+  // Pendentes = não concluídas
+  var pendTodas=visiveis.filter(function(x){return!x.done;});
+  // PASSADAS = data já passou (data < hoje). PENDENTES = hoje, futuras ou sem data.
+  var pPend=pendTodas.filter(function(x){return !x.taskDate || x.taskDate>=_hojeStr;});
+  var pPass=pendTodas.filter(function(x){return x.taskDate && x.taskDate<_hojeStr;});
+  var p=sortTasks(pPend,false);
   // AGRUPAMENTO: reunir as tarefas de cada licitação num bloco, ordenado pela data da disputa
   p=agruparTarefasLicitacao(p);
+  var pp=sortTasks(pPass,false);
+  pp=agruparTarefasLicitacao(pp);
   var d=sortTasks(visiveis.filter(function(x){return x.done&&!x._futuro;}),true);
-  var lp=document.getElementById('list-p'),ld=document.getElementById('list-d');
-  lp.innerHTML='';ld.innerHTML='';
-  if(p.length===0){var e=document.createElement('div');e.className='empty';e.textContent=todos.length===0?'Nenhuma tarefa ainda.':'Nenhuma tarefa corresponde ao filtro.';lp.appendChild(e);}
+  var lp=document.getElementById('list-p'),lpp=document.getElementById('list-pp'),ld=document.getElementById('list-d');
+  lp.innerHTML='';lpp.innerHTML='';ld.innerHTML='';
+  if(p.length===0){var e=document.createElement('div');e.className='empty';e.textContent=todos.length===0?'Nenhuma tarefa ainda.':'Nenhuma tarefa pendente para hoje ou datas futuras.';lp.appendChild(e);}
   else {
     p.forEach(function(t){ lp.appendChild(makeEl(t)); });
+  }
+  if(pp.length===0){var ep=document.createElement('div');ep.className='empty';ep.textContent='Nenhuma tarefa com data vencida.';lpp.appendChild(ep);}
+  else {
+    pp.forEach(function(t){ lpp.appendChild(makeEl(t)); });
   }
   if(d.length===0){var e2=document.createElement('div');e2.className='empty';e2.textContent='Nenhuma concluída ainda.';ld.appendChild(e2);}
   else {var e3=document.createElement('div');e3.className='empty';e3.innerHTML='✔ '+d.length+' tarefa(s) concluída(s) — clique aqui para vê-las na aba <strong>📅 Histórico de Tarefas</strong>.';e3.style.cursor='pointer';e3.title='Abrir Histórico de Tarefas';e3.onclick=function(){mudarAba('historico');};ld.appendChild(e3);}
@@ -2888,6 +2905,7 @@ function render(){
   var tot=semFuturo.length,conc=semFuturo.filter(function(t){return t.done;}).length;
   var pct=tot>0?Math.round(conc/tot*100):0;
   document.getElementById('cnt-p').textContent=p.filter(function(t){return!t._futuro;}).length;
+  document.getElementById('cnt-pp').textContent=pp.filter(function(t){return!t._futuro;}).length;
   document.getElementById('cnt-d').textContent=d.length;
   document.getElementById('st-p').textContent=(tot-conc)+' pendente'+(tot-conc!==1?'s':'');
   document.getElementById('st-d').textContent=conc+' concluída'+(conc!==1?'s':'');
