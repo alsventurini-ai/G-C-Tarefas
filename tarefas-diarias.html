@@ -2876,7 +2876,24 @@ function atualizarBadgesLic(){
   var badge=document.getElementById('tab-lic-badge');
   var badgeConc=document.getElementById('tab-lic-conc-badge');
   if(badge){if(gruposPend.length>0){badge.textContent=gruposPend.length;badge.style.display='inline';}else{badge.style.display='none';}}
-  if(badgeConc){if(gruposConc.length>0){badgeConc.textContent=gruposConc.length;badgeConc.style.display='inline';}else{badgeConc.style.display='none';}}
+  if(badgeConc){var _nPart=_contarParticipando();if(_nPart>0){badgeConc.textContent=_nPart;badgeConc.style.display='inline';}else{badgeConc.style.display='none';}}
+}
+function _contarParticipando(){
+  // Conta apenas municípios que DECIDIRAM participar (mesma lógica da aba Participando).
+  try{
+    var logRegs=(typeof licLogLoad==='function')?licLogLoad():[];
+    var histRegs=(typeof licHistLoad==='function')?licHistLoad():[];
+    var munSet={};
+    logRegs.forEach(function(e){munSet[_normMun(e.municipio)]=true;});
+    histRegs.forEach(function(r){munSet[_normMun(r.municipio)]=true;});
+    var n=0;
+    Object.keys(munSet).forEach(function(norm){
+      var temPartLog=logRegs.some(function(e){return _normMun(e.municipio)===norm&&e.tipo.indexOf('Participamos')>=0&&e.tipo.indexOf('Não')<0;});
+      var temPartHist=histRegs.some(function(r){return _normMun(r.municipio)===norm&&r.participou==='sim';});
+      if(temPartLog||temPartHist) n++;
+    });
+    return n;
+  }catch(e){return 0;}
 }
 var _subTarefasAtiva='p';
 function mudarSubTarefas(qual){
@@ -4536,7 +4553,8 @@ function renderLicitacoes(){
   // Badge aba concluídas
   var gruposConc=munKeys.filter(function(m){return grupos[m].every(function(t){return t.done;});});
   var badgeConc=document.getElementById('tab-lic-conc-badge');
-  if(gruposConc.length>0){badgeConc.textContent=gruposConc.length;badgeConc.style.display='inline';}
+  var _nPartB=_contarParticipando();
+  if(_nPartB>0){badgeConc.textContent=_nPartB;badgeConc.style.display='inline';}
   else{badgeConc.style.display='none';}
   // Stats — cards clicáveis
   stats.innerHTML=
