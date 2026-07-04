@@ -4881,8 +4881,20 @@ function licConcExcluir(mun){
   // 5) Remover do log de eventos
   try{var lg=JSON.parse(localStorage.getItem('gc_lic_log_v1')||'[]');lg=lg.filter(function(e){return _normMun(e.municipio||'')!==norm;});localStorage.setItem('gc_lic_log_v1',JSON.stringify(lg));}catch(e){}
   // 6) Remover do Hist. Licitações (você pediu para apagar do histórico também)
-  try{var hist=licHistLoad();hist=hist.filter(function(r){return _normMun(r.municipio||'')!==norm;});licHistSave(hist);}catch(e){}
-  save();render();
+  try{var hist=licHistLoad();hist=hist.filter(function(r){return _normMun(r.municipio||'')!==norm;});localStorage.setItem(LIC_HIST_KEY,JSON.stringify(hist));}catch(e){}
+  save();
+  // Forçar sincronização com Firebase para a exclusão não ser revertida na próxima sincronização.
+  // (_fbSave lê as chaves de licitação direto do localStorage, que já limpamos acima.)
+  try{
+    if(window._fbSave){
+      var _t=JSON.parse(localStorage.getItem(KEY)||'[]');
+      var _r=JSON.parse(localStorage.getItem(RECORR_KEY)||'[]');
+      var _a=JSON.parse(localStorage.getItem(ARCH_KEY)||'[]');
+      var _tp=JSON.parse(localStorage.getItem(TPL_KEY)||'[]');
+      window._fbSave(_t,_r,_a,_tp);
+    }
+  }catch(e){}
+  render();
   if(typeof renderLicitacoes==='function')renderLicitacoes();
   if(typeof renderLicitacoesConcluidas==='function')renderLicitacoesConcluidas();
   if(typeof licHistRender==='function')licHistRender();
