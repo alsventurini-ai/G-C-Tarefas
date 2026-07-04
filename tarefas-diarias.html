@@ -585,22 +585,17 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   </div>
 
   <div class="tasks-area">
-    <div class="section-head">
-      <span>Pendentes</span>
-      <span class="section-count" id="cnt-p">0</span>
+    <div class="subtabs-tarefas" style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">
+      <button id="subtab-p" class="subtab-btn" onclick="mudarSubTarefas('p')" style="flex:1;min-width:90px;padding:8px 10px;border-radius:6px;border:2px solid var(--navy);background:var(--navy);color:#fff;font-size:12.5px;font-weight:700;cursor:pointer;font-family:'Segoe UI',Tahoma,sans-serif;">📋 Pendentes <span id="cnt-p" style="opacity:.85;">0</span></button>
+      <button id="subtab-pp" class="subtab-btn" onclick="mudarSubTarefas('pp')" style="flex:1;min-width:90px;padding:8px 10px;border-radius:6px;border:2px solid #b03a2e;background:#fff;color:#b03a2e;font-size:12.5px;font-weight:700;cursor:pointer;font-family:'Segoe UI',Tahoma,sans-serif;">⏰ Datas Passadas <span id="cnt-pp">0</span></button>
+      <button id="subtab-d" class="subtab-btn" onclick="mudarSubTarefas('d')" style="flex:1;min-width:90px;padding:8px 10px;border-radius:6px;border:2px solid #3a8c4a;background:#fff;color:#3a8c4a;font-size:12.5px;font-weight:700;cursor:pointer;font-family:'Segoe UI',Tahoma,sans-serif;">✅ Concluídas <span id="cnt-d">0</span></button>
     </div>
     <div id="list-p"></div>
-    <div class="section-head" style="margin-top:6px;">
-      <span>⏰ Datas Passadas</span>
-      <span class="section-count" id="cnt-pp" style="background:#b03a2e;color:#fff;">0</span>
+    <div id="list-pp" style="display:none;"></div>
+    <div id="sec-d-head" style="display:none;justify-content:flex-end;margin-bottom:6px;">
+      <button onclick="mudarAba('historico')" style="background:none;border:1px solid var(--navy);color:var(--navy);border-radius:3px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Segoe UI',Tahoma,sans-serif;">📅 Ver no Histórico de Tarefas →</button>
     </div>
-    <div id="list-pp"></div>
-    <div class="section-head" style="margin-top:6px;">
-      <span>Concluídas</span>
-      <span class="section-count green" id="cnt-d">0</span>
-      <button onclick="mudarAba('historico')" style="margin-left:auto;background:none;border:1px solid var(--navy);color:var(--navy);border-radius:3px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Segoe UI',Tahoma,sans-serif;">📅 Ver no Histórico de Tarefas →</button>
-    </div>
-    <div id="list-d"></div>
+    <div id="list-d" style="display:none;"></div>
   </div>
 
   <!-- Aba Licitações -->
@@ -2874,6 +2869,31 @@ function atualizarBadgesLic(){
   if(badge){if(gruposPend.length>0){badge.textContent=gruposPend.length;badge.style.display='inline';}else{badge.style.display='none';}}
   if(badgeConc){if(gruposConc.length>0){badgeConc.textContent=gruposConc.length;badgeConc.style.display='inline';}else{badgeConc.style.display='none';}}
 }
+var _subTarefasAtiva='p';
+function mudarSubTarefas(qual){
+  _subTarefasAtiva=qual;
+  var mapa={p:['list-p','subtab-p'],pp:['list-pp','subtab-pp'],d:['list-d','subtab-d']};
+  // esconder todas as listas e resetar botões
+  ['p','pp','d'].forEach(function(k){
+    var lista=document.getElementById(mapa[k][0]);
+    if(lista) lista.style.display='none';
+    var btn=document.getElementById(mapa[k][1]);
+    if(btn){
+      var cor=k==='p'?'var(--navy)':(k==='pp'?'#b03a2e':'#3a8c4a');
+      btn.style.background='#fff';btn.style.color=cor;
+    }
+  });
+  var secDHead=document.getElementById('sec-d-head');
+  if(secDHead) secDHead.style.display=(qual==='d')?'flex':'none';
+  // mostrar a lista ativa e destacar o botão
+  var listaAtiva=document.getElementById(mapa[qual][0]);
+  if(listaAtiva) listaAtiva.style.display='block';
+  var btnAtivo=document.getElementById(mapa[qual][1]);
+  if(btnAtivo){
+    var corA=qual==='p'?'var(--navy)':(qual==='pp'?'#b03a2e':'#3a8c4a');
+    btnAtivo.style.background=corA;btnAtivo.style.color='#fff';
+  }
+}
 function render(){
   atualizarTitulo();
   var todos=tasks;var visiveis=filtrarLista(todos);
@@ -2914,6 +2934,7 @@ function render(){
   document.getElementById('footer-el').textContent='Dados salvos automaticamente · '+now.getDate()+' de '+MONTHS[now.getMonth()]+' de '+now.getFullYear();
   atualizarFiltros();
   atualizarBadgesLic();
+  mudarSubTarefas(_subTarefasAtiva);
 }
 
 function _getMunLic(t){
