@@ -4570,7 +4570,10 @@ function renderLicitacoes(){
   var html='';
   gruposPend.forEach(function(mun){
     var tarefasPend=grupos[mun].filter(function(t){return !t.done;});
-    html+=_renderLicGrupoHTML(mun,tarefasPend,etapasData,true,histRegs);
+    // Mostrar SÓ a tarefa principal (para decidir participar/não/suspender) — sem as etapas
+    var _principal=tarefasPend.find(function(t){return /^licita[çc][aã]o\b/i.test((t.text||'').trim())||!!(t._licPlataforma||t._licQuemFaz);});
+    var _paraExibir=_principal?[_principal]:tarefasPend;
+    html+=_renderLicGrupoHTML(mun,_paraExibir,etapasData,false,histRegs);
   });
   lista.innerHTML=html;
 }
