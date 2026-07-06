@@ -407,7 +407,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <div class="clip"><div class="clip-inner"></div></div>
   <div class="header">
     <div>
-      <div class="htitle">G&amp;C Operacional <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v300</span></div><!-- VERSAO_APP: v300 -->
+      <div class="htitle">G&amp;C Operacional <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v301</span></div><!-- VERSAO_APP: v301 -->
       <div class="hsubtitle">Galhardo &amp; Canales — Controle Operacional Diário</div>
     </div>
     <div>
@@ -2447,7 +2447,12 @@ function restaurarBackup(input){
       var data=JSON.parse(e.target.result);
       var incoming=data.tarefas||data.tasks;
       if(!incoming||!incoming.length){alert('Arquivo sem tarefas para restaurar.');input.value='';return;}
-      function ehLic(t){return !!(t._licMunicipio||(t.tags&&t.tags.indexOf('licitação')>=0));}
+      function ehLic(t){
+        if(t._licMunicipio)return true;
+        if(t.tags&&t.tags.indexOf('licitação')>=0)return true;
+        var pat=/\blicita[çc][aã]o\s*[-—]/i; // só "Licitação - XXXXX"; \b evita "soLICITAdo"
+        return pat.test(t.paraQuem||'')||pat.test(t.text||'');
+      }
       function assinatura(t){return (t.text||'')+'|'+(t.taskDate||'')+'|'+(t.schedule||'');}
       var idsExist={},sigExist={};
       tasks.forEach(function(t){idsExist[t.id]=true;sigExist[assinatura(t)]=true;});
