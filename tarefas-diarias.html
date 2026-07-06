@@ -407,7 +407,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <div class="clip"><div class="clip-inner"></div></div>
   <div class="header">
     <div>
-      <div class="htitle">G&amp;C Operacional <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v304</span></div><!-- VERSAO_APP: v304 -->
+      <div class="htitle">G&amp;C Operacional <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v305</span></div><!-- VERSAO_APP: v305 -->
       <div class="hsubtitle">Galhardo &amp; Canales — Controle Operacional Diário</div>
     </div>
     <div>
@@ -5894,6 +5894,38 @@ function probEnviarDeTarefa(t){
     mostrarToast('⚠️ Tarefa virou Problema — já marcada para a pauta!',false);
   };
 }
+function probEnviarParaTarefa(id){
+  var probs=probLoad();
+  var p=null;
+  for(var i=0;i<probs.length;i++){ if(probs[i].id===id){ p=probs[i]; break; } }
+  if(!p) return;
+  // evita duplicar: se já há uma tarefa aberta vinda deste problema
+  for(var j=0;j<tasks.length;j++){
+    if(tasks[j]._origemProblemaId===id && !tasks[j].done){
+      mostrarToast('Já existe uma tarefa aberta para este problema.',false); return;
+    }
+  }
+  var h=new Date();
+  var hoje=h.getFullYear()+'-'+('0'+(h.getMonth()+1)).slice(-2)+'-'+('0'+h.getDate()).slice(-2);
+  tasks.push({
+    id:Date.now(),
+    text:p.titulo,
+    done:false,
+    addedAt:timeNow(),
+    doneAt:'',
+    schedule:'',
+    taskDate:hoje,
+    alertFired:false,
+    paraQuem:p.responsavel||p.setor||'',
+    obs:p.descricao||'',
+    priority:p.prioridade||'',
+    tags:[],
+    _origemProblemaId:id
+  });
+  save(); render();
+  mostrarToast('↩️ Problema enviado para Tarefas — mantido nos dois!',false);
+}
+
 function probTogglePauta(id){
   var probs=probLoad();
   var p=probs.find(function(x){return x.id===id;});
@@ -6182,6 +6214,7 @@ function probRender(){
     html+='<div style="display:flex;gap:4px;white-space:nowrap;">';
     var naPauta=p.naPauta||false;
     if(!p.resolvido) html+='<label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;font-size:11px;font-weight:700;color:#1a5276;border:2px solid #1a5276;border-radius:3px;padding:3px 10px;background:'+(naPauta?'#e8f0fe':'#fff')+';"><input type="checkbox" '+(naPauta?'checked':'')+' onchange="probTogglePauta('+p.id+')" style="cursor:pointer;width:13px;height:13px;"> 📋 Pauta</label>';
+    if(!p.resolvido) html+='<button onclick="probEnviarParaTarefa('+p.id+')" style="background:#1a5276;color:#fff;border:none;border-radius:3px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;">↩️ Tarefa</button>';
     if(!p.resolvido) html+='<button onclick="probResolver('+p.id+')" style="background:#3a8c4a;color:#fff;border:none;border-radius:3px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;">✅ Resolvido</button>';
     html+='<button onclick="probEditarModal('+p.id+')" style="background:none;border:1px solid #bbb;border-radius:3px;padding:3px 7px;font-size:11px;cursor:pointer;">✏️</button>';
     html+='<button onclick="probExcluir('+p.id+')" style="background:none;border:1px solid #e57373;border-radius:3px;padding:3px 7px;font-size:11px;cursor:pointer;color:#c0392b;">×</button>';
@@ -6517,6 +6550,7 @@ function probRenderPautaTab(){
       html+='</div>';
       html+='<div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;">';
       html+='<label style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#6c3483;cursor:pointer;border:2px solid #6c3483;border-radius:3px;padding:3px 10px;background:'+(sel?'#6c3483':'#fff')+';'+(sel?'color:#fff;':'')+'"><input type="checkbox" '+(sel?'checked':'')+' onchange="pautaToggleSelAta('+p.id+')" style="accent-color:#6c3483;cursor:pointer;">Discutido → Ata</label>';
+      html+='<button onclick="probEnviarParaTarefa('+p.id+')" style="background:#1a5276;color:#fff;border:none;border-radius:3px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;">↩️ Tarefa</button>';
       html+='<button onclick="probEditarModal('+p.id+')" style="background:none;border:1px solid #ddd;border-radius:3px;padding:3px 10px;font-size:11px;cursor:pointer;color:#555;">✏️ Editar Assunto</button>';
       html+='<button onclick="pautaExcluirItem('+p.id+')" style="background:none;border:1px solid #f0c674;border-radius:3px;padding:3px 10px;font-size:11px;cursor:pointer;color:#8a6d00;">← Voltar para Registrar</button>';
       html+='</div>';
