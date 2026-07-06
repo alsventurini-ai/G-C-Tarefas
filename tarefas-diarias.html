@@ -407,7 +407,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <div class="clip"><div class="clip-inner"></div></div>
   <div class="header">
     <div>
-      <div class="htitle">G&amp;C Operacional <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v303</span></div><!-- VERSAO_APP: v303 -->
+      <div class="htitle">G&amp;C Operacional <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v304</span></div><!-- VERSAO_APP: v304 -->
       <div class="hsubtitle">Galhardo &amp; Canales — Controle Operacional Diário</div>
     </div>
     <div>
@@ -2995,9 +2995,14 @@ function render(){
   // Pendentes = não concluídas
   var pendTodas=visiveis.filter(function(x){return!x.done;});
   // PASSADAS = data já passou (data < hoje). PENDENTES = hoje, futuras ou sem data.
-  var pPend=pendTodas.filter(function(x){return !x.taskDate || x.taskDate>=_hojeStr;});
-  var pPass=pendTodas.filter(function(x){return x.taskDate && x.taskDate<_hojeStr;});
-  var p=sortTasks(pPend,false);
+  // Tarefas de licitação ficam SEMPRE juntas (na aba Pendentes), independentemente da data de cada etapa,
+  // para não partir o bloco entre Pendentes e Datas Passadas.
+  var _ehLicTask=function(x){return !!_getMunLic(x);};
+  var pendLic=pendTodas.filter(_ehLicTask);
+  var pendComuns=pendTodas.filter(function(x){return !_ehLicTask(x);});
+  var pPend=pendComuns.filter(function(x){return !x.taskDate || x.taskDate>=_hojeStr;});
+  var pPass=pendComuns.filter(function(x){return x.taskDate && x.taskDate<_hojeStr;});
+  var p=sortTasks(pPend.concat(pendLic),false);
   // AGRUPAMENTO: reunir as tarefas de cada licitação num bloco, ordenado pela data da disputa
   p=agruparTarefasLicitacao(p);
   var pp=sortTasks(pPass,false);
@@ -3032,12 +3037,16 @@ function render(){
 }
 
 function _getMunLic(t){
-  var m=t._licMunicipio;
-  if(!m&&t.tags&&t.tags.indexOf('licitação')>=0){
-    var mm=t.text.match(/^licita[çc][aã]o\s*[-—]\s*(.+)$/i);
-    if(mm) m=mm[1].trim();
+  if(t._licMunicipio) return t._licMunicipio;
+  var txt=(t.text||'').trim();
+  var semEmoji=txt.replace(/^[^0-9A-Za-zÀ-ÿ]+/,'').trim();
+  var m1=semEmoji.match(/^licita[çc][aã]o\s*[-—]\s*(.+)$/i);
+  if(m1) return m1[1].trim();
+  if(/^(impugna[çc][aã]o|an[aá]lise\s+d[eo]\s+edital|prazo\s+final|in[ií]cio\s+(envio|inclus)|resposta\s+impugna)/i.test(semEmoji)){
+    var m2=semEmoji.match(/—\s*(.+)$/) || semEmoji.match(/\s-\s*(.+)$/);
+    if(m2) return m2[1].trim();
   }
-  return m;
+  return null;
 }
 function agruparTarefasLicitacao(lista){
   // Identificar tarefas de licitação (têm _licMunicipio ou tag de licitação)
@@ -3046,7 +3055,7 @@ function agruparTarefasLicitacao(lista){
   var resultado=[];
   var jaProcessado={};
   lista.forEach(function(t,idx){
-    var isLic=t._licMunicipio||(t.tags&&t.tags.indexOf('licitação')>=0);
+    var isLic=!!_getMunLic(t);
     if(!isLic){return;}
     var mun=_getMunLic(t);
     if(!mun){return;}
@@ -3069,7 +3078,7 @@ function agruparTarefasLicitacao(lista){
   // Para cada item da lista original, se já fizer parte de um grupo processado, pular;
   // senão, se for o primeiro membro do grupo encontrado, inserir o grupo inteiro (ordenado por data)
   lista.forEach(function(t){
-    var isLic=t._licMunicipio||(t.tags&&t.tags.indexOf('licitação')>=0);
+    var isLic=!!_getMunLic(t);
     var mun=isLic?_getMunLic(t):null;
     if(mun&&grupos[mun]){
       if(jaProcessado[mun]) return; // já inserido
