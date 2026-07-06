@@ -407,7 +407,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <div class="clip"><div class="clip-inner"></div></div>
   <div class="header">
     <div>
-      <div class="htitle">G&amp;C Operacional</div>
+      <div class="htitle">G&amp;C Operacional <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v300</span></div><!-- VERSAO_APP: v300 -->
       <div class="hsubtitle">Galhardo &amp; Canales — Controle Operacional Diário</div>
     </div>
     <div>
@@ -2438,25 +2438,34 @@ function fazerBackupManual(){
   mostrarToast('✅ Backup salvo!',false);
 }
 function restaurarBackup(input){
+  // Restauração por ACRÉSCIMO: nunca sobrepõe o que já existe (de qualquer tipo);
+  // apenas acrescenta tarefas que NÃO são de licitação e que ainda não estão no app.
   var file=input.files[0];if(!file)return;
   var reader=new FileReader();
   reader.onload=function(e){
     try{
       var data=JSON.parse(e.target.result);
-      if(!data.tarefas&&!data.tasks){alert('Arquivo inválido.');return;}
-      if(!confirm('Restaurar backup de '+data.data+'?\nTarefas atuais serão substituídas.'))return;
-      tasks=data.tarefas||data.tasks||[];
-      recorrencias=data.recorrencias||[];
-      archived=data.archived||[];
-      templates=data.templates||[];
-      save();saveRecorrencias();saveArchived();saveTemplates();
-      processarRecorrencias();render();renderRecorrencias();renderTemplates();atualizarFiltros();
-      mostrarToast('✅ Backup restaurado!',false);
-    }catch(e){alert('Erro ao ler o arquivo.');}
+      var incoming=data.tarefas||data.tasks;
+      if(!incoming||!incoming.length){alert('Arquivo sem tarefas para restaurar.');input.value='';return;}
+      function ehLic(t){return !!(t._licMunicipio||(t.tags&&t.tags.indexOf('licitação')>=0));}
+      function assinatura(t){return (t.text||'')+'|'+(t.taskDate||'')+'|'+(t.schedule||'');}
+      var idsExist={},sigExist={};
+      tasks.forEach(function(t){idsExist[t.id]=true;sigExist[assinatura(t)]=true;});
+      var add=0,pulLic=0,pulExist=0;
+      incoming.forEach(function(t){
+        if(t._futuro)return;                                           // ignora tarefas futuras de recorrência
+        if(ehLic(t)){pulLic++;return;}                                 // ignora tudo que é licitação
+        if(idsExist[t.id]||sigExist[assinatura(t)]){pulExist++;return;} // já existe → mantém, não sobrepõe
+        tasks.push(t);idsExist[t.id]=true;sigExist[assinatura(t)]=true;add++;
+      });
+      if(add>0){save();render();if(typeof atualizarFiltros==='function')atualizarFiltros();}
+      alert('Restauração concluída — nada foi sobreposto.\n\n✅ Acrescentadas: '+add+'\n⏭️ Já existiam (mantidas): '+pulExist+'\n🏛️ Ignoradas (licitação): '+pulLic);
+    }catch(err){alert('Erro ao ler o arquivo: '+err.message);}
     input.value='';
   };
   reader.readAsText(file);
 }
+
 
 // ── Backup automático agendado ──
 // Tabela de horários (notação "26h30" = 02h30 do dia seguinte, considerado ainda
