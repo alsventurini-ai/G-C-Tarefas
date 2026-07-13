@@ -297,6 +297,11 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
 .cert-processing.hidden{display:none;}
 .spin{display:inline-block;animation:spin 1s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
+/* ── Troca entre apps (Tarefas / Licitações) ── */
+.app-switch{display:flex;gap:0;background:#111c33;padding:0 14px;}
+.app-switch-btn{flex:0 0 auto;display:flex;align-items:center;gap:6px;padding:9px 18px;font-size:12.5px;font-weight:600;color:rgba(255,255,255,.55);text-decoration:none;border-bottom:3px solid transparent;font-family:'Segoe UI',Tahoma,sans-serif;transition:all .15s;}
+.app-switch-btn:hover{color:rgba(255,255,255,.9);}
+.app-switch-btn.active{color:#fff;border-bottom-color:#7b4fa0;background:rgba(255,255,255,.06);cursor:default;}
 /* ── Abas ── */
 .tab-bar{display:flex;background:var(--navy2);padding:0 14px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
 .tab-bar::-webkit-scrollbar{height:4px;}
@@ -407,7 +412,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <div class="clip"><div class="clip-inner"></div></div>
   <div class="header">
     <div>
-      <div class="htitle">G&C Tarefas <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v305</span></div><!-- VERSAO_APP: v305 -->
+      <div class="htitle">G&C Tarefas <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v309</span></div><!-- VERSAO_APP: v309 -->
       <div class="hsubtitle">Galhardo &amp; Canales — Tarefas e Problemas Internos</div>
     </div>
     <div>
@@ -434,6 +439,10 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   </div>
 
   <!-- Abas -->
+  <div class="app-switch">
+    <a href="tarefas.html" class="app-switch-btn active">📋 Tarefas</a>
+    <a href="licitacoes.html" class="app-switch-btn">🏛 Licitações</a>
+  </div>
   <div class="tab-bar">
     <button class="tab-btn active" id="tab-btn-tarefas" onclick="mudarAba('tarefas')"><span class="tab-lbl">📋 Tarefas</span><span class="tab-spacer"></span></button>
     <button class="tab-btn" id="tab-btn-historico" onclick="mudarAba('historico')"><span class="tab-lbl">📅 Histórico<br>de Tarefas</span><span class="tab-spacer"></span></button>
@@ -3080,6 +3089,48 @@ function licDecisaoParticipar(mun){
   }
   renderLicitacoes();
 }
+function licVoltarParaAnalise(mun){
+  if(!confirm('Voltar '+mun+' para a aba Licitações em Análise?\n\nA decisão de "Participaremos" será desfeita (fica como ainda não decidido). O histórico de eventos é preservado.')) return;
+  var norm=_normMun(mun);
+  // 1) Log de eventos: remove as marcações de "Participamos" (sem "Não") para não travar como decidido
+  var log=licLogLoad();
+  var logNovo=log.filter(function(e){
+    return !(_normMun(e.municipio)===norm&&e.tipo.indexOf('Participamos')>=0&&e.tipo.indexOf('Não')<0);
+  });
+  logNovo.push({id:Date.now(),municipio:mun,tipo:'↩️ Voltou para Licitações em Análise',descricao:'Decisão de participação desfeita.',criadoEm:new Date().toISOString()});
+  licLogSave(logNovo);
+  // 2) Registro formal (Hist. Licitações antigo): zera o campo "participou" se estava 'sim'
+  var hist=licHistLoad();
+  var mudouHist=false;
+  hist.forEach(function(r){ if(_normMun(r.municipio)===norm&&r.participou==='sim'){ r.participou=''; mudouHist=true; } });
+  if(mudouHist) licHistSave(hist);
+  // 3) Estado do card (gc_lic_prog_v1): remove o marcador "✅ Participamos"
+  var KEY_PROG='gc_lic_prog_v1';
+  var prog={};try{prog=JSON.parse(localStorage.getItem(KEY_PROG)||'{}');}catch(e){}
+  var chaveProg=Object.keys(prog).find(function(k){return _normMun(k)===norm;})||mun;
+  if(prog[chaveProg]){
+    prog[chaveProg]=prog[chaveProg].filter(function(s){return s!=='✅ Participamos';});
+    localStorage.setItem(KEY_PROG,JSON.stringify(prog));
+  }
+  mostrarToast('↩️ '+mun+' voltou para Licitações em Análise.',false);
+  renderLicitacoesConcluidas();
+  if(typeof renderLicitacoes==='function') renderLicitacoes();
+  setTimeout(function(){mudarAba('licitacoes');},400);
+}
+function licImpugnaremos(mun){
+  var KEY_PROG='gc_lic_prog_v1';
+  var data={};try{data=JSON.parse(localStorage.getItem(KEY_PROG)||'{}');}catch(e){}
+  if(!data[mun]) data[mun]=[];
+  var jaImpugnou=data[mun].indexOf('⚖️ Impugnação Enviada')>=0;
+  if(!jaImpugnou){
+    data[mun].push('⚖️ Impugnação Enviada');
+    localStorage.setItem(KEY_PROG,JSON.stringify(data));
+    licLogRegistrar(mun,'⚖️ Impugnação enviada','G&C protocolou impugnação ao edital desta licitação.');
+    mostrarToast('⚖️ Impugnação registrada — '+mun+' | Já consta no Hist. Licitações.',false);
+  }
+  renderLicitacoes();
+  if(typeof renderLicitacoesConcluidas==='function') renderLicitacoesConcluidas();
+}
 function licEtapasLoad(){var raw=localStorage.getItem(LIC_ETAPAS_KEY);return raw?JSON.parse(raw):{}}
 function licEtapasSave(data){localStorage.setItem(LIC_ETAPAS_KEY,JSON.stringify(data));}
 function licToggleEtapa(mun,etapa){
@@ -3846,9 +3897,10 @@ function _renderLicGrupoHTML(mun, ts, etapasData, mostrarEtapas, histRegs){
       var naoParticipou=munProg.indexOf('❌ Não participamos')>=0;
       var btnParticipar='<button onclick="licDecisaoParticipar(\''+munEscProg+'\')" style="padding:5px 16px;border-radius:20px;border:2px solid #3a8c4a;font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif;'+(jaParticipou?'background:#3a8c4a;color:#fff;':'background:#fff;color:#3a8c4a;')+'">✅ Participaremos</button>';
       var btnNaoParticipar='<button onclick="licNaoParticipar(\''+munEscProg+'\')" style="padding:5px 16px;border-radius:20px;border:2px solid #b03a2e;font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif;'+(naoParticipou?'background:#b03a2e;color:#fff;':'background:#fff;color:#b03a2e;')+'">❌ Não Participaremos</button>';
-      var btnSuspender='<button onclick="licSuspender(\''+munEscProg+'\')" style="padding:5px 16px;border-radius:20px;border:2px solid #8a6d3b;font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif;background:#fff;color:#8a6d3b;">⏸ Suspender</button>';
+      var jaImpugnou=munProg.indexOf('⚖️ Impugnação Enviada')>=0;
+      var btnImpugnar='<button onclick="licImpugnaremos(\''+munEscProg+'\')" style="padding:5px 16px;border-radius:20px;border:2px solid #6c3483;font-size:12px;font-weight:700;cursor:pointer;font-family:sans-serif;'+(jaImpugnou?'background:#6c3483;color:#fff;':'background:#fff;color:#6c3483;')+'">'+(jaImpugnou?'⚖️ Impugnação Enviada':'⚖️ Impugnaremos')+'</button>';
       progHtml='<div style="margin-top:10px;border-top:1px solid var(--border);padding-top:8px;">'
-        +'<div style="display:flex;gap:6px;flex-wrap:wrap;">'+btnParticipar+btnNaoParticipar+btnSuspender+'</div>'
+        +'<div style="display:flex;gap:6px;flex-wrap:wrap;">'+btnParticipar+btnNaoParticipar+btnImpugnar+'</div>'
         +'</div>';
     }
     html+='<div class="cert-card" style="border-left-color:'+statusCor+';">'+
@@ -4333,9 +4385,8 @@ function renderLicitacoes(){
   var html='';
   gruposPend.forEach(function(mun){
     var tarefasPend=grupos[mun].filter(function(t){return !t.done;});
-    // Mostrar SÓ a tarefa principal (para decidir participar/não/suspender) — sem as etapas
-    var _principal=tarefasPend.find(function(t){return /^licita[çc][aã]o\b/i.test((t.text||'').trim())||!!(t._licPlataforma||t._licQuemFaz);});
-    var _paraExibir=_principal?[_principal]:tarefasPend;
+    // Mostrar a tarefa principal + todas as etapas geradas (Impugnação, Análise, Proposta...)
+    var _paraExibir=tarefasPend;
     html+=_renderLicGrupoHTML(mun,_paraExibir,etapasData,false,histRegs);
   });
   lista.innerHTML=html;
@@ -4479,6 +4530,7 @@ function renderLicitacoesConcluidas(){
     // Botões ver histórico, concluído, editar e excluir
     html+='<div style="display:flex;gap:4px;flex-wrap:wrap;">';
     html+='<button onclick="licParticConcluir(\''+munEscC+'\')" style="background:#3a8c4a;color:#fff;border:none;border-radius:3px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;">✅ Concluído</button>';
+    html+='<button onclick="licVoltarParaAnalise(\''+munEscC+'\')" style="background:none;border:1px solid #8a6d3b;border-radius:3px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;color:#8a6d3b;">↩️ Voltar p/ Análise</button>';
     html+='<button onclick="mudarAba(\'lic-historico\')" style="background:none;border:1px solid var(--border);border-radius:3px;padding:3px 10px;font-size:11px;cursor:pointer;color:var(--navy);">📋 Histórico</button>';
     html+='<button onclick="licConcEditarModal(\''+munEscC+'\')" style="background:none;border:1px solid #ddd;border-radius:3px;padding:3px 8px;font-size:11px;cursor:pointer;color:#555;">✏️ Editar</button>';
     html+='<button onclick="licConcExcluir(\''+munEscC+'\')" style="background:none;border:1px solid #ffcccc;border-radius:3px;padding:3px 8px;font-size:11px;cursor:pointer;color:#c0392b;">× Excluir</button>';
