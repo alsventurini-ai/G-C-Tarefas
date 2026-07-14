@@ -412,7 +412,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <div class="clip"><div class="clip-inner"></div></div>
   <div class="header">
     <div>
-      <div class="htitle">G&C Tarefas <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v309</span></div><!-- VERSAO_APP: v309 -->
+      <div class="htitle">G&C Tarefas <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v311</span></div><!-- VERSAO_APP: v311 -->
       <div class="hsubtitle">Galhardo &amp; Canales — Tarefas e Problemas Internos</div>
     </div>
     <div>
@@ -2975,6 +2975,7 @@ function criarLicitacao(){
   tasks.push({id:now2+4,text:'⚖️ Prazo Final de Impugnação — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataImpug,alertFired:false,paraQuem:'Licitações',obs:'ATENÇÃO: encerra hoje o prazo de impugnação — '+municipio+' ('+labelTipo+')\nLei nº 14.133/2021, Art. 164.',priority:'alta',tags:['licitação','impugnação',municipio],pinned:false,duracao:'',link:licLink,_licMunicipio:municipio,_licTipo:licTipo,_licNumero:licNumero});
   tasks.push({id:now2+6,text:'📩 Prazo Final p/ Resposta da Impugnação — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataRespostaImpug,alertFired:false,paraQuem:'Licitações',obs:'⚠️ ATENÇÃO: o órgão tem até esta data para julgar e responder a impugnação (3 dias úteis, limitado ao último dia útil antes da disputa) — '+municipio+' ('+labelTipo+')\nLei nº 14.133/2021, Art. 164, parágrafo único. Verifique se a resposta foi divulgada para não perder o prazo de propostas.',priority:'alta',tags:['licitação','resposta-impugnação',municipio],pinned:true,duracao:'',link:licLink,_licMunicipio:municipio,_licTipo:licTipo,_licNumero:licNumero,_intradayTimes:['08:00','14:00']});
   save();render();atualizarFiltros();
+  if(typeof renderLicitacoes==='function')renderLicitacoes();
   // Registrar no log com tipo e número
   licLogRegistrar(municipio,'📌 Licitação cadastrada','Disputa em '+fmtDate(dataDisputa)+' às '+horaDisputa+' | '+labelTipo+(licPlataforma?' | Plataforma: '+licPlataforma:''));
   // Salvar automaticamente no Hist. Licitações (aba hist) com tipo e número
@@ -4322,6 +4323,72 @@ function licConcluirGrupo(mun){
     renderLicitacoes();
   };
 }
+function _licSlug(s){return 'licblk-'+(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');}
+function _licDataDisputaGrupo(ts){
+  // Retorna {data,hora} da disputa: usa a tarefa principal "Licitação - X"; senão, a menor data disponível
+  var princ=ts.find(function(t){return /^licita/i.test((t.text||'').normalize('NFD').replace(/[\u0300-\u036f]/g,''));});
+  var data=(princ&&(princ._licDataDisputa||princ.taskDate))||'';
+  var hora=(princ&&(princ._licHoraDisputa||princ.schedule))||'';
+  if(!data){
+    var ds=ts.map(function(t){return t._licDataDisputa;}).filter(Boolean).sort();
+    if(ds.length){data=ds[0];}
+    else{var td=ts.map(function(t){return t.taskDate;}).filter(Boolean).sort();if(td.length)data=td[0];}
+  }
+  return {data:data,hora:hora};
+}
+var LIC_AGENDA_OCULTA_KEY='gc_lic_agenda_oculta';
+function licAgendaOcultaLoad(){try{return JSON.parse(localStorage.getItem(LIC_AGENDA_OCULTA_KEY)||'[]');}catch(e){return [];}}
+function licAgendaOcultaSave(arr){localStorage.setItem(LIC_AGENDA_OCULTA_KEY,JSON.stringify(arr));}
+function licAgendaConcluir(mun){
+  var arr=licAgendaOcultaLoad();var n=_normMun(mun);
+  if(arr.indexOf(n)<0){arr.push(n);licAgendaOcultaSave(arr);}
+  if(typeof mostrarToast==='function')mostrarToast('✓ '+mun+' removida da agenda.',false);
+  renderLicitacoes();
+}
+function licAgendaRestaurar(){
+  licAgendaOcultaSave([]);
+  if(typeof mostrarToast==='function')mostrarToast('Agenda restaurada.',false);
+  renderLicitacoes();
+}
+function _licListaContinuaHTML(gruposPend,grupos){
+  var hojeStr=(function(){var h=new Date();h.setHours(0,0,0,0);var y=h.getFullYear(),m=('0'+(h.getMonth()+1)).slice(-2),d=('0'+h.getDate()).slice(-2);return y+'-'+m+'-'+d;})();
+  var ocultas=licAgendaOcultaLoad();
+  var itens=gruposPend.map(function(mun){var dd=_licDataDisputaGrupo(grupos[mun]);return {mun:mun,data:dd.data,hora:dd.hora};});
+  itens=itens.filter(function(it){return ocultas.indexOf(_normMun(it.mun))<0;});
+  itens.sort(function(a,b){var da=a.data||'9999-99-99',db=b.data||'9999-99-99';return da<db?-1:da>db?1:(a.mun<b.mun?-1:1);});
+  var restaurarBtn=ocultas.length>0?'<span onclick="licAgendaRestaurar()" title="Trazer de volta as removidas" style="cursor:pointer;font-size:10px;color:var(--navy);font-weight:600;text-transform:none;letter-spacing:0;">↩ restaurar ('+ocultas.length+')</span>':'';
+  var h='<div style="border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:20px;background:#fbfaf7;">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
+    +'<span style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);font-weight:700;">📅 Agenda de disputas — por data ('+itens.length+')</span>'+restaurarBtn
+    +'</div>';
+  if(itens.length===0){
+    h+='<div style="font-size:12.5px;color:var(--muted);padding:4px 2px;">Nenhuma disputa na agenda.</div></div>';
+    return h;
+  }
+  itens.forEach(function(item,i){
+    var slug=_licSlug(item.mun);
+    var munEsc=item.mun.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    var dataFmt=item.data?fmtDate(item.data):'sem data';
+    var horaFmt=item.hora?(' · '+item.hora):'';
+    var atrasada=item.data&&item.data<hojeStr;
+    var hoje=item.data&&item.data===hojeStr;
+    var corData=hoje?'#b8860b':(atrasada?'#b03a2e':'var(--navy)');
+    var flag=hoje?' 🔴 HOJE':(atrasada?' ⚠️':'');
+    var borda=i<itens.length-1?'border-bottom:1px solid var(--border);':'';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:7px 2px;'+borda+'" '
+      +'onmouseover="this.style.background=\'#f3f0ea\'" onmouseout="this.style.background=\'transparent\'">'
+      +'<span style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;cursor:pointer;" '
+        +'onclick="var el=document.getElementById(\''+slug+'\');if(el)el.scrollIntoView({behavior:\'smooth\',block:\'start\'});">'
+        +'<button title="Concluir — remover da agenda" onclick="event.stopPropagation();licAgendaConcluir(\''+munEsc+'\');" '
+          +'style="background:#3a8c4a;color:#fff;border:none;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">✓ Concluir</button>'
+        +'<span style="font-weight:600;color:var(--ink);font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🏛 '+item.mun+'</span>'
+      +'</span>'
+      +'<span style="font-weight:700;color:'+corData+';font-size:13px;white-space:nowrap;">'+dataFmt+horaFmt+flag+'</span>'
+      +'</div>';
+  });
+  h+='</div>';
+  return h;
+}
 function renderLicitacoes(){
   var lista=document.getElementById('lic-lista');
   var stats=document.getElementById('lic-stats-row');
@@ -4382,12 +4449,13 @@ function renderLicitacoes(){
   } else if(licSort==='status'){gruposPend.sort();}
   var etapasData=licEtapasLoad();
   var histRegs=licHistLoad();
-  var html='';
+  // Listagem contínua no topo — sempre por data de realização
+  var html=_licListaContinuaHTML(gruposPend,grupos);
   gruposPend.forEach(function(mun){
     var tarefasPend=grupos[mun].filter(function(t){return !t.done;});
     // Mostrar a tarefa principal + todas as etapas geradas (Impugnação, Análise, Proposta...)
     var _paraExibir=tarefasPend;
-    html+=_renderLicGrupoHTML(mun,_paraExibir,etapasData,false,histRegs);
+    html+='<div id="'+_licSlug(mun)+'" style="scroll-margin-top:12px;">'+_renderLicGrupoHTML(mun,_paraExibir,etapasData,false,histRegs)+'</div>';
   });
   lista.innerHTML=html;
 }
