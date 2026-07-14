@@ -412,7 +412,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <div class="clip"><div class="clip-inner"></div></div>
   <div class="header">
     <div>
-      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v312</span></div><!-- VERSAO_APP: v312 -->
+      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v313</span></div><!-- VERSAO_APP: v313 -->
       <div class="hsubtitle">Galhardo &amp; Canales — Licitações, Participando, Histórico e Certidões</div>
     </div>
     <div>
@@ -4332,6 +4332,7 @@ function renderListagem(){
   h+='</div>';
   lista.innerHTML=h;
 }
+function _licEtapasCheckboxesHTML(mun){
   var KEY_PROG='gc_lic_prog_v1';
   var progData={};try{progData=JSON.parse(localStorage.getItem(KEY_PROG)||'{}');}catch(e){}
   var munProg=progData[mun]||[];
