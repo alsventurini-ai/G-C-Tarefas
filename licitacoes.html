@@ -412,7 +412,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <div class="clip"><div class="clip-inner"></div></div>
   <div class="header">
     <div>
-      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v313</span></div><!-- VERSAO_APP: v313 -->
+      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v315</span></div><!-- VERSAO_APP: v315 -->
       <div class="hsubtitle">Galhardo &amp; Canales — Licitações, Participando, Histórico e Certidões</div>
     </div>
     <div>
@@ -3727,23 +3727,27 @@ function _renderLicGrupoHTML(mun, ts, etapasData, mostrarEtapas, histRegs){
       var munEscProg=mun.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
       // Checklist de situação — cada botão registra no log e navega para Hist.
       var STEPS=[
-        {k:'Análise do Edital',     ico:'📋', cor:'#1a5276'},
-        {k:'Impugnação',            ico:'⚖️', cor:'#6c3483'},
-        {k:'Checklist',             ico:'☑️', cor:'#1a5276'},
-        {k:'Declarações',           ico:'📄', cor:'#1a5276'},
-        {k:'Juntada',               ico:'📁', cor:'#1a5276'},
-        {k:'Conf. Habilitação',     ico:'🔍', cor:'#1a5276'},
-        {k:'Envio Proposta',        ico:'📤', cor:'#1a5276'},
-        {k:'Resposta Impugnação',   ico:'📩', cor:'#6c3483'},
-        {k:'Amostra',               ico:'🧪', cor:'#1a5276'},
-        {k:'Intenção de Recurso',   ico:'⚠️', cor:'#b8860b'},
-        {k:'Recurso',               ico:'📄', cor:'#6c3483'},
-        {k:'Contrarrazões',         ico:'📝', cor:'#6c3483'},
-        {k:'Julgamento Recurso',    ico:'⚖️', cor:'#6c3483'},
-        {k:'MP/TCU',                ico:'🏛', cor:'#b03a2e'},
-        {k:'Atendimento Local',     ico:'🧑‍💼', cor:'#1a6b8a'},
-        {k:'Suspensão',             ico:'⛔', cor:'#b03a2e'}
-      ];
+          {k:'Baixar Edital',         ico:'📥', cor:'#1a5276'},
+          {k:'Análise do Edital',     ico:'📋', cor:'#1a5276', lbl:'Análise Edital'},
+          {k:'Atendimento Local',     ico:'🧑‍💼', cor:'#1a6b8a'},
+          {k:'Amostra',               ico:'🧪', cor:'#1a5276'},
+          {k:'Impugnação',            ico:'⚖️', cor:'#6c3483'},
+          {k:'Resposta Impugnação',   ico:'📩', cor:'#6c3483'},
+          {k:'Checklist',             ico:'☑️', cor:'#1a5276'},
+          {k:'Declarações',           ico:'📄', cor:'#1a5276'},
+          {k:'Juntada',               ico:'📁', cor:'#1a5276'},
+          {k:'Conf. Habilitação',     ico:'🔍', cor:'#1a5276'},
+          {k:'Envio Proposta',        ico:'📤', cor:'#1a5276'},
+          {k:'Análise Documentos Pregoeiro', ico:'🗂', cor:'#1a5276'},
+          {k:'Análise Hab. Concorrente', ico:'🔎', cor:'#1a5276'},
+          {k:'Intenção de Recurso',   ico:'⚠️', cor:'#b8860b'},
+          {k:'Recurso',               ico:'📄', cor:'#6c3483'},
+          {k:'Contrarrazões',         ico:'📝', cor:'#6c3483', lbl:'Contrarrazão'},
+          {k:'Julgamento Recurso',    ico:'⚖️', cor:'#6c3483', lbl:'Julgamento do Recurso'},
+          {k:'Suspensão',             ico:'⛔', cor:'#b03a2e', lbl:'Suspenso/Cancelado'},
+          {k:'Data Alterada',         ico:'📅', cor:'#b8860b'},
+          {k:'MP/TCU',                ico:'🏛', cor:'#b03a2e'}
+        ];
       var checkboxes=STEPS.map(function(step){
         var feito=munProg.indexOf(step.k)>=0;
         var bg=feito?step.cor:'#fff';
@@ -3751,7 +3755,7 @@ function _renderLicGrupoHTML(mun, ts, etapasData, mostrarEtapas, histRegs){
         var bord=feito?step.cor:'#c8d0e8';
         return '<button onclick="licEtapaClicar(\''+munEscProg+'\',\''+step.k+'\')" '
           +'style="background:'+bg+';color:'+cor+';border:1.5px solid '+bord+';border-radius:14px;padding:3px 10px;font-size:11px;cursor:pointer;font-family:sans-serif;transition:all .15s;white-space:nowrap;">'
-          +(feito?'✔ ':step.ico+' ')+step.k+'</button>';
+          +(feito?'✔ ':step.ico+' ')+(step.lbl||step.k)+'</button>';
       }).join('');
       // Botões de decisão principais
       var jaParticipou=munProg.indexOf('✅ Participamos')>=0;
@@ -3879,6 +3883,8 @@ function licConfirmarConcluir(id, mun){
   save();renderLicitacoes();
   mostrarToast('✔ Concluído: '+t.text.substring(0,35),false);
 }
+var ETAPA_LBL={'Análise do Edital':'Análise Edital','Contrarrazões':'Contrarrazão','Julgamento Recurso':'Julgamento do Recurso','Suspensão':'Suspenso/Cancelado'};
+function _etapaLbl(k){return ETAPA_LBL[k]||k;}
 function licEtapaClicar(mun, step){
   var KEY_PROG='gc_lic_prog_v1';
   var data={};try{data=JSON.parse(localStorage.getItem(KEY_PROG)||'{}');}catch(e){}
@@ -3912,13 +3918,13 @@ function licEtapaModal(mun, step){
       +'</div>';
   }
   if(step==='Amostra'){
-    extraHtml='<div style="margin-bottom:12px;padding:10px;background:#eef5fb;border-radius:4px;border:1px solid #a8c8e8;">'
+    extraHtml+='<div style="margin-bottom:12px;padding:10px;background:#eef5fb;border-radius:4px;border:1px solid #a8c8e8;">'
       +'<label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:2px;">🧪 Prazo para Apresentação da Amostra</label>'
       +'<input id="et-prazo-amostra" type="date" style="width:100%;padding:6px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;">'
       +'</div>';
   }
   if(step==='Atendimento Local'){
-    extraHtml='<div style="margin-bottom:12px;padding:10px;background:#eef5fb;border-radius:4px;border:1px solid #a8c8e8;">'
+    extraHtml+='<div style="margin-bottom:12px;padding:10px;background:#eef5fb;border-radius:4px;border:1px solid #a8c8e8;">'
       +'<label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:6px;">🧑‍💼 Envio de profissional</label>'
       +'<div style="display:flex;gap:8px;">'
       +'<label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;border:2px solid #3a8c4a;border-radius:4px;cursor:pointer;font-size:13px;font-weight:600;color:#3a8c4a;"><input type="radio" name="et-atend-local" value="sim" style="cursor:pointer;"> Sim</label>'
@@ -3926,8 +3932,23 @@ function licEtapaModal(mun, step){
       +'</div>'
       +'</div>';
   }
+  var ETAPA_SIMNAO={
+    'Resposta Impugnação': 'A impugnação foi respondida?',
+    'Intenção de Recurso': 'Houve intenção de recurso?',
+    'Recurso':             'Recurso foi interposto?',
+    'Contrarrazões':       'Contrarrazão foi apresentada?',
+    'Julgamento Recurso':  'Recurso foi provido?'
+  };
+  if(ETAPA_SIMNAO[step]){
+    extraHtml+='<div style="margin-bottom:12px;padding:10px;background:#f5f0fa;border-radius:4px;border:1px solid #c9a8e8;">'
+      +'<label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:6px;">'+ETAPA_SIMNAO[step]+'</label>'
+      +'<div style="display:flex;gap:8px;">'
+      +'<label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;border:2px solid #3a8c4a;border-radius:4px;cursor:pointer;font-size:13px;font-weight:600;color:#3a8c4a;"><input type="radio" name="et-simnao" value="sim" style="cursor:pointer;"> Sim</label>'
+      +'<label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;border:2px solid #b03a2e;border-radius:4px;cursor:pointer;font-size:13px;font-weight:600;color:#b03a2e;"><input type="radio" name="et-simnao" value="nao" style="cursor:pointer;"> Não</label>'
+      +'</div></div>';
+  }
   overlay.innerHTML='<div style="background:#fff;border-radius:8px;padding:24px;max-width:380px;width:90%;font-family:Segoe UI,Tahoma,sans-serif;">'
-    +'<div style="font-size:14px;font-weight:700;color:#1a5276;margin-bottom:16px;">✔ '+step+' — '+mun+'</div>'
+    +'<div style="font-size:14px;font-weight:700;color:#1a5276;margin-bottom:16px;">✔ '+_etapaLbl(step)+' — '+mun+'</div>'
     +'<div style="margin-bottom:12px;">'
     +'<label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:2px;">📅 Data do registro</label>'
     +'<input id="et-data" type="date" value="'+dataDefault+'" style="width:100%;padding:6px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;margin-bottom:6px;">'
@@ -3954,11 +3975,13 @@ function licEtapaModal(mun, step){
     var prazoAmostraVal=document.getElementById('et-prazo-amostra')?document.getElementById('et-prazo-amostra').value:null;
     var atendLocalRadio=document.querySelector('input[name="et-atend-local"]:checked');
     var atendLocalVal=atendLocalRadio?atendLocalRadio.value:null;
+    var simNaoRadio=document.querySelector('input[name="et-simnao"]:checked');
+    var simNaoVal=simNaoRadio?simNaoRadio.value:null;
     document.body.removeChild(overlay);
-    licEtapaConfirmar(mun, step, dataReg, horaReg, obs, prazoRecursoVal, prazoContraVal, prazoAmostraVal, atendLocalVal);
+    licEtapaConfirmar(mun, step, dataReg, horaReg, obs, prazoRecursoVal, prazoContraVal, prazoAmostraVal, atendLocalVal, simNaoVal);
   };
 }
-function licEtapaConfirmar(mun, step, dataReg, horaReg, obs, prazoRecurso, prazoContra, prazoAmostra, atendLocal){
+function licEtapaConfirmar(mun, step, dataReg, horaReg, obs, prazoRecurso, prazoContra, prazoAmostra, atendLocal, simNao){
   var KEY_PROG='gc_lic_prog_v1';
   var data={};try{data=JSON.parse(localStorage.getItem(KEY_PROG)||'{}');}catch(e){}
   if(!data[mun])data[mun]=[];
@@ -3990,6 +4013,7 @@ function licEtapaConfirmar(mun, step, dataReg, horaReg, obs, prazoRecurso, prazo
   if(prazoContra) descLog+=' | Prazo Contrarrazões: '+fmtDate(prazoContra);
   if(prazoAmostra) descLog+=' | Prazo Amostra: '+fmtDate(prazoAmostra);
   if(atendLocal) descLog+=' | Envio de profissional: '+(atendLocal==='sim'?'Sim':'Não');
+  if(simNao) descLog+=' | '+(simNao==='sim'?'✅ Sim':'❌ Não');
   if(tarefaMatch){
     tarefaMatch.done=true;tarefaMatch.doneAt=timeNow();
     save();
@@ -4338,23 +4362,27 @@ function _licEtapasCheckboxesHTML(mun){
   var munProg=progData[mun]||[];
   var munEscProg=mun.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
   var STEPS=[
-    {k:'Análise do Edital',     ico:'📋', cor:'#1a5276'},
-    {k:'Impugnação',            ico:'⚖️', cor:'#6c3483'},
-    {k:'Checklist',             ico:'☑️', cor:'#1a5276'},
-    {k:'Declarações',           ico:'📄', cor:'#1a5276'},
-    {k:'Juntada',               ico:'📁', cor:'#1a5276'},
-    {k:'Conf. Habilitação',     ico:'🔍', cor:'#1a5276'},
-    {k:'Envio Proposta',        ico:'📤', cor:'#1a5276'},
-    {k:'Resposta Impugnação',   ico:'📩', cor:'#6c3483'},
-    {k:'Amostra',               ico:'🧪', cor:'#1a5276'},
-    {k:'Intenção de Recurso',   ico:'⚠️', cor:'#b8860b'},
-    {k:'Recurso',               ico:'📄', cor:'#6c3483'},
-    {k:'Contrarrazões',         ico:'📝', cor:'#6c3483'},
-    {k:'Julgamento Recurso',    ico:'⚖️', cor:'#6c3483'},
-    {k:'MP/TCU',                ico:'🏛', cor:'#b03a2e'},
-    {k:'Atendimento Local',     ico:'🧑‍💼', cor:'#1a6b8a'},
-    {k:'Suspensão',             ico:'⛔', cor:'#b03a2e'}
-  ];
+      {k:'Baixar Edital',         ico:'📥', cor:'#1a5276'},
+      {k:'Análise do Edital',     ico:'📋', cor:'#1a5276', lbl:'Análise Edital'},
+      {k:'Atendimento Local',     ico:'🧑‍💼', cor:'#1a6b8a'},
+      {k:'Amostra',               ico:'🧪', cor:'#1a5276'},
+      {k:'Impugnação',            ico:'⚖️', cor:'#6c3483'},
+      {k:'Resposta Impugnação',   ico:'📩', cor:'#6c3483'},
+      {k:'Checklist',             ico:'☑️', cor:'#1a5276'},
+      {k:'Declarações',           ico:'📄', cor:'#1a5276'},
+      {k:'Juntada',               ico:'📁', cor:'#1a5276'},
+      {k:'Conf. Habilitação',     ico:'🔍', cor:'#1a5276'},
+      {k:'Envio Proposta',        ico:'📤', cor:'#1a5276'},
+      {k:'Análise Documentos Pregoeiro', ico:'🗂', cor:'#1a5276'},
+      {k:'Análise Hab. Concorrente', ico:'🔎', cor:'#1a5276'},
+      {k:'Intenção de Recurso',   ico:'⚠️', cor:'#b8860b'},
+      {k:'Recurso',               ico:'📄', cor:'#6c3483'},
+      {k:'Contrarrazões',         ico:'📝', cor:'#6c3483', lbl:'Contrarrazão'},
+      {k:'Julgamento Recurso',    ico:'⚖️', cor:'#6c3483', lbl:'Julgamento do Recurso'},
+      {k:'Suspensão',             ico:'⛔', cor:'#b03a2e', lbl:'Suspenso/Cancelado'},
+      {k:'Data Alterada',         ico:'📅', cor:'#b8860b'},
+      {k:'MP/TCU',                ico:'🏛', cor:'#b03a2e'}
+    ];
   var checkboxes=STEPS.map(function(step){
     var feito=munProg.indexOf(step.k)>=0;
     var bg=feito?step.cor:'#fff';
@@ -4362,7 +4390,7 @@ function _licEtapasCheckboxesHTML(mun){
     var bord=feito?step.cor:'#c8d0e8';
     return '<button onclick="licEtapaClicar(\''+munEscProg+'\',\''+step.k+'\')" '
       +'style="background:'+bg+';color:'+cor+';border:1.5px solid '+bord+';border-radius:14px;padding:3px 10px;font-size:11px;cursor:pointer;font-family:sans-serif;transition:all .15s;white-space:nowrap;">'
-      +(feito?'✔ ':step.ico+' ')+step.k+'</button>';
+      +(feito?'✔ ':step.ico+' ')+(step.lbl||step.k)+'</button>';
   }).join('');
   return '<div style="margin-top:8px;border-top:1px dashed var(--border);padding-top:8px;">'
     +'<div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;">📋 Etapas — clique para registrar no histórico</div>'
