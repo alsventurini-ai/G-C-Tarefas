@@ -412,7 +412,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <div class="clip"><div class="clip-inner"></div></div>
   <div class="header">
     <div>
-      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v315</span></div><!-- VERSAO_APP: v315 -->
+      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v317</span></div><!-- VERSAO_APP: v317 -->
       <div class="hsubtitle">Galhardo &amp; Canales — Licitações, Participando, Histórico e Certidões</div>
     </div>
     <div>
@@ -2939,7 +2939,7 @@ function licDecisaoParticipar(mun){
     var vd=licVencedorLoad();
     var norm=_normMun(mun);
     var chaveReal=Object.keys(vd).find(function(k){return _normMun(k)===norm;})||mun;
-    if(!vd[chaveReal]) vd[chaveReal]={nome:'',resultado:'',quemVenceu:''};
+    if(!vd[chaveReal]) vd[chaveReal]={nome:'',resultado:'',quemVenceu:'',obs:''};
     licVencedorSave(vd);
     mostrarToast('✅ Participação registrada — '+mun+' | Movida para a aba Participando.',false);
     renderLicitacoes();
@@ -3883,6 +3883,13 @@ function licConfirmarConcluir(id, mun){
   save();renderLicitacoes();
   mostrarToast('✔ Concluído: '+t.text.substring(0,35),false);
 }
+var ETAPA_SIMNAO={
+  'Resposta Impugnação': {q:'A impugnação foi acatada?', tag:'Acatado'},
+  'Intenção de Recurso': {q:'Houve intenção de recurso?', tag:'Intenção de recurso'},
+  'Recurso':             {q:'Recurso foi interposto?',   tag:'Recurso interposto'},
+  'Contrarrazões':       {q:'Contrarrazão foi apresentada?', tag:'Contrarrazão apresentada'},
+  'Julgamento Recurso':  {q:'Recurso foi provido?',      tag:'Recurso provido'}
+};
 var ETAPA_LBL={'Análise do Edital':'Análise Edital','Contrarrazões':'Contrarrazão','Julgamento Recurso':'Julgamento do Recurso','Suspensão':'Suspenso/Cancelado'};
 function _etapaLbl(k){return ETAPA_LBL[k]||k;}
 function licEtapaClicar(mun, step){
@@ -3932,16 +3939,9 @@ function licEtapaModal(mun, step){
       +'</div>'
       +'</div>';
   }
-  var ETAPA_SIMNAO={
-    'Resposta Impugnação': 'A impugnação foi respondida?',
-    'Intenção de Recurso': 'Houve intenção de recurso?',
-    'Recurso':             'Recurso foi interposto?',
-    'Contrarrazões':       'Contrarrazão foi apresentada?',
-    'Julgamento Recurso':  'Recurso foi provido?'
-  };
   if(ETAPA_SIMNAO[step]){
     extraHtml+='<div style="margin-bottom:12px;padding:10px;background:#f5f0fa;border-radius:4px;border:1px solid #c9a8e8;">'
-      +'<label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:6px;">'+ETAPA_SIMNAO[step]+'</label>'
+      +'<label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:6px;">'+ETAPA_SIMNAO[step].q+'</label>'
       +'<div style="display:flex;gap:8px;">'
       +'<label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;border:2px solid #3a8c4a;border-radius:4px;cursor:pointer;font-size:13px;font-weight:600;color:#3a8c4a;"><input type="radio" name="et-simnao" value="sim" style="cursor:pointer;"> Sim</label>'
       +'<label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;border:2px solid #b03a2e;border-radius:4px;cursor:pointer;font-size:13px;font-weight:600;color:#b03a2e;"><input type="radio" name="et-simnao" value="nao" style="cursor:pointer;"> Não</label>'
@@ -4013,7 +4013,7 @@ function licEtapaConfirmar(mun, step, dataReg, horaReg, obs, prazoRecurso, prazo
   if(prazoContra) descLog+=' | Prazo Contrarrazões: '+fmtDate(prazoContra);
   if(prazoAmostra) descLog+=' | Prazo Amostra: '+fmtDate(prazoAmostra);
   if(atendLocal) descLog+=' | Envio de profissional: '+(atendLocal==='sim'?'Sim':'Não');
-  if(simNao) descLog+=' | '+(simNao==='sim'?'✅ Sim':'❌ Não');
+  if(simNao) descLog+=' | '+((ETAPA_SIMNAO[step]&&ETAPA_SIMNAO[step].tag)||'Resposta')+': '+(simNao==='sim'?'✅ Sim':'❌ Não');
   if(tarefaMatch){
     tarefaMatch.done=true;tarefaMatch.doneAt=timeNow();
     save();
@@ -4196,7 +4196,7 @@ function licConcluirGrupo(mun){
       if(quemVenceu) jaExiste.vencedor=quemVenceu;
       jaExiste.participou='sim';
     } else {
-      listaHist.push({id:Date.now(),municipio:mun,data:dataDisp,pregao:pregaoLabel,resultado:resultado,quemFaz:quemFaz,vencedor:quemVenceu,participou:'sim',obs:'',link:(tDisp&&tDisp.link?tDisp.link:''),criadoEm:new Date().toISOString(),_licTipo:tDisp&&tDisp._licTipo?tDisp._licTipo:'',_licNumero:numPregao});
+      listaHist.push({id:Date.now(),municipio:mun,data:dataDisp,pregao:pregaoLabel,resultado:resultado,quemFaz:quemFaz,vencedor:quemVenceu,participou:'sim',obs:(vd[chaveReal]&&vd[chaveReal].obs)||'',link:(tDisp&&tDisp.link?tDisp.link:''),criadoEm:new Date().toISOString(),_licTipo:tDisp&&tDisp._licTipo?tDisp._licTipo:'',_licNumero:numPregao});
     }
     licHistSave(listaHist);
     // Registrar no log
@@ -4529,6 +4529,16 @@ function renderLicitacoesConcluidas(){
     html+='<button onclick="licVencedorSalvar(\''+munEscC+'\',\'quemVenceu\',document.getElementById(\'qv-'+munEscC+'\').value)" '
       +'style="background:#6c3483;color:#fff;border:none;padding:4px 12px;border-radius:3px;font-size:11px;font-weight:600;cursor:pointer;">💾</button>';
     html+='</div>';
+    // Observação — linha inline editável
+    var obsPart=venc.obs||'';
+    html+='<div style="display:flex;gap:6px;align-items:flex-start;flex-wrap:wrap;margin-top:4px;">';
+    html+='<span style="font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap;padding-top:5px;">📝 Observação:</span>';
+    html+='<textarea id="ob-'+munEscC+'" placeholder="Anotações sobre esta licitação…" '
+      +'style="flex:1;min-width:160px;min-height:38px;border:1px solid var(--border);background:#fff;padding:4px 9px;font-size:12px;border-radius:3px;font-family:\'Segoe UI\',Tahoma,sans-serif;color:var(--ink);outline:none;resize:vertical;box-sizing:border-box;" '
+      +'onchange="licVencedorSalvar(\''+munEscC+'\',\'obs\',this.value)">'+obsPart.replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</textarea>';
+    html+='<button onclick="licVencedorSalvar(\''+munEscC+'\',\'obs\',document.getElementById(\'ob-'+munEscC+'\').value)" '
+      +'style="background:#1a6b8a;color:#fff;border:none;padding:4px 12px;border-radius:3px;font-size:11px;font-weight:600;cursor:pointer;align-self:flex-start;">💾</button>';
+    html+='</div>';
     // ETAPA 1: etapas/prazos agora vivem aqui na Participando
     html+=_licEtapasCheckboxesHTML(mun);
     html+='</div>';
@@ -4591,7 +4601,7 @@ function licParticConcluir(mun){
     } else {
       var numPregao=tDisp&&tDisp._licNumero?tDisp._licNumero:'';
       var pregaoLabel=(tDisp&&tDisp._licTipo?tDisp._licTipo+(numPregao?' '+numPregao:''):'');
-      listaHist.push({id:Date.now(),municipio:mun,data:dataDisp,pregao:pregaoLabel,resultado:resultado,quemFaz:quemFaz,vencedor:quemVenceu,participou:'sim',obs:'',link:(tDisp&&tDisp.link?tDisp.link:''),criadoEm:new Date().toISOString(),_licTipo:tDisp&&tDisp._licTipo?tDisp._licTipo:'',_licNumero:numPregao});
+      listaHist.push({id:Date.now(),municipio:mun,data:dataDisp,pregao:pregaoLabel,resultado:resultado,quemFaz:quemFaz,vencedor:quemVenceu,participou:'sim',obs:(vd[chaveReal]&&vd[chaveReal].obs)||'',link:(tDisp&&tDisp.link?tDisp.link:''),criadoEm:new Date().toISOString(),_licTipo:tDisp&&tDisp._licTipo?tDisp._licTipo:'',_licNumero:numPregao});
     }
     licHistSave(listaHist);
     licLogRegistrar(mun,'🏁 Concluído em Participando','Resultado: '+(resultado||'não definido')+(quemVenceu?' | Vencedor: '+quemVenceu:''));
@@ -4705,7 +4715,7 @@ function licVencedorGetMun(mun){
   if(data[mun]) return data[mun];
   var norm=_normMun(mun);
   var chave=Object.keys(data).find(function(k){return _normMun(k)===norm;});
-  return chave?data[chave]:{nome:'',resultado:''};
+  return chave?data[chave]:{nome:'',resultado:'',quemVenceu:'',obs:''};
 }
 function licVencedorSave(data){
   localStorage.setItem(LIC_VENCEDOR_KEY,JSON.stringify(data));
