@@ -412,7 +412,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <div class="clip"><div class="clip-inner"></div></div>
   <div class="header">
     <div>
-      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v320</span></div><!-- VERSAO_APP: v320 -->
+      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v322</span></div><!-- VERSAO_APP: v322 -->
       <div class="hsubtitle">Galhardo &amp; Canales — Licitações, Participando, Histórico e Certidões</div>
     </div>
     <div>
@@ -473,6 +473,8 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
       <option value="data">📅 Data mais próxima</option>
       <option value="status">⏳ Pendentes primeiro</option>
     </select>
+    <input type="search" id="lic-busca" placeholder="🔍 Buscar município ou pregão…" oninput="renderLicitacoes()"
+      style="flex:1;min-width:150px;padding:6px 10px;border:1px solid var(--border);border-radius:4px;font-size:13px;font-family:'Segoe UI',Tahoma,sans-serif;color:var(--ink);outline:none;background:#fff;">
   </div>
   <div id="lic-lista" style="padding:0 30px 24px;background:var(--cream);"></div>
   </div>
@@ -488,6 +490,8 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
       <option value="municipio">🔤 A-Z Município</option>
       <option value="data">📅 Data mais recente</option>
     </select>
+    <input type="search" id="lic-conc-busca" placeholder="🔍 Buscar município ou pregão…" oninput="renderLicitacoesConcluidas()"
+      style="flex:1;min-width:150px;padding:6px 10px;border:1px solid var(--border);border-radius:4px;font-size:13px;font-family:'Segoe UI',Tahoma,sans-serif;color:var(--ink);outline:none;background:#fff;">
     <button class="btn" style="font-size:12px;padding:5px 11px;border-color:#1a5276;color:#1a5276;white-space:nowrap;" onclick="licPartImprimirSimples()">🖨 Cidade e Data</button>
   </div>
   <div id="lic-conc-lista" style="padding:0 30px 24px;background:var(--cream);"></div>
@@ -3885,6 +3889,46 @@ function licConfirmarConcluir(id, mun){
   save();renderLicitacoes();
   mostrarToast('✔ Concluído: '+t.text.substring(0,35),false);
 }
+function _licQuemFazDe(mun, reg){
+  if(reg&&reg.quemFaz) return reg.quemFaz;
+  var norm=_normMun(mun||'');
+  // 1) Registro salvo em Participando (licVencedor)
+  try{
+    var vd=licVencedorLoad();
+    var k=Object.keys(vd).find(function(x){return _normMun(x)===norm;});
+    if(k&&vd[k]&&vd[k].nome) return vd[k].nome;
+  }catch(e){}
+  // 2) Tarefa principal da licitação (_licQuemFaz)
+  try{
+    var grupos=_getLicGrupos();
+    var gk=Object.keys(grupos).find(function(x){return _normMun(x)===norm;});
+    if(gk){
+      var tp=(grupos[gk]||[]).find(function(t){return t._licQuemFaz;});
+      if(tp&&tp._licQuemFaz) return tp._licQuemFaz;
+    }
+  }catch(e){}
+  // 3) Outros registros do mesmo município no histórico
+  try{
+    var hs=licHistLoad().filter(function(r){return _normMun(r.municipio)===norm&&r.quemFaz;});
+    if(hs.length>0){
+      hs.sort(function(a,b){return (b.data||'')<(a.data||'')?-1:1;});
+      return hs[0].quemFaz;
+    }
+  }catch(e){}
+  return '';
+}
+function _licBuscaMatch(termo, mun, tasks){
+  if(!termo) return true;
+  var t=termo.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  var alvo=(mun||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  if(alvo.indexOf(t)>=0) return true;
+  var extra='';
+  (tasks||[]).forEach(function(x){
+    extra+=' '+(x._licNumero||'')+' '+(x._licTipo||'')+' '+(x._licPlataforma||'')+' '+(x.text||'');
+  });
+  extra=extra.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  return extra.indexOf(t)>=0;
+}
 var ETAPA_COM_OBS=['Resposta Impugnação','Análise Documentos Pregoeiro','Análise Hab. Concorrente','Julgamento Recurso'];
 var ETAPA_SIMNAO={
   'Habilitado':          {q:'Fomos habilitados?', tag:'Habilitado'},
@@ -4263,6 +4307,14 @@ function renderLicitacoes(){
     lista.innerHTML='<div class="cert-empty">Nenhuma licitação pendente. Veja a aba <strong>✅ Participando</strong>.</div>';
     return;
   }
+  var _buscaLic=((document.getElementById('lic-busca')||{}).value||'').trim();
+  if(_buscaLic){
+    gruposPend=gruposPend.filter(function(m){return _licBuscaMatch(_buscaLic,m,grupos[m]||[]);});
+    if(gruposPend.length===0){
+      lista.innerHTML='<div class="cert-empty">Nenhuma licitação encontrada para <strong>'+_buscaLic+'</strong>.</div>';
+      return;
+    }
+  }
   var licSort=(document.getElementById('lic-sort')||{}).value||'municipio';
   if(licSort==='municipio'){gruposPend.sort();}
   else if(licSort==='data'){
@@ -4445,6 +4497,14 @@ function renderLicitacoesConcluidas(){
     '<div class="cert-stat"><div class="cert-stat-num" style="color:var(--green)">'+nPart+'</div><div class="cert-stat-lbl">Participamos</div></div>'+
     '<div class="cert-stat"><div class="cert-stat-num" style="color:var(--red)">'+nNaoPart+'</div><div class="cert-stat-lbl">Não part.</div></div>'+
     '<div class="cert-stat"><div class="cert-stat-num" style="color:var(--muted)">'+nSemDec+'</div><div class="cert-stat-lbl">Sem decisão</div></div>';
+  var _buscaConc=((document.getElementById('lic-conc-busca')||{}).value||'').trim();
+  if(_buscaConc){
+    todosKeys=todosKeys.filter(function(m){return _licBuscaMatch(_buscaConc,m,grupos[m]||[]);});
+    if(todosKeys.length===0){
+      lista.innerHTML='<div class="cert-empty">Nenhuma licitação encontrada para <strong>'+_buscaConc+'</strong>.</div>';
+      return;
+    }
+  }
   var licSort=(document.getElementById('lic-conc-sort')||{}).value||'municipio';
   if(licSort==='data'){
     todosKeys.sort(function(a,b){
@@ -4855,7 +4915,7 @@ function licNaoParticiparTarefas(mun, idPrincipal){
     jaExiste.participou='nao';
     if(motivo) jaExiste.motivo=motivo;
   } else {
-    listaHist.push({id:Date.now(),municipio:mun,data:dataDisp,pregao:pregaoLabel,resultado:'',motivo:motivo,quemFaz:'',vencedor:'',participou:'nao',obs:'',link:(tDisp&&tDisp.link?tDisp.link:''),criadoEm:new Date().toISOString(),_licTipo:tDisp&&tDisp._licTipo?tDisp._licTipo:'',_licNumero:numPregao});
+    listaHist.push({id:Date.now(),municipio:mun,data:dataDisp,pregao:pregaoLabel,resultado:'',motivo:motivo,quemFaz:_licQuemFazDe(mun),vencedor:'',participou:'nao',obs:'',link:(tDisp&&tDisp.link?tDisp.link:''),criadoEm:new Date().toISOString(),_licTipo:tDisp&&tDisp._licTipo?tDisp._licTipo:'',_licNumero:numPregao});
   }
   licHistSave(listaHist);
   // Registrar no log
@@ -4905,7 +4965,7 @@ function licSuspender(mun){
     jaExiste.resultado='suspensa';
     if(motivo) jaExiste.motivo=motivo;
   } else {
-    listaHist.push({id:Date.now(),municipio:mun,data:dataDisp,pregao:pregaoLabel,resultado:'suspensa',motivo:motivo||'Licitação suspensa',quemFaz:'',vencedor:'',participou:'nao',obs:'',link:linkDisp,criadoEm:new Date().toISOString(),_licTipo:tDisp&&tDisp._licTipo?tDisp._licTipo:'',_licNumero:numPregao});
+    listaHist.push({id:Date.now(),municipio:mun,data:dataDisp,pregao:pregaoLabel,resultado:'suspensa',motivo:motivo||'Licitação suspensa',quemFaz:_licQuemFazDe(mun),vencedor:'',participou:'nao',obs:'',link:linkDisp,criadoEm:new Date().toISOString(),_licTipo:tDisp&&tDisp._licTipo?tDisp._licTipo:'',_licNumero:numPregao});
   }
   licHistSave(listaHist);
   // Registrar evento no log do histórico
@@ -4963,7 +5023,7 @@ function licHistEditarModal(id){
   document.getElementById('lh-data').value=reg.data||'';
   document.getElementById('lh-pregao').value=reg.pregao||'';
   document.getElementById('lh-resultado').value=reg.resultado||'';
-  document.getElementById('lh-quemfaz').value=reg.quemFaz||reg.vencedor||'';
+  document.getElementById('lh-quemfaz').value=reg.quemFaz||_licQuemFazDe(reg.municipio,reg)||reg.vencedor||'';
   document.getElementById('lh-vencedor').value=reg.vencedor||'';
   document.getElementById('lh-participou').value=reg.participou||'';
   document.getElementById('lh-motivo').value=reg.motivo||reg.obs||'';
@@ -5136,9 +5196,10 @@ function licHistRender(){
       if((r.participou==='sim'||r.resultado==='nao_aconteceu'||r.resultado==='suspensa'||r.resultado==='deserto')&&resLbl) html+='<span style="font-size:10px;font-weight:700;color:'+resCor+';background:'+(r.resultado==='ganhou'?'#e8f5e9':r.resultado==='perdeu'?'#fde8e8':'#f5f5f5')+';padding:1px 8px;border-radius:10px;">'+resLbl+'</span>';
       html+='</div>';
       if(r.participou==='nao'&&r.motivo) html+='<div style="font-size:11px;color:#b03a2e;margin-bottom:2px;">❓ <strong>Motivo:</strong> '+r.motivo+'</div>';
-      if(r.quemFaz||r.vencedor){
+      var _qf=_licQuemFazDe(r.municipio, r);
+      if(_qf||r.vencedor){
         html+='<div style="display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:#555;margin-bottom:2px;">';
-        if(r.quemFaz) html+='<span>👤 <strong>Quem Faz:</strong> '+r.quemFaz+'</span>';
+        if(_qf) html+='<span>👤 <strong>Quem Faz:</strong> '+_qf+(!r.quemFaz?' <span style="color:#999;font-style:italic;">(herdado)</span>':'')+'</span>';
         if(r.vencedor) html+='<span>🏆 <strong>Quem Venceu:</strong> '+r.vencedor+'</span>';
         html+='</div>';
       }
