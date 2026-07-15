@@ -412,7 +412,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <div class="clip"><div class="clip-inner"></div></div>
   <div class="header">
     <div>
-      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v317</span></div><!-- VERSAO_APP: v317 -->
+      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v318</span></div><!-- VERSAO_APP: v318 -->
       <div class="hsubtitle">Galhardo &amp; Canales — Licitações, Participando, Histórico e Certidões</div>
     </div>
     <div>
@@ -3743,7 +3743,7 @@ function _renderLicGrupoHTML(mun, ts, etapasData, mostrarEtapas, histRegs){
           {k:'Intenção de Recurso',   ico:'⚠️', cor:'#b8860b'},
           {k:'Recurso',               ico:'📄', cor:'#6c3483'},
           {k:'Contrarrazões',         ico:'📝', cor:'#6c3483', lbl:'Contrarrazão'},
-          {k:'Julgamento Recurso',    ico:'⚖️', cor:'#6c3483', lbl:'Julgamento do Recurso'},
+          {k:'Julgamento Recurso',    ico:'⚖️', cor:'#6c3483', lbl:'Julgamento do Recurso/Contrarrazão'},
           {k:'Suspensão',             ico:'⛔', cor:'#b03a2e', lbl:'Suspenso/Cancelado'},
           {k:'Data Alterada',         ico:'📅', cor:'#b8860b'},
           {k:'MP/TCU',                ico:'🏛', cor:'#b03a2e'}
@@ -3883,6 +3883,7 @@ function licConfirmarConcluir(id, mun){
   save();renderLicitacoes();
   mostrarToast('✔ Concluído: '+t.text.substring(0,35),false);
 }
+var ETAPA_COM_OBS=['Resposta Impugnação','Análise Documentos Pregoeiro','Análise Hab. Concorrente','Julgamento Recurso'];
 var ETAPA_SIMNAO={
   'Resposta Impugnação': {q:'A impugnação foi acatada?', tag:'Acatado'},
   'Intenção de Recurso': {q:'Houve intenção de recurso?', tag:'Intenção de recurso'},
@@ -3890,7 +3891,7 @@ var ETAPA_SIMNAO={
   'Contrarrazões':       {q:'Contrarrazão foi apresentada?', tag:'Contrarrazão apresentada'},
   'Julgamento Recurso':  {q:'Recurso foi provido?',      tag:'Recurso provido'}
 };
-var ETAPA_LBL={'Análise do Edital':'Análise Edital','Contrarrazões':'Contrarrazão','Julgamento Recurso':'Julgamento do Recurso','Suspensão':'Suspenso/Cancelado'};
+var ETAPA_LBL={'Análise do Edital':'Análise Edital','Contrarrazões':'Contrarrazão','Julgamento Recurso':'Julgamento do Recurso/Contrarrazão','Suspensão':'Suspenso/Cancelado'};
 function _etapaLbl(k){return ETAPA_LBL[k]||k;}
 function licEtapaClicar(mun, step){
   var KEY_PROG='gc_lic_prog_v1';
@@ -3956,10 +3957,12 @@ function licEtapaModal(mun, step){
     +'<input id="et-hora" type="time" value="'+horaDefault+'" style="width:100%;padding:6px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;">'
     +'</div>'
     +extraHtml
-    +'<div style="margin-bottom:16px;">'
-    +'<label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:2px;">📝 Observação (opcional)</label>'
-    +'<textarea id="et-obs" style="width:100%;padding:6px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;min-height:50px;"></textarea>'
-    +'</div>'
+    +(ETAPA_COM_OBS.indexOf(step)>=0
+      ? '<div style="margin-bottom:16px;">'
+        +'<label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:2px;">📝 Observação (opcional)</label>'
+        +'<textarea id="et-obs" style="width:100%;padding:6px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;min-height:50px;"></textarea>'
+        +'</div>'
+      : '<div style="margin-bottom:8px;"></div>')
     +'<div style="display:flex;gap:8px;justify-content:flex-end;">'
     +'<button id="et-cancelar" style="padding:7px 16px;border:1px solid #ccc;border-radius:4px;background:#fff;font-size:12px;cursor:pointer;">Cancelar</button>'
     +'<button id="et-confirmar" style="padding:7px 16px;border:none;border-radius:4px;background:#1a5276;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">✔ Confirmar</button>'
@@ -3969,7 +3972,8 @@ function licEtapaModal(mun, step){
   document.getElementById('et-confirmar').onclick=function(){
     var dataReg=document.getElementById('et-data').value||dataDefault;
     var horaReg=document.getElementById('et-hora').value||horaDefault;
-    var obs=document.getElementById('et-obs').value.trim();
+    var _obsEl=document.getElementById('et-obs');
+    var obs=_obsEl?_obsEl.value.trim():'';
     var prazoRecursoVal=document.getElementById('et-prazo-recurso')?document.getElementById('et-prazo-recurso').value:null;
     var prazoContraVal=document.getElementById('et-prazo-contra')?document.getElementById('et-prazo-contra').value:null;
     var prazoAmostraVal=document.getElementById('et-prazo-amostra')?document.getElementById('et-prazo-amostra').value:null;
@@ -4378,7 +4382,7 @@ function _licEtapasCheckboxesHTML(mun){
       {k:'Intenção de Recurso',   ico:'⚠️', cor:'#b8860b'},
       {k:'Recurso',               ico:'📄', cor:'#6c3483'},
       {k:'Contrarrazões',         ico:'📝', cor:'#6c3483', lbl:'Contrarrazão'},
-      {k:'Julgamento Recurso',    ico:'⚖️', cor:'#6c3483', lbl:'Julgamento do Recurso'},
+      {k:'Julgamento Recurso',    ico:'⚖️', cor:'#6c3483', lbl:'Julgamento do Recurso/Contrarrazão'},
       {k:'Suspensão',             ico:'⛔', cor:'#b03a2e', lbl:'Suspenso/Cancelado'},
       {k:'Data Alterada',         ico:'📅', cor:'#b8860b'},
       {k:'MP/TCU',                ico:'🏛', cor:'#b03a2e'}
