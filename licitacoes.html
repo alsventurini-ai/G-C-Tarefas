@@ -412,7 +412,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <div class="clip"><div class="clip-inner"></div></div>
   <div class="header">
     <div>
-      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v318</span></div><!-- VERSAO_APP: v318 -->
+      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v319</span></div><!-- VERSAO_APP: v319 -->
       <div class="hsubtitle">Galhardo &amp; Canales — Licitações, Participando, Histórico e Certidões</div>
     </div>
     <div>
@@ -3739,6 +3739,7 @@ function _renderLicGrupoHTML(mun, ts, etapasData, mostrarEtapas, histRegs){
           {k:'Conf. Habilitação',     ico:'🔍', cor:'#1a5276'},
           {k:'Envio Proposta',        ico:'📤', cor:'#1a5276'},
           {k:'Análise Documentos Pregoeiro', ico:'🗂', cor:'#1a5276'},
+          {k:'Habilitado',             ico:'🪪', cor:'#2e7d32'},
           {k:'Análise Hab. Concorrente', ico:'🔎', cor:'#1a5276'},
           {k:'Intenção de Recurso',   ico:'⚠️', cor:'#b8860b'},
           {k:'Recurso',               ico:'📄', cor:'#6c3483'},
@@ -3885,6 +3886,7 @@ function licConfirmarConcluir(id, mun){
 }
 var ETAPA_COM_OBS=['Resposta Impugnação','Análise Documentos Pregoeiro','Análise Hab. Concorrente','Julgamento Recurso'];
 var ETAPA_SIMNAO={
+  'Habilitado':          {q:'Fomos habilitados?', tag:'Habilitado'},
   'Resposta Impugnação': {q:'A impugnação foi acatada?', tag:'Acatado'},
   'Intenção de Recurso': {q:'Houve intenção de recurso?', tag:'Intenção de recurso'},
   'Recurso':             {q:'Recurso foi interposto?',   tag:'Recurso interposto'},
@@ -4378,6 +4380,7 @@ function _licEtapasCheckboxesHTML(mun){
       {k:'Conf. Habilitação',     ico:'🔍', cor:'#1a5276'},
       {k:'Envio Proposta',        ico:'📤', cor:'#1a5276'},
       {k:'Análise Documentos Pregoeiro', ico:'🗂', cor:'#1a5276'},
+      {k:'Habilitado',             ico:'🪪', cor:'#2e7d32'},
       {k:'Análise Hab. Concorrente', ico:'🔎', cor:'#1a5276'},
       {k:'Intenção de Recurso',   ico:'⚠️', cor:'#b8860b'},
       {k:'Recurso',               ico:'📄', cor:'#6c3483'},
