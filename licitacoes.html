@@ -412,7 +412,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <div class="clip"><div class="clip-inner"></div></div>
   <div class="header">
     <div>
-      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v323</span></div><!-- VERSAO_APP: v323 -->
+      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v324</span></div><!-- VERSAO_APP: v324 -->
       <div class="hsubtitle">Galhardo &amp; Canales — Licitações, Participando, Histórico e Certidões</div>
     </div>
     <div>
@@ -469,8 +469,8 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <div style="padding:0 30px 10px;display:flex;align-items:center;gap:8px;">
     <span style="font-size:11px;color:var(--muted);white-space:nowrap;">Ordenar por:</span>
     <select id="lic-sort" class="filter-select" onchange="renderLicitacoes()" style="font-size:13px;flex:1;">
+      <option value="data" selected>📅 Data mais próxima</option>
       <option value="municipio">🔤 A-Z Município</option>
-      <option value="data">📅 Data mais próxima</option>
       <option value="status">⏳ Pendentes primeiro</option>
     </select>
     <input type="search" id="lic-busca" placeholder="🔍 Buscar município ou pregão…" oninput="renderLicitacoes()"
@@ -487,8 +487,8 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <div style="padding:0 30px 10px;display:flex;align-items:center;gap:8px;">
     <span style="font-size:11px;color:var(--muted);white-space:nowrap;">Ordenar por:</span>
     <select id="lic-conc-sort" class="filter-select" onchange="renderLicitacoesConcluidas()" style="font-size:13px;flex:1;">
+      <option value="data" selected>📅 Data mais recente</option>
       <option value="municipio">🔤 A-Z Município</option>
-      <option value="data">📅 Data mais recente</option>
     </select>
     <input type="search" id="lic-conc-busca" placeholder="🔍 Buscar município ou pregão…" oninput="renderLicitacoesConcluidas()"
       style="flex:1;min-width:150px;padding:6px 10px;border:1px solid var(--border);border-radius:4px;font-size:13px;font-family:'Segoe UI',Tahoma,sans-serif;color:var(--ink);outline:none;background:#fff;">
@@ -4315,7 +4315,7 @@ function renderLicitacoes(){
       return;
     }
   }
-  var licSort=(document.getElementById('lic-sort')||{}).value||'municipio';
+  var licSort=(document.getElementById('lic-sort')||{}).value||'data';
   if(licSort==='municipio'){gruposPend.sort();}
   else if(licSort==='data'){
     gruposPend.sort(function(a,b){
@@ -4505,7 +4505,7 @@ function renderLicitacoesConcluidas(){
       return;
     }
   }
-  var licSort=(document.getElementById('lic-conc-sort')||{}).value||'municipio';
+  var licSort=(document.getElementById('lic-conc-sort')||{}).value||'data';
   if(licSort==='data'){
     todosKeys.sort(function(a,b){
       var ga=grupos[a]||[];var gb=grupos[b]||[];
@@ -4637,7 +4637,7 @@ function licPartImprimirSimples(){
     var d=tDisp&&tDisp.taskDate?tDisp.taskDate:(munHist.length>0?munHist[0].data:'');
     return {mun:mun,data:d};
   });
-  var licSort=(document.getElementById('lic-conc-sort')||{}).value||'municipio';
+  var licSort=(document.getElementById('lic-conc-sort')||{}).value||'data';
   if(licSort==='data'){itens.sort(function(a,b){return (b.data||'0000')>(a.data||'0000')?1:-1;});}
   else{itens.sort(function(a,b){return a.mun.localeCompare(b.mun);});}
   var linhas=itens.map(function(it){
