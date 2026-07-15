@@ -412,7 +412,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <div class="clip"><div class="clip-inner"></div></div>
   <div class="header">
     <div>
-      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v322</span></div><!-- VERSAO_APP: v322 -->
+      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v323</span></div><!-- VERSAO_APP: v323 -->
       <div class="hsubtitle">Galhardo &amp; Canales — Licitações, Participando, Histórico e Certidões</div>
     </div>
     <div>
@@ -5179,7 +5179,10 @@ function licHistRender(){
       html+='<span style="font-size:12px;font-weight:700;color:'+cor+';">'+e.tipo+'</span>';
       if(e.descricao) html+='<span style="font-size:11px;color:var(--muted);margin-left:6px;">— '+e.descricao+'</span>';
       html+='</div>';
+      html+='<span style="display:flex;gap:4px;align-items:center;flex-shrink:0;">';
+      html+='<button onclick="licLogEditarModal('+e.id+')" style="background:none;border:1px solid #ddd;border-radius:3px;padding:1px 7px;font-size:10px;cursor:pointer;color:#555;" title="Editar">✏️</button>';
       html+='<button onclick="licLogExcluir('+e.id+')" style="background:none;border:none;font-size:13px;cursor:pointer;color:#ccc;padding:0;" title="Excluir">×</button>';
+      html+='</span>';
       html+='</div>';
     });
     // Registros do histórico (pregão completo)
@@ -5219,6 +5222,57 @@ function licLogExcluir(id){
   if(!confirm('Excluir este evento do histórico?')) return;
   var log=licLogLoad().filter(function(e){return e.id!==id;});
   licLogSave(log);licHistRender();
+}
+function licLogEditarModal(id){
+  var log=licLogLoad();
+  var ev=log.find(function(e){return e.id===id;});
+  if(!ev){mostrarToast('Evento não encontrado.',false);return;}
+  var dt=new Date(ev.criadoEm);
+  var dVal=isNaN(dt)?'':dt.toISOString().slice(0,10);
+  var hVal=isNaN(dt)?'':dt.toTimeString().slice(0,5);
+  var overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  function esc(v){return String(v||'').replace(/"/g,'&quot;');}
+  overlay.innerHTML='<div style="background:#fff;border-radius:8px;padding:24px;max-width:420px;width:92%;font-family:Segoe UI,Tahoma,sans-serif;max-height:90vh;overflow:auto;">'
+    +'<div style="font-size:14px;font-weight:700;color:#1a5276;margin-bottom:16px;">✏️ Editar Evento — '+ev.municipio+'</div>'
+    +'<div style="margin-bottom:10px;"><label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:3px;">🏙 Município</label>'
+    +'<input id="lg-mun" type="text" value="'+esc(ev.municipio)+'" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;"></div>'
+    +'<div style="display:flex;gap:8px;margin-bottom:10px;">'
+    +'<div style="flex:1;"><label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:3px;">📅 Data</label>'
+    +'<input id="lg-data" type="date" value="'+dVal+'" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;"></div>'
+    +'<div style="flex:1;"><label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:3px;">🕐 Hora</label>'
+    +'<input id="lg-hora" type="time" value="'+hVal+'" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;"></div>'
+    +'</div>'
+    +'<div style="margin-bottom:10px;"><label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:3px;">📌 Evento / Etapa</label>'
+    +'<input id="lg-tipo" type="text" value="'+esc(ev.tipo)+'" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;"></div>'
+    +'<div style="margin-bottom:16px;"><label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:3px;">📝 Descrição / Observação</label>'
+    +'<textarea id="lg-desc" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;box-sizing:border-box;min-height:70px;">'+String(ev.descricao||'').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</textarea></div>'
+    +'<div style="display:flex;gap:8px;justify-content:flex-end;">'
+    +'<button id="lg-cancelar" style="padding:7px 16px;border:1px solid #ccc;border-radius:4px;background:#fff;font-size:12px;cursor:pointer;">Cancelar</button>'
+    +'<button id="lg-salvar" style="padding:7px 16px;border:none;border-radius:4px;background:#1a5276;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">💾 Salvar</button>'
+    +'</div></div>';
+  document.body.appendChild(overlay);
+  document.getElementById('lg-cancelar').onclick=function(){document.body.removeChild(overlay);};
+  document.getElementById('lg-salvar').onclick=function(){
+    var mun=document.getElementById('lg-mun').value.trim();
+    var tipo=document.getElementById('lg-tipo').value.trim();
+    var desc=document.getElementById('lg-desc').value.trim();
+    var d=document.getElementById('lg-data').value;
+    var h=document.getElementById('lg-hora').value||'00:00';
+    if(!tipo){alert('Informe o evento.');return;}
+    var novoLog=licLogLoad().map(function(e){
+      if(e.id!==id) return e;
+      e.municipio=mun||e.municipio;
+      e.tipo=tipo;
+      e.descricao=desc;
+      if(d) e.criadoEm=new Date(d+'T'+h+':00').toISOString();
+      return e;
+    });
+    licLogSave(novoLog);
+    document.body.removeChild(overlay);
+    licHistRender();
+    mostrarToast('✔ Evento atualizado.',false);
+  };
 }
 function licLogAdicionarManual(mun){
   var texto=prompt('Anotação para '+mun+':','');
