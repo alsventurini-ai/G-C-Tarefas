@@ -412,7 +412,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <div class="clip"><div class="clip-inner"></div></div>
   <div class="header">
     <div>
-      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v319</span></div><!-- VERSAO_APP: v319 -->
+      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v320</span></div><!-- VERSAO_APP: v320 -->
       <div class="hsubtitle">Galhardo &amp; Canales — Licitações, Participando, Histórico e Certidões</div>
     </div>
     <div>
@@ -488,6 +488,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
       <option value="municipio">🔤 A-Z Município</option>
       <option value="data">📅 Data mais recente</option>
     </select>
+    <button class="btn" style="font-size:12px;padding:5px 11px;border-color:#1a5276;color:#1a5276;white-space:nowrap;" onclick="licPartImprimirSimples()">🖨 Cidade e Data</button>
   </div>
   <div id="lic-conc-lista" style="padding:0 30px 24px;background:var(--cream);"></div>
   </div>
@@ -4552,6 +4553,53 @@ function renderLicitacoesConcluidas(){
     lista_html+=html;
   });
   lista.innerHTML=lista_html;
+}
+function licPartImprimirSimples(){
+  var grupos=_getLicGrupos();
+  var histRegs=licHistLoad();
+  var logRegs=licLogLoad();
+  var munSet={};
+  Object.keys(grupos).forEach(function(m){munSet[_normMun(m)]=m;});
+  histRegs.forEach(function(r){var n=_normMun(r.municipio);if(!munSet[n])munSet[n]=r.municipio;});
+  logRegs.forEach(function(e){var n=_normMun(e.municipio);if(!munSet[n])munSet[n]=e.municipio;});
+  var keys=Object.keys(munSet).map(function(k){return munSet[k];}).filter(function(mun){
+    var log=logRegs.filter(function(e){return _normMun(e.municipio)===_normMun(mun);});
+    var hist=histRegs.filter(function(r){return _normMun(r.municipio)===_normMun(mun);});
+    var temPartLog=log.some(function(e){return e.tipo.indexOf('Participamos')>=0&&e.tipo.indexOf('Não')<0;});
+    var temPartHist=hist.some(function(r){return r.participou==='sim';});
+    return temPartLog||temPartHist;
+  });
+  if(keys.length===0){mostrarToast('Nenhuma licitação em Participando.',false);return;}
+  var itens=keys.map(function(mun){
+    var munTasks=grupos[mun]||[];
+    var munHist=histRegs.filter(function(r){return _normMun(r.municipio)===_normMun(mun);});
+    var tDisp=munTasks.find(function(t){return /^licita/i.test(t.text.normalize('NFD').replace(/[\u0300-\u036f]/g,''));});
+    var d=tDisp&&tDisp.taskDate?tDisp.taskDate:(munHist.length>0?munHist[0].data:'');
+    return {mun:mun,data:d};
+  });
+  var licSort=(document.getElementById('lic-conc-sort')||{}).value||'municipio';
+  if(licSort==='data'){itens.sort(function(a,b){return (b.data||'0000')>(a.data||'0000')?1:-1;});}
+  else{itens.sort(function(a,b){return a.mun.localeCompare(b.mun);});}
+  var linhas=itens.map(function(it){
+    return '<tr><td>'+it.mun+'</td><td class="dt">'+(it.data?fmtDate(it.data):'—')+'</td></tr>';
+  }).join('');
+  var hoje=new Date().toLocaleDateString('pt-BR');
+  var w=window.open('','_blank');
+  w.document.write('<html><head><title>Participando — Cidade e Data</title><style>'
+    +'body{font-family:Segoe UI,Tahoma,sans-serif;padding:28px;color:#1a2744;}'
+    +'h1{font-size:17px;margin:0 0 2px;}'
+    +'.sub{font-size:11px;color:#777;margin-bottom:16px;}'
+    +'table{width:100%;border-collapse:collapse;}'
+    +'th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:#777;border-bottom:2px solid #1a2744;padding:6px 4px;}'
+    +'td{font-size:13px;padding:7px 4px;border-bottom:1px solid #e5e5e5;}'
+    +'td.dt{text-align:right;font-weight:700;white-space:nowrap;}'
+    +'</style></head><body>'
+    +'<h1>✅ Participando — Cidade e Data</h1>'
+    +'<div class="sub">Galhardo &amp; Canales · '+itens.length+' licitações · Emitido em '+hoje+'</div>'
+    +'<table><thead><tr><th>Município</th><th style="text-align:right;">Data da Disputa</th></tr></thead><tbody>'
+    +linhas+'</tbody></table></body></html>');
+  w.document.close();
+  setTimeout(function(){w.print();},350);
 }
 function licParticConcluir(mun){
   var venc=licVencedorGetMun(mun);
