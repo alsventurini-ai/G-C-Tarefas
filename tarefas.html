@@ -412,7 +412,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <div class="clip"><div class="clip-inner"></div></div>
   <div class="header">
     <div>
-      <div class="htitle">G&C Tarefas <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v311</span></div><!-- VERSAO_APP: v311 -->
+      <div class="htitle">G&C Tarefas <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v312</span></div><!-- VERSAO_APP: v312 -->
       <div class="hsubtitle">Galhardo &amp; Canales — Tarefas e Problemas Internos</div>
     </div>
     <div>
@@ -1124,7 +1124,7 @@ var REPEAT_LABELS={none:'Não repetir',daily:'🔁 Diária',weekly:'🔁 Semanal
 var PRIORITY_LABELS={alta:'🔴 Alta',media:'🟢 Média',baixa:'🟡 Baixa'};
 var PRIORITY_CLASS={alta:'priority-alta',media:'priority-media',baixa:'priority-baixa'};
 var now=new Date(),todayStr=now.toISOString().slice(0,10);
-var intradayTimes=[],_editingId=null,_editIntradayTimes=[],_alertSound=null;
+var intradayTimes=[],_editingId=null,_editIntradayTimes=[],_alertSound=null,_editFromHist=false;
 
 function pad(n){return String(n).padStart(2,'0');}
 function timeNow(){var n=new Date();return pad(n.getHours())+':'+pad(n.getMinutes());}
@@ -1957,7 +1957,7 @@ function abrirModalEdicao(id){
   document.getElementById('edit-modal').style.display='flex';
   setTimeout(function(){document.getElementById('em-text').focus();},80);
 }
-function fecharModalEdicao(){document.getElementById('edit-modal').style.display='none';_editingId=null;_modalSalvo=false;var btnSalv=document.getElementById('btn-modal-salvar');if(btnSalv){btnSalv.textContent='💾 Salvar';btnSalv.style.background='';}}
+function fecharModalEdicao(){document.getElementById('edit-modal').style.display='none';_editingId=null;_editFromHist=false;_modalSalvo=false;var btnSalv=document.getElementById('btn-modal-salvar');if(btnSalv){btnSalv.textContent='💾 Salvar';btnSalv.style.background='';}}
 function duplicarTarefa(id){
   var t=tasks.find(function(x){return x.id===id;});if(!t)return;
   _editingId='__novo__';
@@ -2020,6 +2020,10 @@ function salvarModalEdicao(){
       tasks.forEach(function(t){if(t.repeatId===_editingId&&t._futuro){t.text=novoText;t.paraQuem=novoPQ;t.priority=novoPriority;}});
       save();render();
     }
+  } else if(mode==='arquivada'){
+    var ta=archived.find(function(x){return x.id===_editingId;});if(!ta)return false;
+    ta.text=novoText;ta.paraQuem=novoPQ;ta.criadaPor=novoCriadaPor;ta.obs=novoObs;ta.priority=novoPriority;ta.pinned=novoPin;ta.duracao=novoDuracao;ta.schedule=novoTime||'';ta.taskDate=novaData||'';
+    saveArchived();if(typeof renderArchived==='function')renderArchived();
   } else {
     var t=tasks.find(function(x){return x.id===_editingId;});if(!t)return false;
     t.text=novoText;t.paraQuem=novoPQ;t.criadaPor=novoCriadaPor;t.obs=novoObs;t.priority=novoPriority;t.pinned=novoPin;t.duracao=novoDuracao;t.schedule=novoTime||'';
@@ -2046,6 +2050,7 @@ function salvarModalEdicao(){
     }
     save();render();atualizarFiltros();
   }
+  if(_editFromHist){var _th=document.getElementById('tab-historico');if(_th&&_th.classList.contains('active'))renderHistorico();}
   _modalSalvo=true;
   // Feedback visual no botão Salvar
   var btnSalv=document.getElementById('btn-modal-salvar');
@@ -5401,6 +5406,32 @@ function histReabrirTarefa(id){
   save();render();renderHistorico();
   mostrarToast('↩ Tarefa reaberta — voltou para Pendentes.',false);
 }
+function histEditarTarefa(id){
+  _editFromHist=true;
+  // Concluída que ainda está em "tasks": reaproveita o modal padrão.
+  if(tasks.some(function(x){return x.id===id;})){ abrirModalEdicao(id); return; }
+  // Tarefa arquivada: popular o modal manualmente e salvar de volta em "archived".
+  var t=archived.find(function(x){return x.id===id;});
+  if(!t){_editFromHist=false;mostrarToast('Tarefa não encontrada para edição.',false);return;}
+  _editingId=id;
+  var _emcp=document.getElementById('em-criadapor');if(_emcp)_emcp.value=t.criadaPor||'';
+  document.getElementById('em-pq').value=t.paraQuem||'';
+  document.getElementById('em-text').value=t.text||'';
+  document.getElementById('em-date').value=t.taskDate||'';
+  document.getElementById('em-time').value=t.schedule||'';
+  document.getElementById('em-obs').value=t.obs||'';
+  document.getElementById('em-priority').value=t.priority||'';
+  document.getElementById('em-pin').value=t.pinned?'1':'';
+  document.getElementById('em-duracao').value=t.duracao||'';
+  document.getElementById('em-repeat').value='none';
+  document.getElementById('em-maxrep').value='';
+  _editIntradayTimes=[];
+  onEditRepeatChange();
+  renderIntradayList('em-intraday-list',_editIntradayTimes,null);
+  document.getElementById('edit-modal').dataset.mode='arquivada';
+  document.getElementById('edit-modal').style.display='flex';
+  setTimeout(function(){document.getElementById('em-text').focus();},80);
+}
 function histPeriodo(dias){
   var ate=new Date();
   var de=new Date();de.setDate(de.getDate()-dias+1);
@@ -5469,10 +5500,11 @@ function renderHistorico(){
       var hr=t.doneAt?' · ✓ '+t.doneAt:'';
       var podeReabrir=tasks.some(function(x){return x.id===t.id;});
       var btnReabrir=podeReabrir?'<button onclick="histReabrirTarefa('+t.id+')" title="Reabrir tarefa (volta para Pendentes)" style="background:none;border:1px solid var(--border);border-radius:3px;padding:2px 8px;font-size:10.5px;cursor:pointer;color:var(--navy);margin-left:8px;white-space:nowrap;">↩ Reabrir</button>':'';
+      var btnEditarH='<button onclick="histEditarTarefa('+t.id+')" title="Editar esta tarefa" style="background:none;border:1px solid var(--purple);border-radius:3px;padding:2px 8px;font-size:10.5px;cursor:pointer;color:var(--purple);margin-left:6px;white-space:nowrap;">✏️ Editar</button>';
       html+='<div class="hist-item">'+
         '<div class="hist-item-done">✔</div>'+
         '<div class="hist-item-body">'+
-          '<div class="hist-item-text">'+cp+pq+certEsc(t.text)+btnReabrir+'</div>'+
+          '<div class="hist-item-text">'+cp+pq+certEsc(t.text)+btnEditarH+btnReabrir+'</div>'+
           '<div class="hist-item-meta">'+(t.schedule?'⏰ '+t.schedule+' ':'')+hr+'</div>'+obs+
         '</div></div>';
     });
