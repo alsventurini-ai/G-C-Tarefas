@@ -274,6 +274,11 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#c8c3bb;min-height:100v
 .cert-stat-num.amber{color:var(--amber);}
 .cert-stat-num.green{color:var(--green);}
 .cert-stat-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;}
+.cert-stat.clicavel{cursor:pointer;transition:border-color .15s,box-shadow .15s,background .15s;user-select:none;}
+.cert-stat.clicavel:hover{border-color:var(--navy);box-shadow:0 2px 7px rgba(0,0,0,.09);}
+.cert-stat.ativo{border-color:var(--navy);background:var(--cream2);box-shadow:inset 0 -3px 0 var(--navy);}
+.cert-stat.ativo .cert-stat-lbl{color:var(--navy);font-weight:700;}
+.cert-stat.vazio{opacity:.5;}
 .lic-stat-btn:hover{box-shadow:0 2px 10px rgba(0,0,0,.12);border-color:#b0b8cc;}
 .cert-alert-bar{background:#fff8ec;border:1px solid #e8b84b;border-radius:3px;padding:9px 14px;font-size:12.5px;color:#7a5a00;margin-bottom:12px;line-height:1.5;}
 .cert-card{background:var(--white);border:1px solid var(--border);border-radius:3px;padding:12px 15px;margin-bottom:9px;border-left:3px solid var(--border);}.tasks-area .cert-card{margin-left:0;margin-right:0;}
@@ -412,7 +417,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <div class="clip"><div class="clip-inner"></div></div>
   <div class="header">
     <div>
-      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v325</span></div><!-- VERSAO_APP: v325 -->
+      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v326</span></div><!-- VERSAO_APP: v326 -->
       <div class="hsubtitle">Galhardo &amp; Canales — Licitações, Participando, Histórico e Certidões</div>
     </div>
     <div>
@@ -508,6 +513,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
     </div>
   </div>
   <div id="lic-hist-stats-row" style="display:flex;gap:10px;margin:0 30px 10px;flex-wrap:wrap;"></div>
+  <div id="lic-hist-filtro-aviso" style="margin:0 30px 8px;"></div>
   <div style="padding:0 30px 10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
     <input type="text" id="lic-hist-search" placeholder="🔍 Buscar município, quem faz…" oninput="licHistRender()" style="flex:1;min-width:180px;border:1px solid var(--border);background:var(--white);padding:7px 10px;font-size:13px;border-radius:2px;font-family:'Segoe UI',Tahoma,sans-serif;color:var(--ink);outline:none;">
     <select id="lic-hist-sort" class="filter-select" onchange="licHistRender()" style="font-size:13px;">
@@ -5228,6 +5234,23 @@ function licHistExcluir(id){
   var lista=licHistLoad().filter(function(r){return r.id!==id;});
   licHistSave(lista);licHistRender();
 }
+var LIC_HIST_CARD_FILTRO='';
+function licHistFiltroCard(filtro,num){
+  if(filtro===''){
+    LIC_HIST_CARD_FILTRO='';
+    var b1=document.getElementById('lic-hist-search'); if(b1)b1.value='';
+    var b2=document.getElementById('lic-hist-filtro-resultado'); if(b2)b2.value='';
+    licHistRender();
+    if(typeof mostrarToast==='function')mostrarToast('Filtros limpos.',false);
+    return;
+  }
+  if(num===0 && LIC_HIST_CARD_FILTRO!==filtro){
+    if(typeof mostrarToast==='function')mostrarToast('Nenhum registro nessa categoria.',true);
+    return;
+  }
+  LIC_HIST_CARD_FILTRO=(LIC_HIST_CARD_FILTRO===filtro)?'':filtro;
+  licHistRender();
+}
 function licHistRender(){
   var lista=document.getElementById('lic-hist-lista');
   var stats=document.getElementById('lic-hist-stats-row');
@@ -5264,6 +5287,12 @@ function licHistRender(){
   var munKeys=Object.keys(munMap);
   if(q){var ql=q.toLowerCase();munKeys=munKeys.filter(function(k){return munMap[k].nome.toLowerCase().indexOf(ql)>=0||munMap[k].eventos.some(function(e){return(e.tipo+e.descricao).toLowerCase().indexOf(ql)>=0;})||munMap[k].regs.some(function(r){return(r.municipio+r.vencedor+r.pregao+r.obs).toLowerCase().indexOf(ql)>=0;});});}
   if(filtroRes){munKeys=munKeys.filter(function(k){return munMap[k].regs.some(function(r){return r.resultado===filtroRes;})||munMap[k].eventos.some(function(e){return e.tipo.indexOf(filtroRes)>=0;});});}
+  // Conjunto antes do filtro dos cards (para os números dos cards ficarem estáveis)
+  var munKeysBase=munKeys.slice();
+  // Filtro pelos cards de estatística
+  if(LIC_HIST_CARD_FILTRO==='eventos'){munKeys=munKeys.filter(function(k){return munMap[k].eventos.length>0;});}
+  else if(LIC_HIST_CARD_FILTRO==='participamos'){munKeys=munKeys.filter(function(k){return munMap[k].regs.some(function(r){return r.participou==='sim';});});}
+  else if(LIC_HIST_CARD_FILTRO==='vitorias'){munKeys=munKeys.filter(function(k){return munMap[k].regs.some(function(r){return r.resultado==='ganhou';});});}
   // Ordenar municípios
   if(sort==='municipio'||sort==='quemfaz'){munKeys.sort(function(a,b){return munMap[a].nome.localeCompare(munMap[b].nome);});}
   else{munKeys.sort(function(a,b){
@@ -5272,17 +5301,34 @@ function licHistRender(){
     return sort==='data_asc'?(da<db?-1:1):(db<da?-1:1);
   });}
   // Stats
-  var totalMun=munKeys.length;
+  var totalMun=munKeysBase.length;
   var totalEventos=log.filter(function(e){return !(e.tipo.indexOf('Participamos')>=0&&e.tipo.indexOf('Não')<0);}).length;
   var _partSet={};
   regsAntigos.forEach(function(r){if(r.participou==='sim')_partSet[_normMun(r.municipio)]=true;});
   var participamos=Object.keys(_partSet).length;
   var ganhou=regsAntigos.filter(function(r){return r.resultado==='ganhou';}).length;
-  stats.innerHTML='<div class="cert-stat"><div class="cert-stat-num" style="color:var(--navy)">'+totalMun+'</div><div class="cert-stat-lbl">Municípios</div></div>'+
-    '<div class="cert-stat"><div class="cert-stat-num" style="color:var(--amber)">'+totalEventos+'</div><div class="cert-stat-lbl">Eventos</div></div>'+
-    '<div class="cert-stat"><div class="cert-stat-num" style="color:var(--green)">'+participamos+'</div><div class="cert-stat-lbl">Participamos</div></div>'+
-    '<div class="cert-stat"><div class="cert-stat-num" style="color:var(--green)">'+ganhou+'</div><div class="cert-stat-lbl">Vitórias</div></div>';
-  if(munKeys.length===0){lista.innerHTML='<div class="cert-empty">Nenhum registro. Os eventos das licitações aparecem aqui automaticamente.</div>';return;}
+  function _hstCard(num,lbl,cor,filtro,titulo){
+    var ativo=(LIC_HIST_CARD_FILTRO===filtro);
+    var vazio=(filtro!=='' && num===0);
+    return '<div class="cert-stat clicavel'+(ativo?' ativo':'')+(vazio?' vazio':'')+'" '
+      +'title="'+titulo+'" onclick="licHistFiltroCard(\''+filtro+'\','+num+')">'
+      +'<div class="cert-stat-num" style="color:'+cor+'">'+num+'</div>'
+      +'<div class="cert-stat-lbl">'+lbl+'</div></div>';
+  }
+  stats.innerHTML=
+    _hstCard(totalMun,'Municípios','var(--navy)','','Limpar todos os filtros e mostrar tudo')+
+    _hstCard(totalEventos,'Eventos','var(--amber)','eventos','Mostrar só municípios com eventos registrados')+
+    _hstCard(participamos,'Participamos','var(--green)','participamos','Mostrar só onde participamos')+
+    _hstCard(ganhou,'Vitórias','var(--green)','vitorias','Mostrar só as licitações que ganhamos');
+  // Aviso de filtro ativo
+  var avisoEl=document.getElementById('lic-hist-filtro-aviso');
+  if(avisoEl){
+    var lblF={eventos:'📌 Com eventos',participamos:'✅ Participamos',vitorias:'🏆 Vitórias'}[LIC_HIST_CARD_FILTRO];
+    avisoEl.innerHTML=lblF?('<span style="display:inline-flex;align-items:center;gap:7px;background:var(--navy);color:#fff;border-radius:14px;padding:3px 12px;font-size:12px;font-weight:600;">'
+      +lblF+' — '+munKeys.length+' de '+totalMun
+      +'<span onclick="licHistFiltroCard(\'\',0)" title="Limpar filtro" style="cursor:pointer;font-size:15px;line-height:1;opacity:.8;">×</span></span>'):'';
+  }
+  if(munKeys.length===0){lista.innerHTML='<div class="cert-empty">'+(LIC_HIST_CARD_FILTRO?'Nenhum município nesse filtro. <span onclick="licHistFiltroCard(\'\',0)" style="cursor:pointer;color:var(--navy);font-weight:600;text-decoration:underline;">Limpar filtro</span>':'Nenhum registro. Os eventos das licita\u00e7\u00f5es aparecem aqui automaticamente.')+'</div>';return;}
   var html='';
   munKeys.forEach(function(norm){
     var mun=munMap[norm];
