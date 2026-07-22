@@ -412,7 +412,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <div class="clip"><div class="clip-inner"></div></div>
   <div class="header">
     <div>
-      <div class="htitle">G&C Tarefas <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v313</span></div><!-- VERSAO_APP: v313 -->
+      <div class="htitle">G&C Tarefas <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v314</span></div><!-- VERSAO_APP: v314 -->
       <div class="hsubtitle">Galhardo &amp; Canales — Tarefas e Problemas Internos</div>
     </div>
     <div>
@@ -5775,6 +5775,7 @@ function probEnviarDeTarefa(t){
     document.body.removeChild(overlay);
     var probs=probLoad();
     probs.push({
+      _origemTarefaId:(t&&t.id)||null,
       id:Date.now(),
       titulo:titulo,
       descricao:t.obs||'',
@@ -5790,7 +5791,18 @@ function probEnviarDeTarefa(t){
       origemTarefaId:t.id
     });
     probSaveData(probs);
-    mostrarToast('⚠️ Tarefa virou Problema — já marcada para a pauta!',false);
+    // A tarefa sai da lista e vai para o Histórico (arquivadas)
+    var _arquivou=false;
+    try{
+      if(t&&t.id&&tasks.some(function(x){return x.id===t.id;})){
+        arquivarTarefa(t.id);
+        _arquivou=true;
+      }
+    }catch(e){console.warn('Arquivar apos virar problema:',e);}
+    if(typeof render==='function') render();
+    mostrarToast(_arquivou
+      ? '⚠️ Virou Problema e saiu das Tarefas — está no Histórico como arquivada.'
+      : '⚠️ Tarefa virou Problema — já marcada para a pauta!',false);
   };
 }
 function probEnviarParaTarefa(id){
