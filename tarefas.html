@@ -412,7 +412,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <div class="clip"><div class="clip-inner"></div></div>
   <div class="header">
     <div>
-      <div class="htitle">G&C Tarefas <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v312</span></div><!-- VERSAO_APP: v312 -->
+      <div class="htitle">G&C Tarefas <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v313</span></div><!-- VERSAO_APP: v313 -->
       <div class="hsubtitle">Galhardo &amp; Canales — Tarefas e Problemas Internos</div>
     </div>
     <div>
@@ -543,6 +543,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
     <button class="btn btn-resumo" onclick="mostrarResumo()">📊 Resumo</button>
     <button class="btn" onclick="clearDone()">✕ Concluídas</button>
     <button class="btn btn-danger" onclick="recuperarBackupFirebase()">🆘 Recuperar Backup</button>
+    <button class="btn" style="border-color:#8e44ad;color:#8e44ad;font-weight:600;" onclick="limparLicitacoesDaBase()">🧹 Limpar Licitações</button>
     <button class="btn btn-danger" onclick="clearAll()">🗑 Limpar tudo</button>
   </div>
 
@@ -1752,9 +1753,10 @@ function addTask(){
       var recorr2={id:tid,text:txt,paraQuem:pq,schedule:horaTask,repeat:repeat,active:true,maxRep:maxRep,repCount:1,dayOfWeek:now.getDay(),dayOfMonth:now.getDate(),lastGenerated:todayStr,priority:priority,startDate:dataTask||todayStr};
       tasks[tasks.length-1].repeatId=tid;adicionarRecorrencia(recorr2);
     }
-    // Deteccao automatica: "Licitacao — Municipio" gera 5 tarefas
+    // Deteccao automatica DESATIVADA — licitações agora vivem só no app de Licitações.
     var licMatch=txt.match(/^licitaç[aã]o\s*[-—]\s*(.+)$/i);
-    if(licMatch&&dataTask){
+    if(licMatch){ setTimeout(function(){ mostrarToast('🏛 Licitações agora são criadas no app de Licitações. Esta ficou como tarefa comum.',true); },400); }
+    if(false&&licMatch&&dataTask){
       var munAuto=licMatch[1].trim();
       var dataImpugAuto=somarDiasUteis_subtrair(dataTask,3);
       var dataAnaliseAuto=somarDiasCorridos(dataTask,8);
@@ -2948,7 +2950,60 @@ function somarDiasCorridos(dataIso,dias){
   d.setDate(d.getDate()-dias);
   return d.toISOString().slice(0,10);
 }
+
+// ── Limpeza: remover licitações desta base (Etapa 2 da separação) ──
+function _ehTarefaLicitacao(t){
+  if(!t||!t.text) return false;
+  var tx=t.text.toLowerCase();
+  if(t._licMunicipio) return true;
+  if(t.paraQuem==='Licitações') return true;
+  if(t.tags&&t.tags.indexOf('licitação')>=0) return true;
+  if(t.text.indexOf('🏛 Disputa')===0||t.text.indexOf('⚠️ Impugnação')===0||t.text.indexOf('📋 Análise de Edital')===0) return true;
+  if(t.text.indexOf('📤 Início Inclusão da Proposta')===0||t.text.indexOf('📤 Prazo Final Inclusão da Proposta')===0) return true;
+  if(t.text.indexOf('📨 Início Envio da Proposta')===0||t.text.indexOf('⚖️ Prazo Final de Impugnação')===0) return true;
+  if(t.text.indexOf('🔎 Conferir Retorno da Impugnação')===0||t.text.indexOf('📩 Prazo Final p/ Resposta da Impugnação')===0) return true;
+  if(/^licitaç[aã]o\s*[-—]/i.test(t.text)) return true;
+  if(/^impugnaç[aã]o\s*[-—]/i.test(t.text)) return true;
+  if(/^an[aá]lise do edital\s*[-—]/i.test(t.text)) return true;
+  if(tx.indexOf('licitaç')>=0||tx.indexOf('licitac')>=0) return true;
+  return false;
+}
+function limparLicitacoesDaBase(){
+  var alvoT=tasks.filter(_ehTarefaLicitacao);
+  var alvoA=(archived||[]).filter(_ehTarefaLicitacao);
+  var alvoR=(recorrencias||[]).filter(_ehTarefaLicitacao);
+  var total=alvoT.length+alvoA.length+alvoR.length;
+  if(total===0){ mostrarToast('Nenhuma licitação encontrada nesta base — já está limpa.',false); return; }
+  var amostra=alvoT.slice(0,12).map(function(t){return '  • '+t.text;}).join('\n');
+  var msg='LIMPAR LICITAÇÕES DA BASE DE TAREFAS\n\n'
+    +'Serão removidas:\n'
+    +'  '+alvoT.length+' tarefas\n'
+    +'  '+alvoA.length+' arquivadas\n'
+    +'  '+alvoR.length+' recorrências\n\n'
+    +'Exemplos:\n'+amostra+(alvoT.length>12?'\n  … e mais '+(alvoT.length-12):'')
+    +'\n\nIsto NÃO apaga nada do app de Licitações — lá elas continuam intactas.\n'
+    +'Um backup completo será baixado antes.\n\nConfirmar?';
+  if(!confirm(msg)) return;
+  // Backup antes de qualquer remoção
+  try{
+    var blob=new Blob([gerarConteudoBackup()],{type:'application/json'});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');
+    a.href=url; a.download='gc_tarefas_antes_da_limpeza_'+new Date().toISOString().slice(0,10)+'.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(url);},2000);
+  }catch(e){
+    if(!confirm('Não consegui gerar o backup automático ('+e+').\n\nContinuar assim mesmo?')) return;
+  }
+  tasks=tasks.filter(function(t){return !_ehTarefaLicitacao(t);});
+  archived=(archived||[]).filter(function(t){return !_ehTarefaLicitacao(t);});
+  recorrencias=(recorrencias||[]).filter(function(t){return !_ehTarefaLicitacao(t);});
+  save(); render();
+  mostrarToast('🧹 '+total+' registros de licitação removidos da base de Tarefas.',false);
+}
 function criarLicitacao(){
+  alert('As licitações passaram a ser criadas exclusivamente no app de Licitações.\n\nAbra o G&C Licitações e cadastre por lá — os prazos, etapas e o histórico ficam todos naquela base.');
+  return;
   var municipio=document.getElementById('lic-municipio').value.trim();
   var dataDisputa=document.getElementById('lic-data').value;
   var horaDisputa=document.getElementById('lic-hora').value;
