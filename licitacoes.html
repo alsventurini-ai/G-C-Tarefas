@@ -412,7 +412,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <div class="clip"><div class="clip-inner"></div></div>
   <div class="header">
     <div>
-      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v324</span></div><!-- VERSAO_APP: v324 -->
+      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v325</span></div><!-- VERSAO_APP: v325 -->
       <div class="hsubtitle">Galhardo &amp; Canales — Licitações, Participando, Histórico e Certidões</div>
     </div>
     <div>
@@ -565,7 +565,10 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <div id="tab-listagem" class="tab-content">
   <div class="action-bar" style="justify-content:space-between;">
     <span style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.3px;color:var(--muted);font-weight:600;">📋 Listagem — disputas por data</span>
-    <span id="listagem-restaurar" style="font-size:12px;"></span>
+    <span style="display:flex;align-items:center;gap:12px;">
+      <span id="listagem-restaurar" style="font-size:12px;"></span>
+      <button class="btn" onclick="abrirModalListagem()" style="background:var(--navy);color:#fff;border-color:var(--navy);font-weight:600;">➕ Adicionar</button>
+    </span>
   </div>
   <div id="listagem-lista" style="padding:0 30px 24px;background:var(--cream);"></div>
   </div>
@@ -837,6 +840,45 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   </div>
 </div>
 
+<div id="lst-add-modal" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span class="modal-head-title" id="lst-add-titulo">📋 Adicionar à Listagem</span>
+      <button class="modal-close" onclick="fecharModalListagem()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="lst-add-id">
+      <div class="modal-row">
+        <div class="modal-field">
+          <label>🏙 Município</label>
+          <input type="text" id="lst-add-mun" class="modal-input" placeholder="Nome da cidade…" autocomplete="off">
+        </div>
+      </div>
+      <div class="modal-row">
+        <div class="modal-field">
+          <label>📅 Data da Disputa</label>
+          <input type="date" id="lst-add-data" class="modal-input">
+        </div>
+        <div class="modal-field">
+          <label>⏰ Horário</label>
+          <input type="time" id="lst-add-hora" class="modal-input">
+        </div>
+      </div>
+      <div class="modal-field" style="margin-bottom:6px;">
+        <label>📝 Observação (opcional)</label>
+        <textarea id="lst-add-obs" class="modal-textarea" placeholder="Nº do pregão, plataforma, lembrete…" style="min-height:60px;"></textarea>
+      </div>
+      <div style="background:var(--cream2);border:1px solid var(--border);border-radius:3px;padding:10px 13px;font-size:12.5px;color:var(--muted);line-height:1.6;">
+        Lançamento avulso — aparece <strong>só nesta Listagem</strong>, sem criar tarefas nem entrar em "Licitações em Análise".
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-modal-cancel" onclick="fecharModalListagem()">Cancelar</button>
+      <button class="btn-modal-primary" onclick="salvarModalListagem()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
 <div id="cert-edit-modal" class="cert-modal-overlay" style="display:none;">
   <div class="cert-modal-box">
     <div class="modal-head" style="background:#7a3030;">
@@ -888,8 +930,9 @@ async function fbSave(t,r,a,tp){
     var licProg=localStorage.getItem('gc_lic_prog_v1')||'{}';
     var probs=localStorage.getItem('gc_problemas_v1')||'[]';
     var atas=localStorage.getItem('gc_atas_v1')||'[]';
+    var licLstMan=localStorage.getItem('gc_lic_listagem_manual_v1')||'[]';
     _fbLastSaveTs=Date.now();
-    await setDoc(REF,{tasks:JSON.stringify(t),recorrencias:JSON.stringify(r),archived:JSON.stringify(a||[]),templates:JSON.stringify(tp||[]),certidoes:cert,licHistorico:licHist,licLog:licLog,licVencedor:licVenc,licProgresso:licProg,problemas:probs,atas:atas,updatedAt:new Date().toISOString()});
+    await setDoc(REF,{tasks:JSON.stringify(t),recorrencias:JSON.stringify(r),archived:JSON.stringify(a||[]),templates:JSON.stringify(tp||[]),certidoes:cert,licHistorico:licHist,licLog:licLog,licVencedor:licVenc,licProgresso:licProg,problemas:probs,atas:atas,licListagemManual:licLstMan,updatedAt:new Date().toISOString()});
   }
   catch(e){console.warn("Firebase save:",e);}
 }
@@ -911,6 +954,9 @@ onSnapshot(REF, function(snap){
     if(d.licProgresso) localStorage.setItem('gc_lic_prog_v1',d.licProgresso);
     if(d.problemas) localStorage.setItem('gc_problemas_v1',d.problemas);
     if(d.atas) localStorage.setItem('gc_atas_v1',d.atas);
+    if(d.licListagemManual){ localStorage.setItem('gc_lic_listagem_manual_v1',d.licListagemManual);
+      var _lstTab=document.getElementById('tab-listagem');
+      if(_lstTab&&_lstTab.classList.contains('active')&&typeof renderListagem==='function') renderListagem(); }
     // Só atualiza se os dados do Firebase forem diferentes dos locais
     var localRaw=localStorage.getItem('gc_tarefas_v3');
     var localTasks=localRaw?JSON.parse(localRaw):[];
@@ -4345,8 +4391,75 @@ function listagemConcluir(mun){
   if(typeof mostrarToast==='function')mostrarToast('✓ '+mun+' removida da listagem.',false);
   renderListagem();
 }
+// ── Lançamentos manuais da Listagem (sincronizados no Firebase) ──
+var LISTAGEM_MANUAL_KEY='gc_lic_listagem_manual_v1';
+function listagemManualLoad(){try{return JSON.parse(localStorage.getItem(LISTAGEM_MANUAL_KEY)||'[]');}catch(e){return [];}}
+function listagemManualSave(arr){
+  localStorage.setItem(LISTAGEM_MANUAL_KEY,JSON.stringify(arr));
+  if(window._fbSave){
+    var t=JSON.parse(localStorage.getItem(KEY)||'[]');
+    var r=JSON.parse(localStorage.getItem(RECORR_KEY)||'[]');
+    var a=JSON.parse(localStorage.getItem(ARCH_KEY)||'[]');
+    var tp=JSON.parse(localStorage.getItem(TPL_KEY)||'[]');
+    window._fbSave(t,r,a,tp);
+  }
+}
+function abrirModalListagem(id){
+  var m=document.getElementById('lst-add-modal');if(!m)return;
+  var reg=null;
+  if(id){var arr=listagemManualLoad();reg=arr.find(function(x){return x.id===id;})||null;}
+  document.getElementById('lst-add-id').value=reg?reg.id:'';
+  document.getElementById('lst-add-mun').value=reg?(reg.mun||''):'';
+  document.getElementById('lst-add-data').value=reg?(reg.data||''):'';
+  document.getElementById('lst-add-hora').value=reg?(reg.hora||''):'';
+  document.getElementById('lst-add-obs').value=reg?(reg.obs||''):'';
+  document.getElementById('lst-add-titulo').textContent=reg?'✏️ Editar lançamento':'📋 Adicionar à Listagem';
+  m.style.display='flex';
+  setTimeout(function(){var i=document.getElementById('lst-add-mun');if(i)i.focus();},60);
+}
+function fecharModalListagem(){var m=document.getElementById('lst-add-modal');if(m)m.style.display='none';}
+function salvarModalListagem(){
+  var id=document.getElementById('lst-add-id').value;
+  var mun=(document.getElementById('lst-add-mun').value||'').trim();
+  var data=document.getElementById('lst-add-data').value||'';
+  var hora=document.getElementById('lst-add-hora').value||'';
+  var obs=(document.getElementById('lst-add-obs').value||'').trim();
+  if(!mun){if(typeof mostrarToast==='function')mostrarToast('Informe o município.',true);return;}
+  if(!data){if(typeof mostrarToast==='function')mostrarToast('Informe a data da disputa.',true);return;}
+  var arr=listagemManualLoad();
+  if(id){
+    var reg=arr.find(function(x){return x.id===id;});
+    if(reg){reg.mun=mun;reg.data=data;reg.hora=hora;reg.obs=obs;}
+  }else{
+    arr.push({id:'lstm_'+Date.now()+'_'+Math.floor(Math.random()*1000),mun:mun,data:data,hora:hora,obs:obs,oculta:false,criadoEm:new Date().toISOString()});
+  }
+  listagemManualSave(arr);
+  fecharModalListagem();
+  if(typeof mostrarToast==='function')mostrarToast(id?'✏️ Lançamento atualizado.':'➕ '+mun+' adicionada à listagem.',false);
+  renderListagem();
+}
+function listagemManualConcluir(id){
+  var arr=listagemManualLoad();
+  var reg=arr.find(function(x){return x.id===id;});
+  if(reg){reg.oculta=true;listagemManualSave(arr);
+    if(typeof mostrarToast==='function')mostrarToast('✓ '+reg.mun+' removida da listagem.',false);}
+  renderListagem();
+}
+function listagemManualExcluir(id){
+  var arr=listagemManualLoad();
+  var reg=arr.find(function(x){return x.id===id;});
+  if(!reg)return;
+  if(!confirm('Excluir definitivamente "'+reg.mun+'" da listagem?'))return;
+  listagemManualSave(arr.filter(function(x){return x.id!==id;}));
+  if(typeof mostrarToast==='function')mostrarToast('🗑 Lançamento excluído.',false);
+  renderListagem();
+}
 function listagemRestaurar(){
   listagemOcultaSave([]);
+  var arr=listagemManualLoad();
+  var mudou=false;
+  arr.forEach(function(x){if(x.oculta){x.oculta=false;mudou=true;}});
+  if(mudou)listagemManualSave(arr);
   if(typeof mostrarToast==='function')mostrarToast('Listagem restaurada.',false);
   renderListagem();
 }
@@ -4379,17 +4492,24 @@ function renderListagem(){
   });
   var hojeStr=(function(){var h=new Date();h.setHours(0,0,0,0);var y=h.getFullYear(),m=('0'+(h.getMonth()+1)).slice(-2),d=('0'+h.getDate()).slice(-2);return y+'-'+m+'-'+d;})();
   var ocultas=listagemOcultaLoad();
-  var itens=gruposPend.map(function(mun){var dd=_lstDataDisputa(grupos[mun]);return {mun:mun,data:dd.data,hora:dd.hora};});
+  var itens=gruposPend.map(function(mun){var dd=_lstDataDisputa(grupos[mun]);return {mun:mun,data:dd.data,hora:dd.hora,manual:false};});
   itens=itens.filter(function(it){return ocultas.indexOf(_normMun(it.mun))<0;});
+  // Lançamentos manuais
+  var manuais=listagemManualLoad();
+  var manuaisOcultos=manuais.filter(function(x){return x.oculta;}).length;
+  manuais.filter(function(x){return !x.oculta;}).forEach(function(x){
+    itens.push({mun:x.mun,data:x.data||'',hora:x.hora||'',obs:x.obs||'',manual:true,id:x.id});
+  });
   itens.sort(function(a,b){var da=a.data||'9999-99-99',db=b.data||'9999-99-99';return da<db?-1:da>db?1:(a.mun<b.mun?-1:1);});
   // Badge da aba
   var badge=document.getElementById('tab-listagem-badge');
   if(badge){if(itens.length>0){badge.textContent=itens.length;badge.style.display='inline';}else{badge.style.display='none';}}
   // Botão restaurar
+  var totalOcultas=ocultas.length+manuaisOcultos;
   var restEl=document.getElementById('listagem-restaurar');
-  if(restEl){restEl.innerHTML=ocultas.length>0?'<span onclick="listagemRestaurar()" title="Trazer de volta as removidas" style="cursor:pointer;color:var(--navy);font-weight:600;">↩ restaurar ('+ocultas.length+')</span>':'';}
+  if(restEl){restEl.innerHTML=totalOcultas>0?'<span onclick="listagemRestaurar()" title="Trazer de volta as removidas" style="cursor:pointer;color:var(--navy);font-weight:600;">↩ restaurar ('+totalOcultas+')</span>':'';}
   if(itens.length===0){
-    lista.innerHTML='<div class="cert-empty" style="padding:24px 0;text-align:center;color:var(--muted);">Nenhuma licitação na listagem.</div>';
+    lista.innerHTML='<div class="cert-empty" style="padding:24px 0;text-align:center;color:var(--muted);">Nenhuma licitação na listagem. Use ➕ Adicionar para lançar manualmente.</div>';
     return;
   }
   var h='<div style="background:var(--white);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-top:6px;">';
@@ -4402,14 +4522,30 @@ function renderListagem(){
     var corData=hoje?'#b8860b':(atrasada?'#b03a2e':'var(--navy)');
     var flag=hoje?' 🔴 HOJE':(atrasada?' ⚠️':'');
     var borda=i<itens.length-1?'border-bottom:1px solid var(--border);':'';
+    var acaoConcluir=item.manual?('listagemManualConcluir(\''+item.id+'\')'):('listagemConcluir(\''+munEsc+'\')');
+    var extras='';
+    if(item.manual){
+      extras='<button title="Editar lançamento" onclick="abrirModalListagem(\''+item.id+'\')" '
+        +'style="background:none;border:none;cursor:pointer;font-size:14px;padding:0 2px;opacity:.65;flex-shrink:0;">✏️</button>'
+        +'<button title="Excluir lançamento" onclick="listagemManualExcluir(\''+item.id+'\')" '
+        +'style="background:none;border:none;cursor:pointer;font-size:14px;padding:0 2px;opacity:.65;flex-shrink:0;">🗑</button>';
+    }
+    var obsHtml=(item.manual&&item.obs)?('<div style="font-size:12px;color:var(--muted);margin-top:2px;line-height:1.4;">'+item.obs.replace(/</g,'&lt;')+'</div>'):'';
     h+='<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 14px;'+borda+'" '
       +'onmouseover="this.style.background=\'var(--cream2)\'" onmouseout="this.style.background=\'transparent\'">'
       +'<span style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">'
-        +'<button title="Concluir — remover da listagem" onclick="listagemConcluir(\''+munEsc+'\')" '
+        +'<button title="Concluir — remover da listagem" onclick="'+acaoConcluir+'" '
           +'style="background:#3a8c4a;color:#fff;border:none;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">✓ Concluir</button>'
-        +'<span style="font-weight:600;color:var(--ink);font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🏛 '+item.mun+'</span>'
+        +'<span style="flex:1;min-width:0;">'
+          +'<span style="font-weight:600;color:var(--ink);font-size:14.5px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'
+            +(item.manual?'📌':'🏛')+' '+item.mun+'</span>'
+          +obsHtml
+        +'</span>'
       +'</span>'
-      +'<span style="font-weight:700;color:'+corData+';font-size:14px;white-space:nowrap;">'+dataFmt+horaFmt+flag+'</span>'
+      +'<span style="display:flex;align-items:center;gap:6px;flex-shrink:0;">'
+        +extras
+        +'<span style="font-weight:700;color:'+corData+';font-size:14px;white-space:nowrap;">'+dataFmt+horaFmt+flag+'</span>'
+      +'</span>'
       +'</div>';
   });
   h+='</div>';
