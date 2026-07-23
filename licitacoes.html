@@ -417,7 +417,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <div class="clip"><div class="clip-inner"></div></div>
   <div class="header">
     <div>
-      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v330</span></div><!-- VERSAO_APP: v330 -->
+      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v331</span></div><!-- VERSAO_APP: v331 -->
       <div class="hsubtitle">Galhardo &amp; Canales — Licitações, Participando, Histórico e Certidões</div>
     </div>
     <div>
@@ -463,6 +463,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
     <span style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.3px;color:var(--muted);font-weight:600;">🏛 Licitações em Análise</span>
     <div style="display:flex;gap:6px;flex-wrap:wrap;">
       <button class="btn" style="font-size:12px;padding:5px 11px;border-color:#6c3483;color:#6c3483;font-weight:700;" onclick="abrirModalLicitacao()">+ Nova Licitação</button>
+      <button class="btn" style="font-size:12px;padding:5px 11px;border-color:#1a6b3a;color:#1a6b3a;font-weight:700;" onclick="abrirModalImportarLote()">📥 Importar Lista</button>
       <button class="btn" style="font-size:12px;padding:5px 11px;border-color:#8e44ad;color:#8e44ad;" onclick="imprimirLicitacoes()">🖨 Imprimir</button>
       <button class="btn btn-backup" style="font-size:12px;padding:5px 11px;" onclick="fazerBackupManual()">💾 Backup</button>
       <button class="btn" style="font-size:12px;padding:5px 11px;border-color:#1a6b3a;color:#1a6b3a;font-weight:600;" onclick="backupGeral()">💾 Backup Geral</button>
@@ -846,6 +847,30 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   </div>
 </div>
 
+<div id="lote-modal" class="modal-overlay" style="display:none;">
+  <div class="modal-box" style="max-width:760px;">
+    <div class="modal-head">
+      <span class="modal-head-title">📥 Importar Lista de Licitações</span>
+      <button class="modal-close" onclick="fecharModalImportarLote()">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12.5px;color:var(--muted);line-height:1.6;margin-bottom:9px;">
+        Cole direto da planilha. Ordem livre — o sistema identifica sozinho <strong>município</strong>, modalidade, <strong>nº do pregão</strong>, <strong>data</strong> e <strong>hora</strong>.
+        Sem hora, assume <strong>09:00</strong>.
+      </div>
+      <textarea id="lote-texto" class="modal-textarea" spellcheck="false" placeholder="Igaraçu do Tietê&#9;Eletrônica&#9;23&#9;29/07/2026&#9;09:00&#10;Catanduva&#9;Eletrônica&#9;68&#9;29/07/2026&#9;08:30" style="min-height:150px;font-family:monospace;font-size:12.5px;"></textarea>
+      <div style="margin:10px 0;">
+        <button class="btn" style="border-color:var(--navy);color:var(--navy);font-weight:600;" onclick="loteAnalisar()">🔍 Analisar</button>
+      </div>
+      <div id="lote-preview" style="max-height:280px;overflow:auto;border-radius:3px;"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-modal-cancel" onclick="fecharModalImportarLote()">Cancelar</button>
+      <button id="lote-confirmar" class="btn-modal-primary" style="display:none;" onclick="loteConfirmar()">✅ Criar</button>
+    </div>
+  </div>
+</div>
+
 <div id="lst-obs-modal" class="modal-overlay" style="display:none;">
   <div class="modal-box">
     <div class="modal-head">
@@ -986,7 +1011,7 @@ async function fbSemearBaseLicitacoes(){
       licVencedor:d.licVencedor||'{}',licProgresso:d.licProgresso||'{}',
       problemas:d.problemas||'[]',atas:d.atas||'[]',
       licListagemManual:d.licListagemManual||'[]',licListagemObs:d.licListagemObs||'{}',
-      updatedAt:new Date().toISOString(),origem:"split-v330"});
+      updatedAt:new Date().toISOString(),origem:"split-v331"});
     console.log('Base de Licitações criada com',lics.length,'registros.');
     location.reload();
   }catch(e){console.warn('Semeadura da base de licitações:',e);}
@@ -2927,6 +2952,109 @@ function somarDiasCorridos(dataIso,dias){
   d.setDate(d.getDate()-dias);
   return d.toISOString().slice(0,10);
 }
+
+// ══ Importação em lote de licitações (colar da planilha) ══
+function _loteParseLinha(linha){
+  var bruto=linha.replace(/\u00a0/g,' ').trim();
+  if(!bruto) return null;
+  var partes=bruto.indexOf('\t')>=0 ? bruto.split('\t')
+            : (bruto.indexOf(';')>=0 ? bruto.split(';') : bruto.split(/\s{2,}/));
+  partes=partes.map(function(x){return x.trim();}).filter(function(x){return x!=='';});
+  if(!partes.length) return null;
+  var r={municipio:'',tipo:'Pregão Eletrônico',numero:'',data:'',hora:'',erro:''};
+  var resto=[];
+  partes.forEach(function(p){
+    var md=p.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if(md && !r.data){ r.data=md[3]+'-'+('0'+md[2]).slice(-2)+'-'+('0'+md[1]).slice(-2); return; }
+    var mh=p.match(/^(\d{1,2})[:h](\d{2})$/i);
+    if(mh && !r.hora){ r.hora=('0'+mh[1]).slice(-2)+':'+mh[2]; return; }
+    if(/eletr[oô]n/i.test(p)){ r.tipo='Pregão Eletrônico'; return; }
+    if(/presencial/i.test(p)){ r.tipo='Pregão Presencial'; return; }
+    if(/dispensa/i.test(p)){ r.tipo='Dispensa'; return; }
+    if(/^\d{1,6}(\/\d{2,4})?$/.test(p) && !r.numero){ r.numero=p; return; }
+    resto.push(p);
+  });
+  r.municipio=resto.length?resto[0]:'';
+  if(!r.municipio) r.erro='sem município';
+  else if(!r.data) r.erro='sem data válida';
+  return r;
+}
+function abrirModalImportarLote(){
+  var m=document.getElementById('lote-modal'); if(!m) return;
+  document.getElementById('lote-texto').value='';
+  document.getElementById('lote-preview').innerHTML='';
+  document.getElementById('lote-confirmar').style.display='none';
+  m.style.display='flex';
+  setTimeout(function(){var t=document.getElementById('lote-texto'); if(t) t.focus();},60);
+}
+function fecharModalImportarLote(){var m=document.getElementById('lote-modal'); if(m) m.style.display='none';}
+var _LOTE_FILA=[];
+function loteAnalisar(){
+  var txt=document.getElementById('lote-texto').value||'';
+  var linhas=txt.split(/\r?\n/);
+  _LOTE_FILA=[];
+  var linhasVal=[];
+  linhas.forEach(function(l){ var r=_loteParseLinha(l); if(r) linhasVal.push(r); });
+  if(!linhasVal.length){
+    document.getElementById('lote-preview').innerHTML='<div style="padding:14px;color:#b03a2e;font-size:13px;">Não consegui ler nenhuma linha. Cole direto da planilha (colunas separadas por TAB).</div>';
+    document.getElementById('lote-confirmar').style.display='none';
+    return;
+  }
+  var hist=(typeof licHistLoad==='function')?licHistLoad():[];
+  var h='<table style="width:100%;border-collapse:collapse;font-size:12.5px;">'
+    +'<tr style="background:var(--cream2);"><th style="text-align:left;padding:6px 8px;">Município</th>'
+    +'<th style="text-align:left;padding:6px 8px;">Pregão</th><th style="text-align:left;padding:6px 8px;">Disputa</th>'
+    +'<th style="text-align:left;padding:6px 8px;">Situação</th></tr>';
+  linhasVal.forEach(function(r){
+    var status,cor,ok=false;
+    if(r.erro){ status='✕ '+r.erro; cor='#b03a2e'; }
+    else{
+      var dup=hist.some(function(x){return _normMun(x.municipio)===_normMun(r.municipio)&&x.data===r.data;})
+        ||tasks.some(function(t){return t._licMunicipio&&_normMun(t._licMunicipio)===_normMun(r.municipio)&&t.taskDate===r.data;});
+      if(dup){ status='⚠️ já cadastrada'; cor='#b8860b'; }
+      else if(!r.hora){ status='✓ criar (hora 09:00)'; cor='#1a6b3a'; r.hora='09:00'; ok=true; }
+      else { status='✓ criar'; cor='#1a6b3a'; ok=true; }
+    }
+    if(ok) _LOTE_FILA.push(r);
+    h+='<tr style="border-bottom:1px solid var(--border);">'
+      +'<td style="padding:6px 8px;font-weight:600;">'+r.municipio.replace(/</g,'&lt;')+'</td>'
+      +'<td style="padding:6px 8px;color:var(--muted);">'+(r.numero||'—')+'</td>'
+      +'<td style="padding:6px 8px;">'+(r.data?fmtDate(r.data):'—')+(r.hora?' · '+r.hora:'')+'</td>'
+      +'<td style="padding:6px 8px;color:'+cor+';font-weight:600;">'+status+'</td></tr>';
+  });
+  h+='</table>';
+  document.getElementById('lote-preview').innerHTML=h;
+  var btn=document.getElementById('lote-confirmar');
+  if(_LOTE_FILA.length){ btn.style.display='inline-block'; btn.textContent='✅ Criar '+_LOTE_FILA.length+' licitações'; }
+  else btn.style.display='none';
+}
+function loteConfirmar(){
+  if(!_LOTE_FILA.length) return;
+  if(!confirm('Criar '+_LOTE_FILA.length+' licitações?\n\nCada uma gera as tarefas de prazo automaticamente.')) return;
+  var criadas=0, falhas=[];
+  var _toastOrig=window.mostrarToast;
+  window.mostrarToast=function(){};                 // silencia os toasts individuais
+  _LOTE_FILA.forEach(function(r){
+    try{
+      document.getElementById('lic-municipio').value=r.municipio;
+      document.getElementById('lic-data').value=r.data;
+      document.getElementById('lic-hora').value=r.hora;
+      document.getElementById('lic-tipo').value=r.tipo;
+      document.getElementById('lic-numero').value=r.numero||'';
+      ['lic-plataforma','lic-obs','lic-link','lic-quemfaz'].forEach(function(id){
+        var el=document.getElementById(id); if(el) el.value='';
+      });
+      if(criarLicitacao()!==false) criadas++; else falhas.push(r.municipio);
+    }catch(e){ falhas.push(r.municipio+' ('+e.message+')'); }
+  });
+  window.mostrarToast=_toastOrig;
+  _LOTE_FILA=[];
+  fecharModalImportarLote();
+  save(); render(); atualizarFiltros();
+  if(typeof renderListagem==='function') renderListagem();
+  mostrarToast('📥 '+criadas+' licitações importadas'+(falhas.length?' — falharam: '+falhas.join(', '):'')+'.',falhas.length>0);
+}
+
 function criarLicitacao(){
   var municipio=document.getElementById('lic-municipio').value.trim();
   var dataDisputa=document.getElementById('lic-data').value;
