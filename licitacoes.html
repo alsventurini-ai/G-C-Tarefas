@@ -417,7 +417,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <div class="clip"><div class="clip-inner"></div></div>
   <div class="header">
     <div>
-      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v331</span></div><!-- VERSAO_APP: v331 -->
+      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v332</span></div><!-- VERSAO_APP: v332 -->
       <div class="hsubtitle">Galhardo &amp; Canales — Licitações, Participando, Histórico e Certidões</div>
     </div>
     <div>
@@ -1011,7 +1011,7 @@ async function fbSemearBaseLicitacoes(){
       licVencedor:d.licVencedor||'{}',licProgresso:d.licProgresso||'{}',
       problemas:d.problemas||'[]',atas:d.atas||'[]',
       licListagemManual:d.licListagemManual||'[]',licListagemObs:d.licListagemObs||'{}',
-      updatedAt:new Date().toISOString(),origem:"split-v331"});
+      updatedAt:new Date().toISOString(),origem:"split-v332"});
     console.log('Base de Licitações criada com',lics.length,'registros.');
     location.reload();
   }catch(e){console.warn('Semeadura da base de licitações:',e);}
@@ -4960,6 +4960,7 @@ function renderLicitacoesConcluidas(){
     // Botões ver histórico, concluído, editar e excluir
     html+='<div style="display:flex;gap:4px;flex-wrap:wrap;">';
     html+='<button onclick="licParticConcluir(\''+munEscC+'\')" style="background:#3a8c4a;color:#fff;border:none;border-radius:3px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;">✅ Concluído</button>';
+    html+='<button onclick="licParticNaoParticipamos(\''+munEscC+'\')" title="Registrar que não participamos desta licitação" style="background:#b03a2e;color:#fff;border:none;border-radius:3px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;margin-left:5px;">🚫 Não Participamos</button>';
     html+='<button onclick="licVoltarParaAnalise(\''+munEscC+'\')" style="background:none;border:1px solid #8a6d3b;border-radius:3px;padding:3px 10px;font-size:11px;font-weight:600;cursor:pointer;color:#8a6d3b;">↩️ Voltar p/ Análise</button>';
     html+='<button onclick="mudarAba(\'lic-historico\')" style="background:none;border:1px solid var(--border);border-radius:3px;padding:3px 10px;font-size:11px;cursor:pointer;color:var(--navy);">📋 Histórico</button>';
     html+='<button onclick="licConcEditarModal(\''+munEscC+'\')" style="background:none;border:1px solid #ddd;border-radius:3px;padding:3px 8px;font-size:11px;cursor:pointer;color:#555;">✏️ Editar</button>';
@@ -5054,8 +5055,11 @@ function licPartImprimirSimples(){
   w.document.close();
   setTimeout(function(){w.print();},350);
 }
-function licParticConcluir(mun){
+function licParticNaoParticipamos(mun){ licParticConcluir(mun,'nao_participamos'); }
+function licParticConcluir(mun,preset){
   var venc=licVencedorGetMun(mun);
+  var _np=(preset==='nao_participamos');
+  if(_np) venc=Object.assign({},venc,{resultado:'nao_participamos'});
   var grupos=_getLicGrupos();
   var ts=grupos[mun]||[];
   var tDisp=ts.find(function(t){return /^licita/i.test(t.text.normalize('NFD').replace(/[\u0300-\u036f]/g,''));});
@@ -5063,7 +5067,7 @@ function licParticConcluir(mun){
   var overlay=document.createElement('div');
   overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
   overlay.innerHTML='<div style="background:#fff;border-radius:8px;padding:24px;max-width:420px;width:90%;font-family:Segoe UI,Tahoma,sans-serif;">'
-    +'<div style="font-size:14px;font-weight:700;color:#1a5276;margin-bottom:16px;">✅ Concluir — '+mun+'</div>'
+    +'<div style="font-size:14px;font-weight:700;color:'+(_np?'#b03a2e':'#1a5276')+';margin-bottom:16px;">'+(_np?'🚫 Não Participamos — ':'✅ Concluir — ')+mun+'</div>'
     +'<div style="margin-bottom:12px;">'
     +'<label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:4px;">🎯 Resultado</label>'
     +'<select id="pc-resultado" style="width:100%;padding:7px;border:1px solid #ccc;border-radius:4px;font-size:13px;">'
@@ -5088,6 +5092,10 @@ function licParticConcluir(mun){
     +'</div></div>';
   document.body.appendChild(overlay);
   document.getElementById('pc-cancelar').onclick=function(){document.body.removeChild(overlay);};
+  if(_np){
+    var _b=document.getElementById('pc-salvar');
+    if(_b){ _b.textContent='🚫 Registrar Não Participação'; _b.style.background='#b03a2e'; }
+  }
   document.getElementById('pc-resultado').onchange=function(){
     var np=(this.value==='nao_participamos');
     var lbl=document.getElementById('pc-obs-lbl');
