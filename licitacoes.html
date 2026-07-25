@@ -417,7 +417,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <div class="clip"><div class="clip-inner"></div></div>
   <div class="header">
     <div>
-      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v332</span></div><!-- VERSAO_APP: v332 -->
+      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v333</span></div><!-- VERSAO_APP: v333 -->
       <div class="hsubtitle">Galhardo &amp; Canales — Licitações, Participando, Histórico e Certidões</div>
     </div>
     <div>
@@ -444,10 +444,6 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   </div>
 
   <!-- Abas -->
-  <div class="app-switch">
-    <a href="tarefas.html" class="app-switch-btn">📋 Tarefas</a>
-    <a href="licitacoes.html" class="app-switch-btn active">🏛 Licitações</a>
-  </div>
   <div class="tab-bar">
     <button class="tab-btn active" id="tab-btn-licitacoes" onclick="mudarAba('licitacoes')"><span class="tab-lbl">🏛 Licitações<br>em Análise</span><span class="tab-badge" id="tab-lic-badge" style="display:none;">0</span></button>
     <button class="tab-btn" id="tab-btn-lic-concluidas" onclick="mudarAba('lic-concluidas')"><span class="tab-lbl">✅ Participando</span><span class="tab-badge" id="tab-lic-conc-badge" style="display:none;background:#3a8c4a;">0</span></button>
@@ -1011,7 +1007,7 @@ async function fbSemearBaseLicitacoes(){
       licVencedor:d.licVencedor||'{}',licProgresso:d.licProgresso||'{}',
       problemas:d.problemas||'[]',atas:d.atas||'[]',
       licListagemManual:d.licListagemManual||'[]',licListagemObs:d.licListagemObs||'{}',
-      updatedAt:new Date().toISOString(),origem:"split-v332"});
+      updatedAt:new Date().toISOString(),origem:"split-v333"});
     console.log('Base de Licitações criada com',lics.length,'registros.');
     location.reload();
   }catch(e){console.warn('Semeadura da base de licitações:',e);}
