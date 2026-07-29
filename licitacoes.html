@@ -417,7 +417,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <div class="clip"><div class="clip-inner"></div></div>
   <div class="header">
     <div>
-      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v333</span></div><!-- VERSAO_APP: v333 -->
+      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v334</span></div><!-- VERSAO_APP: v334 -->
       <div class="hsubtitle">Galhardo &amp; Canales — Licitações, Participando, Histórico e Certidões</div>
     </div>
     <div>
@@ -483,7 +483,10 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <div id="tab-lic-concluidas" class="tab-content">
   <div class="action-bar" style="justify-content:space-between;">
     <span style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.3px;color:var(--green);font-weight:600;">✅ Participando</span>
-    <button class="btn" style="font-size:12px;padding:5px 11px;border-color:#3a8c4a;color:#3a8c4a;" onclick="imprimirLicitacoesConcluidas()">🖨 Imprimir</button>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      <button class="btn" style="font-size:12px;padding:5px 11px;border-color:#1a6b3a;color:#1a6b3a;font-weight:600;" onclick="partManualNovoModal()">+ Nova (manual)</button>
+      <button class="btn" style="font-size:12px;padding:5px 11px;border-color:#3a8c4a;color:#3a8c4a;" onclick="imprimirLicitacoesConcluidas()">🖨 Imprimir</button>
+    </div>
   </div>
   <div id="lic-conc-stats-row" style="display:flex;gap:10px;margin:0 30px 10px;flex-wrap:wrap;"></div>
   <div style="padding:0 30px 10px;display:flex;align-items:center;gap:8px;">
@@ -839,6 +842,90 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
       <button class="btn-modal-cancel" onclick="fecharModalLicitacao()">Cancelar</button>
       <button class="btn-modal-primary" style="background:#6c3483;" onclick="criarLicitacao()">🏛 Criar 5 tarefas</button>
       <button class="btn-modal-primary" style="background:#4a7a4a;" onclick="okModalLicitacao()">✅ OK</button>
+    </div>
+  </div>
+</div>
+
+<div id="part-manual-modal" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-head" style="background:#1a6b3a;">
+      <span class="modal-head-title">✅ Nova Participando (manual)</span>
+      <button class="modal-close" onclick="partManualFechar()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-row">
+        <div class="modal-field">
+          <label>🏙 Município *</label>
+          <input type="text" id="pm-municipio" class="modal-input" placeholder="Nome da cidade…" autocomplete="off">
+        </div>
+      </div>
+      <div class="modal-row">
+        <div class="modal-field">
+          <label>📋 Tipo</label>
+          <select id="pm-tipo" class="modal-input" style="font-family:'Segoe UI',Tahoma,sans-serif;">
+            <option value="Pregão Eletrônico">Pregão Eletrônico</option>
+            <option value="Pregão Presencial">Pregão Presencial</option>
+            <option value="Dispensa Eletrônica">Dispensa Eletrônica</option>
+            <option value="Concorrência">Concorrência</option>
+            <option value="Chamamento Público">Chamamento Público</option>
+            <option value="Outro">Outro</option>
+          </select>
+        </div>
+        <div class="modal-field">
+          <label>🔢 Nº do Pregão</label>
+          <input type="text" id="pm-numero" class="modal-input" placeholder="Ex: PE 036/2026…" autocomplete="off">
+        </div>
+      </div>
+      <div class="modal-row">
+        <div class="modal-field">
+          <label>📅 Data da Disputa *</label>
+          <input type="date" id="pm-data" class="modal-input">
+        </div>
+        <div class="modal-field">
+          <label>⏰ Horário</label>
+          <input type="time" id="pm-hora" class="modal-input">
+        </div>
+      </div>
+      <div class="modal-field" style="margin-bottom:14px;">
+        <label>🌐 Plataforma / Site</label>
+        <input type="text" id="pm-plataforma" class="modal-input" placeholder="Ex: BLL, BNC Compras, ComprasNet…" autocomplete="off" list="lic-plataforma-list">
+      </div>
+      <div class="modal-row">
+        <div class="modal-field">
+          <label>👤 Quem Faz</label>
+          <input type="text" id="pm-quemfaz" class="modal-input" placeholder="Empresa executora…" autocomplete="off" list="pm-empresas-list">
+        </div>
+        <div class="modal-field">
+          <label>🏆 Quem Venceu</label>
+          <input type="text" id="pm-quemvenceu" class="modal-input" placeholder="Empresa vencedora…" autocomplete="off" list="pm-empresas-list">
+        </div>
+      </div>
+      <datalist id="pm-empresas-list"></datalist>
+      <div class="modal-field" style="margin-bottom:14px;">
+        <label>🎯 Resultado</label>
+        <select id="pm-resultado" class="modal-input" style="font-family:'Segoe UI',Tahoma,sans-serif;">
+          <option value="">— Sem resultado ainda</option>
+          <option value="ganhou">✅ Ganhamos</option>
+          <option value="perdeu">❌ Perdemos</option>
+          <option value="deserto">— Deserto/Cancelado</option>
+        </select>
+      </div>
+      <div class="modal-field" style="margin-bottom:14px;">
+        <label>🔗 Link (edital / PNCP)</label>
+        <input type="url" id="pm-link" class="modal-input" placeholder="https://pncp.gov.br/…">
+      </div>
+      <div class="modal-field" style="margin-bottom:14px;">
+        <label>📝 Observação</label>
+        <textarea id="pm-obs" class="modal-textarea" placeholder="Anotações sobre esta licitação…" style="min-height:56px;"></textarea>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;background:#eef7f0;border:1px solid #b6ddc2;border-radius:3px;padding:10px 12px;font-size:12.5px;color:#1a6b3a;cursor:pointer;line-height:1.5;">
+        <input type="checkbox" id="pm-gerar-prazos" style="width:16px;height:16px;flex-shrink:0;">
+        <span>Também gerar as tarefas de prazo (impugnação, análise, proposta…) — deixe <strong>desmarcado</strong> se os prazos já passaram.</span>
+      </label>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-modal-cancel" onclick="partManualFechar()">Cancelar</button>
+      <button class="btn-modal-primary" style="background:#1a6b3a;" onclick="partManualSalvar()">💾 Criar em Participando</button>
     </div>
   </div>
 </div>
@@ -4742,13 +4829,13 @@ function renderListagem(){
   var hojeStr=(function(){var h=new Date();h.setHours(0,0,0,0);var y=h.getFullYear(),m=('0'+(h.getMonth()+1)).slice(-2),d=('0'+h.getDate()).slice(-2);return y+'-'+m+'-'+d;})();
   var ocultas=listagemOcultaLoad();
   var _obsMap=listagemObsLoad();
-  var itens=gruposPend.map(function(mun){var dd=_lstDataDisputa(grupos[mun]);return {mun:mun,data:dd.data,hora:dd.hora,manual:false,obs:_obsMap[_normMun(mun)]||''};});
+  var itens=gruposPend.map(function(mun){var dd=_lstDataDisputa(grupos[mun]);var _vi=(typeof licVencedorGetMun==='function')?licVencedorGetMun(mun):{};return {mun:mun,data:dd.data,hora:dd.hora,manual:false,obs:_obsMap[_normMun(mun)]||'',quemFaz:(_vi.nome||''),quemVenceu:(_vi.quemVenceu||'')};});
   itens=itens.filter(function(it){return ocultas.indexOf(_normMun(it.mun))<0;});
   // Lançamentos manuais
   var manuais=listagemManualLoad();
   var manuaisOcultos=manuais.filter(function(x){return x.oculta;}).length;
   manuais.filter(function(x){return !x.oculta;}).forEach(function(x){
-    itens.push({mun:x.mun,data:x.data||'',hora:x.hora||'',obs:x.obs||'',manual:true,id:x.id});
+    itens.push({mun:x.mun,data:x.data||'',hora:x.hora||'',obs:x.obs||'',manual:true,id:x.id,quemFaz:x.quemFaz||'',quemVenceu:x.quemVenceu||''});
   });
   itens.sort(function(a,b){var da=a.data||'9999-99-99',db=b.data||'9999-99-99';return da<db?-1:da>db?1:(a.mun<b.mun?-1:1);});
   // Badge da aba
@@ -4762,7 +4849,16 @@ function renderListagem(){
     lista.innerHTML='<div class="cert-empty" style="padding:24px 0;text-align:center;color:var(--muted);">Nenhuma licitação na listagem. Use ➕ Adicionar para lançar manualmente.</div>';
     return;
   }
-  var h='<div style="background:var(--white);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-top:6px;">';
+  // Datalist de empresas (mesma fonte da aba Participando) para autocomplete de Quem Faz/Venceu
+  var _lstEmpresas=[];
+  try{
+    var _lvd=licVencedorLoad();
+    Object.keys(_lvd).forEach(function(m){if(_lvd[m].nome)_lstEmpresas.push(_lvd[m].nome);if(_lvd[m].quemVenceu)_lstEmpresas.push(_lvd[m].quemVenceu);});
+    licHistLoad().forEach(function(r){if(r.vencedor)_lstEmpresas.push(r.vencedor);if(r.quemFaz)_lstEmpresas.push(r.quemFaz);});
+  }catch(e){}
+  _lstEmpresas=_lstEmpresas.filter(function(v,i,a){return v&&a.indexOf(v)===i;}).sort();
+  var h='<datalist id="lst-empresas-list">'+_lstEmpresas.map(function(e){return'<option value="'+e.replace(/"/g,'&quot;')+'">';}).join('')+'</datalist>';
+  h+='<div style="background:var(--white);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-top:6px;">';
   itens.forEach(function(item,i){
     var munEsc=item.mun.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
     var dataFmt=item.data?fmtDate(item.data):'sem data';
@@ -4784,25 +4880,66 @@ function renderListagem(){
         +'style="background:none;border:none;cursor:pointer;font-size:14px;padding:0 2px;opacity:'+(item.obs?'1':'.5')+';flex-shrink:0;">'+(item.obs?'📝':'✏️')+'</button>';
     }
     var obsHtml=item.obs?('<div style="font-size:12px;color:#7b4fa0;font-style:italic;margin-top:2px;line-height:1.4;">'+item.obs.replace(/</g,'&lt;')+'</div>'):'';
-    h+='<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 14px;'+borda+'" '
+    // Handlers de salvamento de Quem Faz / Quem Venceu (auto usa município; manual usa id)
+    var qfAcao=item.manual?('listagemSetCampoManual(\''+item.id+'\',\'quemFaz\',this.value)'):('listagemSetCampoAuto(\''+munEsc+'\',\'nome\',this.value)');
+    var qvAcao=item.manual?('listagemSetCampoManual(\''+item.id+'\',\'quemVenceu\',this.value)'):('listagemSetCampoAuto(\''+munEsc+'\',\'quemVenceu\',this.value)');
+    var qfVal=(item.quemFaz||'').replace(/"/g,'&quot;');
+    var qvVal=(item.quemVenceu||'').replace(/"/g,'&quot;');
+    var inputCss='min-width:0;flex:1;border:1px solid var(--border);background:#fff;padding:3px 8px;font-size:12px;border-radius:3px;font-family:\'Segoe UI\',Tahoma,sans-serif;color:var(--ink);outline:none;';
+    h+='<div style="padding:11px 14px;'+borda+'" '
       +'onmouseover="this.style.background=\'var(--cream2)\'" onmouseout="this.style.background=\'transparent\'">'
-      +'<span style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">'
-        +'<button title="Concluir — remover da listagem" onclick="'+acaoConcluir+'" '
-          +'style="background:#3a8c4a;color:#fff;border:none;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">✓ Concluir</button>'
-        +'<span style="flex:1;min-width:0;">'
-          +'<span style="font-weight:600;color:var(--ink);font-size:14.5px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'
-            +(item.manual?'📌':'🏛')+' '+item.mun+'</span>'
-          +obsHtml
+      // Linha 1: concluir + município + data
+      +'<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">'
+        +'<span style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">'
+          +'<button title="Concluir — remover da listagem" onclick="'+acaoConcluir+'" '
+            +'style="background:#3a8c4a;color:#fff;border:none;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">✓ Concluir</button>'
+          +'<span style="flex:1;min-width:0;">'
+            +'<span style="font-weight:600;color:var(--ink);font-size:14.5px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'
+              +(item.manual?'📌':'🏛')+' '+item.mun+'</span>'
+            +obsHtml
+          +'</span>'
         +'</span>'
-      +'</span>'
-      +'<span style="display:flex;align-items:center;gap:6px;flex-shrink:0;">'
-        +extras
-        +'<span style="font-weight:700;color:'+corData+';font-size:14px;white-space:nowrap;">'+dataFmt+horaFmt+flag+'</span>'
-      +'</span>'
+        +'<span style="display:flex;align-items:center;gap:6px;flex-shrink:0;">'
+          +extras
+          +'<span style="font-weight:700;color:'+corData+';font-size:14px;white-space:nowrap;">'+dataFmt+horaFmt+flag+'</span>'
+        +'</span>'
+      +'</div>'
+      // Linha 2: Quem Faz / Quem Venceu editáveis
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:7px;padding-left:2px;">'
+        +'<span style="display:flex;align-items:center;gap:5px;flex:1;min-width:150px;">'
+          +'<span style="font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap;">👤 Faz:</span>'
+          +'<input type="text" list="lst-empresas-list" value="'+qfVal+'" placeholder="quem faz…" '
+            +'style="'+inputCss+'" onchange="'+qfAcao+'">'
+        +'</span>'
+        +'<span style="display:flex;align-items:center;gap:5px;flex:1;min-width:150px;">'
+          +'<span style="font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap;">🏆 Venceu:</span>'
+          +'<input type="text" list="lst-empresas-list" value="'+qvVal+'" placeholder="quem venceu…" '
+            +'style="'+inputCss+'" onchange="'+qvAcao+'">'
+        +'</span>'
+      +'</div>'
       +'</div>';
   });
   h+='</div>';
   lista.innerHTML=h;
+}
+function listagemSetCampoAuto(mun,campo,valor){
+  // campo: 'nome' (Quem Faz) ou 'quemVenceu' — compartilha o mesmo store da aba Participando
+  var data=licVencedorLoad();
+  var norm=_normMun(mun);
+  var chaveReal=Object.keys(data).find(function(k){return _normMun(k)===norm;})||mun;
+  if(!data[chaveReal])data[chaveReal]={nome:'',resultado:'',quemVenceu:'',obs:''};
+  data[chaveReal][campo]=(valor||'').trim();
+  licVencedorSave(data);
+  if(typeof mostrarToast==='function')mostrarToast('💾 Salvo — '+mun,false);
+}
+function listagemSetCampoManual(id,campo,valor){
+  // campo: 'quemFaz' ou 'quemVenceu' — gravado no próprio lançamento manual
+  var arr=listagemManualLoad();
+  var reg=arr.find(function(x){return x.id===id;});
+  if(!reg)return;
+  reg[campo]=(valor||'').trim();
+  listagemManualSave(arr);
+  if(typeof mostrarToast==='function')mostrarToast('💾 Salvo — '+reg.mun,false);
 }
 function _licEtapasCheckboxesHTML(mun){
   var KEY_PROG='gc_lic_prog_v1';
@@ -5286,6 +5423,95 @@ function licVencedorSalvar(mun,campo,valor){
   licVencedorSave(data);
   renderLicitacoesConcluidas();
 }
+
+// ── Criação manual de registro em "Participando" ──
+function partManualNovoModal(){
+  ['pm-municipio','pm-numero','pm-data','pm-hora','pm-plataforma','pm-quemfaz','pm-quemvenceu','pm-link','pm-obs'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  var t=document.getElementById('pm-tipo');if(t)t.value='Pregão Eletrônico';
+  var r=document.getElementById('pm-resultado');if(r)r.value='';
+  var g=document.getElementById('pm-gerar-prazos');if(g)g.checked=false;
+  var empresas=[];
+  try{
+    var vd=licVencedorLoad();
+    Object.keys(vd).forEach(function(m){if(vd[m].nome)empresas.push(vd[m].nome);if(vd[m].quemVenceu)empresas.push(vd[m].quemVenceu);});
+    licHistLoad().forEach(function(x){if(x.vencedor)empresas.push(x.vencedor);if(x.quemFaz)empresas.push(x.quemFaz);});
+  }catch(e){}
+  empresas=empresas.filter(function(v,i,a){return v&&a.indexOf(v)===i;}).sort();
+  var dl=document.getElementById('pm-empresas-list');
+  if(dl)dl.innerHTML=empresas.map(function(e){return'<option value="'+e.replace(/"/g,'&quot;')+'">';}).join('');
+  var m=document.getElementById('part-manual-modal');if(m)m.style.display='flex';
+  setTimeout(function(){var i=document.getElementById('pm-municipio');if(i)i.focus();},80);
+}
+function partManualFechar(){var m=document.getElementById('part-manual-modal');if(m)m.style.display='none';}
+function partManualSalvar(){
+  var mun=(document.getElementById('pm-municipio').value||'').trim();
+  var data=document.getElementById('pm-data').value||'';
+  var hora=document.getElementById('pm-hora').value||'';
+  var tipo=(document.getElementById('pm-tipo')||{}).value||'Pregão Eletrônico';
+  var numero=((document.getElementById('pm-numero')||{}).value||'').trim();
+  var plataforma=((document.getElementById('pm-plataforma')||{}).value||'').trim();
+  var quemFaz=((document.getElementById('pm-quemfaz')||{}).value||'').trim();
+  var quemVenceu=((document.getElementById('pm-quemvenceu')||{}).value||'').trim();
+  var resultado=(document.getElementById('pm-resultado')||{}).value||'';
+  var link=((document.getElementById('pm-link')||{}).value||'').trim();
+  var obs=((document.getElementById('pm-obs')||{}).value||'').trim();
+  var gerarPrazos=!!(document.getElementById('pm-gerar-prazos')||{}).checked;
+  if(!mun){alert('Informe o município.');document.getElementById('pm-municipio').focus();return;}
+  if(!data){alert('Informe a data da disputa.');document.getElementById('pm-data').focus();return;}
+  var labelTipo=numero?(tipo+' '+numero):tipo;
+  if(gerarPrazos){
+    // Reutiliza o fluxo automático: cria principal + tarefas de prazo + hist + log + vencedor.nome
+    var _toastOrig=window.mostrarToast; window.mostrarToast=function(){};
+    try{
+      document.getElementById('lic-municipio').value=mun;
+      document.getElementById('lic-data').value=data;
+      document.getElementById('lic-hora').value=hora||'09:00';
+      document.getElementById('lic-tipo').value=tipo;
+      document.getElementById('lic-numero').value=numero;
+      var _pl=document.getElementById('lic-plataforma'); if(_pl)_pl.value=plataforma;
+      var _qf=document.getElementById('lic-quemfaz'); if(_qf)_qf.value=quemFaz;
+      var _lk=document.getElementById('lic-link'); if(_lk)_lk.value=link;
+      var _ob=document.getElementById('lic-obs'); if(_ob)_ob.value=obs;
+      criarLicitacao();
+    }catch(e){}
+    window.mostrarToast=_toastOrig;
+  }else{
+    // Cria apenas a tarefa principal (para o grupo existir), sem tarefas de prazo
+    var nowId=Date.now();
+    var obsBase='['+labelTipo+']'+(quemFaz?' | Quem Faz: '+quemFaz:'')+(plataforma?' | Plataforma: '+plataforma:'')+(obs?' | '+obs:'');
+    tasks.push({id:nowId,text:'Licitação - '+mun,done:false,addedAt:timeNow(),doneAt:'',schedule:hora||'09:00',taskDate:data,alertFired:false,paraQuem:'Licitações',obs:obsBase,priority:'alta',tags:['licitação',mun,tipo],pinned:false,duracao:'',link:link,_licMunicipio:mun,_licDataDisputa:data,_licHoraDisputa:hora||'09:00',_licTipo:tipo,_licNumero:numero,_licQuemFaz:quemFaz,_licPlataforma:plataforma});
+    save();
+    licLogRegistrar(mun,'📌 Licitação cadastrada (manual)','Disputa em '+fmtDate(data)+(hora?' às '+hora:'')+' | '+labelTipo+(plataforma?' | Plataforma: '+plataforma:''));
+    var lh=licHistLoad();
+    lh.push({id:nowId+1,municipio:mun,data:data,pregao:labelTipo,resultado:'',vencedor:'',obs:obs||'',link:link,plataforma:plataforma,criadoEm:new Date().toISOString(),_licTipo:tipo,_licNumero:numero});
+    licHistSave(lh);
+  }
+  // Decisão de participar → move o registro para a aba Participando
+  if(typeof licDecisaoParticipar==='function') licDecisaoParticipar(mun);
+  // Grava Quem Faz / Quem Venceu / Resultado / Obs no store da Participando
+  var vd2=licVencedorLoad();
+  var norm=_normMun(mun);
+  var chave=Object.keys(vd2).find(function(k){return _normMun(k)===norm;})||mun;
+  if(!vd2[chave])vd2[chave]={nome:'',resultado:'',quemVenceu:'',obs:''};
+  if(quemFaz)vd2[chave].nome=quemFaz;
+  if(quemVenceu)vd2[chave].quemVenceu=quemVenceu;
+  if(resultado)vd2[chave].resultado=resultado;
+  if(obs)vd2[chave].obs=obs;
+  licVencedorSave(vd2);
+  // Marca o registro do Hist. Licitações como participou:'sim' p/ consistência
+  var lh2=licHistLoad();
+  var hr=lh2.filter(function(r){return _normMun(r.municipio)===norm&&r.data===data;}).pop();
+  if(hr){hr.participou='sim';if(resultado)hr.resultado=resultado;if(quemVenceu)hr.vencedor=quemVenceu;if(quemFaz)hr.quemFaz=quemFaz;licHistSave(lh2);}
+  partManualFechar();
+  if(typeof renderLicitacoesConcluidas==='function')renderLicitacoesConcluidas();
+  if(typeof licHistRender==='function')licHistRender();
+  if(typeof renderListagem==='function')renderListagem();
+  if(typeof mostrarToast==='function')mostrarToast('✅ '+mun+' criada em Participando'+(gerarPrazos?' (com tarefas de prazo)':'')+'.',false);
+}
+document.addEventListener('DOMContentLoaded',function(){
+  var m=document.getElementById('part-manual-modal');
+  if(m)m.addEventListener('click',function(e){if(e.target===this)partManualFechar();});
+});
 
 // ── Histórico de Licitações ──
 var LIC_HIST_KEY='gc_lic_historico_v1';
