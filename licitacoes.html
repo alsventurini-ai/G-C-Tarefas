@@ -417,7 +417,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <div class="clip"><div class="clip-inner"></div></div>
   <div class="header">
     <div>
-      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v338</span></div><!-- VERSAO_APP: v338 -->
+      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v339</span></div><!-- VERSAO_APP: v339 -->
       <div class="hsubtitle">Galhardo &amp; Canales — Licitações, Participando, Histórico e Certidões</div>
     </div>
     <div>
@@ -446,9 +446,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <!-- Abas -->
   <div class="tab-bar">
     <button class="tab-btn active" id="tab-btn-licitacoes" onclick="mudarAba('licitacoes')"><span class="tab-lbl">🏛 Licitações<br>em Análise</span><span class="tab-badge" id="tab-lic-badge" style="display:none;">0</span></button>
-    <button class="tab-btn" id="tab-btn-lic-concluidas" onclick="mudarAba('lic-concluidas')"><span class="tab-lbl">✅ Participando</span><span class="tab-badge" id="tab-lic-conc-badge" style="display:none;background:#3a8c4a;">0</span></button>
-    <button class="tab-btn" id="tab-btn-lic-historico" onclick="mudarAba('lic-historico')"><span class="tab-lbl">📊 Hist.<br>Licitações</span><span class="tab-spacer"></span></button>
-    <button class="tab-btn" id="tab-btn-listagem" onclick="mudarAba('listagem')"><span class="tab-lbl">📋 Listagem</span><span class="tab-badge" id="tab-listagem-badge" style="display:none;">0</span></button>
+    <button class="tab-btn" id="tab-btn-lic-concluidas" onclick="mudarAba('lic-concluidas')"><span class="tab-lbl">✅ Participando</span><span class="tab-badge" id="tab-lic-conc-badge" style="display:none;background:#3a8c4a;">0</span></button>    <button class="tab-btn" id="tab-btn-listagem" onclick="mudarAba('listagem')"><span class="tab-lbl">📋 Listagem</span><span class="tab-badge" id="tab-listagem-badge" style="display:none;">0</span></button>
     <button class="tab-btn" id="tab-btn-certidoes" onclick="mudarAba('certidoes')"><span class="tab-lbl">📜 Certidões</span><span class="tab-badge" id="tab-cert-badge" style="display:none;">!</span></button>
     <button class="tab-btn" id="tab-btn-busca" onclick="abrirBuscaGlobal()" style="margin-left:auto;"><span>🔍</span><span class="tab-spacer"></span></button>
   </div>
@@ -570,10 +568,12 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   </div>
   <div id="tab-listagem" class="tab-content">
   <div class="action-bar" style="justify-content:space-between;">
-    <span style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.3px;color:var(--muted);font-weight:600;">📋 Listagem — disputas por data</span>
-    <span style="display:flex;align-items:center;gap:12px;">
+    <span style="font-size:10.5px;text-transform:uppercase;letter-spacing:1.3px;color:var(--muted);font-weight:600;">📋 Listagem — disputas & histórico</span>
+    <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
       <span id="listagem-restaurar" style="font-size:12px;"></span>
-      <button class="btn" onclick="abrirModalListagem()" style="background:var(--navy);color:#fff;border-color:var(--navy);font-weight:600;">➕ Adicionar</button>
+      <input type="text" id="listagem-busca" oninput="renderListagem()" placeholder="🔍 filtrar cidade…" style="border:1px solid var(--border);background:#fff;padding:5px 10px;font-size:12px;border-radius:4px;color:var(--ink);outline:none;width:150px;">
+      <button class="btn" onclick="abrirModalListagem()" style="border-color:var(--navy);color:var(--navy);font-weight:600;">➕ Rápido</button>
+      <button class="btn" onclick="licHistNovoModal()" style="background:var(--navy);color:#fff;border-color:var(--navy);font-weight:600;">➕ Entrada completa</button>
     </span>
   </div>
   <div id="listagem-lista" style="padding:0 30px 24px;background:var(--cream);"></div>
@@ -4865,12 +4865,36 @@ function renderListagem(){
   var hojeStr=(function(){var h=new Date();h.setHours(0,0,0,0);var y=h.getFullYear(),m=('0'+(h.getMonth()+1)).slice(-2),d=('0'+h.getDate()).slice(-2);return y+'-'+m+'-'+d;})();
   var _obsMap=listagemObsLoad();
   var _renovMap=listagemRenovLoad();
-  var itens=gruposPend.map(function(mun){var dd=_lstDataDisputa(grupos[mun]);var _vi=(typeof licVencedorGetMun==='function')?licVencedorGetMun(mun):{};var _rv=_renovMap[_normMun(mun)]||{};return {mun:mun,data:dd.data,hora:dd.hora,manual:false,obs:_obsMap[_normMun(mun)]||'',quemFaz:(_vi.nome||''),quemVenceu:(_vi.quemVenceu||''),renov:!!_rv.on,renovData:(_rv.data||'')};});
-  // Lançamentos manuais (lista consultiva: mostra todos)
+  // Registros do Histórico (agora exibidos aqui dentro)
+  var _histAll=(typeof licHistLoad==='function')?licHistLoad():[];
+  var _histKeys={};
+  _histAll.forEach(function(r){_histKeys[_normMun(r.municipio)+'|'+(r.data||'')]=true;});
+  function _chaveItem(mun,data){return _normMun(mun)+'|'+(data||'');}
+  // 1) Pendentes (em análise) — não mostrar se já houver registro no histórico
+  var itens=gruposPend
+    .filter(function(mun){var dd=_lstDataDisputa(grupos[mun]);return !_histKeys[_chaveItem(mun,dd.data)];})
+    .map(function(mun){
+      var dd=_lstDataDisputa(grupos[mun]);
+      var _vi=(typeof licVencedorGetMun==='function')?licVencedorGetMun(mun):{};
+      var _rv=_renovMap[_normMun(mun)]||{};
+      var _tp=(grupos[mun]||[]).find(function(t){return t._licMunicipio||t._licTipo;})||{};
+      var _preg=((_tp._licTipo||'')+(_tp._licNumero?(' '+_tp._licNumero):'')).trim();
+      return {mun:mun,data:dd.data,hora:dd.hora,kind:'auto',manual:false,obs:_obsMap[_normMun(mun)]||'',quemFaz:(_vi.nome||''),quemVenceu:(_vi.quemVenceu||''),renov:!!_rv.on,renovData:(_rv.data||''),participou:'',resultado:'',pregao:_preg,plataforma:(_tp._licPlataforma||''),link:(_tp.link||''),motivo:''};
+    });
+  // 2) Lançamentos manuais — não mostrar se já houver registro no histórico
   var manuais=listagemManualLoad();
   manuais.forEach(function(x){
-    itens.push({mun:x.mun,data:x.data||'',hora:x.hora||'',obs:x.obs||'',manual:true,id:x.id,quemFaz:x.quemFaz||'',quemVenceu:x.quemVenceu||'',renov:!!x.renovacao,renovData:(x.renovacaoData||'')});
+    if(_histKeys[_chaveItem(x.mun,x.data)])return;
+    itens.push({mun:x.mun,data:x.data||'',hora:x.hora||'',kind:'manual',manual:true,id:x.id,obs:x.obs||'',quemFaz:x.quemFaz||'',quemVenceu:x.quemVenceu||'',renov:!!x.renovacao,renovData:(x.renovacaoData||''),participou:x.participou||'',resultado:x.resultado||'',pregao:x.pregao||'',plataforma:x.plataforma||'',link:x.link||'',motivo:x.motivo||''});
   });
+  // 3) Registros do Histórico
+  _histAll.forEach(function(r){
+    var _rv=_renovMap[_normMun(r.municipio)]||{};
+    itens.push({mun:r.municipio,data:r.data||'',hora:'',kind:'hist',manual:false,histId:r.id,obs:r.obs||'',quemFaz:(typeof _licQuemFazDe==='function'?_licQuemFazDe(r.municipio,r):(r.quemFaz||''))||'',quemVenceu:r.vencedor||'',renov:!!_rv.on,renovData:(_rv.data||''),participou:r.participou||'',resultado:r.resultado||'',pregao:r.pregao||'',plataforma:r.plataforma||'',link:r.link||'',motivo:r.motivo||''});
+  });
+  // Filtro de busca por cidade
+  var _busca=((document.getElementById('listagem-busca')||{}).value||'').trim().toLowerCase();
+  if(_busca){itens=itens.filter(function(it){return (it.mun||'').toLowerCase().indexOf(_busca)>=0;});}
   itens.sort(function(a,b){var da=a.data||'9999-99-99',db=b.data||'9999-99-99';return da<db?-1:da>db?1:(a.mun<b.mun?-1:1);});
   // Badge da aba
   var badge=document.getElementById('tab-listagem-badge');
@@ -4878,7 +4902,7 @@ function renderListagem(){
   var restEl=document.getElementById('listagem-restaurar');
   if(restEl)restEl.innerHTML='';
   if(itens.length===0){
-    lista.innerHTML='<div class="cert-empty" style="padding:24px 0;text-align:center;color:var(--muted);">Nenhuma licitação na listagem. Use ➕ Adicionar para lançar manualmente.</div>';
+    lista.innerHTML='<div class="cert-empty" style="padding:24px 0;text-align:center;color:var(--muted);">'+(_busca?'Nenhuma cidade encontrada para "'+_busca.replace(/</g,'&lt;')+'".':'Nenhuma licitação na listagem. Use ➕ Rápido ou ➕ Entrada completa para lançar.')+'</div>';
     return;
   }
   // Datalist de empresas (mesma fonte da aba Participando) para autocomplete de Quem Faz/Venceu
@@ -4900,8 +4924,14 @@ function renderListagem(){
     var corData=hoje?'#b8860b':(atrasada?'#b03a2e':'var(--navy)');
     var flag=hoje?' 🔴 HOJE':(atrasada?' ⚠️':'');
     var borda=i<itens.length-1?'border-bottom:1px solid var(--border);':'';
+    var icone=item.kind==='hist'?'📊':(item.manual?'📌':'🏛');
     var extras='';
-    if(item.manual){
+    if(item.kind==='hist'){
+      extras='<button title="Editar registro (completo)" onclick="licHistEditarModal('+item.histId+')" '
+        +'style="background:none;border:none;cursor:pointer;font-size:14px;padding:0 2px;opacity:.7;flex-shrink:0;">✏️</button>'
+        +'<button title="Excluir do histórico" onclick="licHistExcluir('+item.histId+')" '
+        +'style="background:none;border:none;cursor:pointer;font-size:14px;padding:0 2px;opacity:.65;flex-shrink:0;">🗑</button>';
+    }else if(item.manual){
       extras='<button title="Editar lançamento" onclick="abrirModalListagem(\''+item.id+'\')" '
         +'style="background:none;border:none;cursor:pointer;font-size:14px;padding:0 2px;opacity:.65;flex-shrink:0;">✏️</button>'
         +'<button title="Excluir lançamento" onclick="listagemManualExcluir(\''+item.id+'\')" '
@@ -4911,15 +4941,29 @@ function renderListagem(){
         +'style="background:none;border:none;cursor:pointer;font-size:14px;padding:0 2px;opacity:'+(item.obs?'1':'.5')+';flex-shrink:0;">'+(item.obs?'📝':'✏️')+'</button>';
     }
     var obsHtml=item.obs?('<div style="font-size:12px;color:#7b4fa0;font-style:italic;margin-top:2px;line-height:1.4;">'+item.obs.replace(/</g,'&lt;')+'</div>'):'';
-    // Handlers de salvamento de Quem Faz / Quem Venceu (auto usa município; manual usa id)
-    var qfAcao=item.manual?('listagemSetCampoManual(\''+item.id+'\',\'quemFaz\',this.value)'):('listagemSetCampoAuto(\''+munEsc+'\',\'nome\',this.value)');
-    var qvAcao=item.manual?('listagemSetCampoManual(\''+item.id+'\',\'quemVenceu\',this.value)'):('listagemSetCampoAuto(\''+munEsc+'\',\'quemVenceu\',this.value)');
+    // Handlers de Quem Faz / Quem Venceu (hist→registro; manual→id; auto→município)
+    var qfAcao,qvAcao;
+    if(item.kind==='hist'){
+      qfAcao='listagemSetCampoHist('+item.histId+',\'quemFaz\',this.value)';
+      qvAcao='listagemSetCampoHist('+item.histId+',\'vencedor\',this.value)';
+    }else if(item.manual){
+      qfAcao='listagemSetCampoManual(\''+item.id+'\',\'quemFaz\',this.value)';
+      qvAcao='listagemSetCampoManual(\''+item.id+'\',\'quemVenceu\',this.value)';
+    }else{
+      qfAcao='listagemSetCampoAuto(\''+munEsc+'\',\'nome\',this.value)';
+      qvAcao='listagemSetCampoAuto(\''+munEsc+'\',\'quemVenceu\',this.value)';
+    }
     var qfVal=(item.quemFaz||'').replace(/"/g,'&quot;');
     var qvVal=(item.quemVenceu||'').replace(/"/g,'&quot;');
     var inputCss='min-width:0;flex:1;border:1px solid var(--border);background:#fff;padding:3px 8px;font-size:12px;border-radius:3px;font-family:\'Segoe UI\',Tahoma,sans-serif;color:var(--ink);outline:none;';
+    // Renovação: manual→id; hist/auto→município
     var renovAcao=item.manual?('listagemRenovToggle(true,\''+item.id+'\')'):('listagemRenovToggle(false,\''+munEsc+'\')');
     var renovDataAcao=item.manual?('listagemRenovData(true,\''+item.id+'\',this.value)'):('listagemRenovData(false,\''+munEsc+'\',this.value)');
     var renovBadge=item.renov?'<span style="font-size:10px;font-weight:800;color:#fff;background:#b8860b;border-radius:10px;padding:1px 8px;margin-left:6px;white-space:nowrap;flex-shrink:0;">🔄 RENOVAÇÃO</span>':'';
+    // Participamos / Não Participamos (hist→registro; manual→id; auto→promove p/ histórico)
+    var pKind=item.kind;var pKey=item.kind==='hist'?item.histId:(item.manual?("'"+item.id+"'"):("'"+munEsc+"'"));
+    var partAcao=function(v){return 'listagemPartic(\''+pKind+'\','+pKey+',\''+v+'\')';};
+    var resAcao=item.kind==='hist'?('listagemResultado(\'hist\','+item.histId+',this.value)'):(item.manual?('listagemResultado(\'manual\',\''+item.id+'\',this.value)'):('listagemResultado(\'auto\',\''+munEsc+'\',this.value)'));
     h+='<div style="padding:11px 14px;'+borda+(item.renov?'border-left:3px solid #b8860b;':'')+'" '
       +'onmouseover="this.style.background=\'var(--cream2)\'" onmouseout="this.style.background=\'transparent\'">'
       // Linha 1: município (+ badge renovação) + data
@@ -4928,7 +4972,7 @@ function renderListagem(){
           +'<span style="flex:1;min-width:0;">'
             +'<span style="display:flex;align-items:center;min-width:0;">'
               +'<span style="font-weight:600;color:var(--ink);font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">'
-                +(item.manual?'📌':'🏛')+' '+item.mun+'</span>'+renovBadge
+                +icone+' '+item.mun+'</span>'+renovBadge
             +'</span>'
             +obsHtml
           +'</span>'
@@ -4962,6 +5006,33 @@ function renderListagem(){
               +'style="border:1px solid var(--border);background:#fff;padding:2px 6px;font-size:12px;border-radius:3px;color:var(--ink);outline:none;">'
           +'</span>'):'')
       +'</div>'
+      // Linha 4: Participamos? + Resultado + dados do histórico
+      +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px;padding-left:2px;">'
+        +'<span style="font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap;">🗳 Participamos?</span>'
+        +'<button title="Participamos" onclick="'+partAcao('sim')+'" style="background:'+(item.participou==='sim'?'#1a6b3a':'#fff')+';color:'+(item.participou==='sim'?'#fff':'#1a6b3a')+';border:1.5px solid #1a6b3a;border-radius:12px 0 0 12px;padding:2px 12px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">✅ Sim</button>'
+        +'<button title="Não participamos" onclick="'+partAcao('nao')+'" style="background:'+(item.participou==='nao'?'#b03a2e':'#fff')+';color:'+(item.participou==='nao'?'#fff':'#b03a2e')+';border:1.5px solid #b03a2e;border-left:none;border-radius:0;padding:2px 12px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">🚫 Não</button>'
+        +'<button title="Limpar" onclick="'+partAcao('')+'" style="background:'+(!item.participou?'#e8e8e8':'#fff')+';color:#888;border:1.5px solid #ccc;border-left:none;border-radius:0 12px 12px 0;padding:2px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">—</button>'
+        +'<span style="display:flex;align-items:center;gap:4px;margin-left:4px;">'
+          +'<span style="font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap;">🎯</span>'
+          +'<select onchange="'+resAcao+'" style="border:1px solid var(--border);background:#fff;padding:2px 6px;font-size:11.5px;border-radius:3px;color:var(--ink);outline:none;font-family:\'Segoe UI\',Tahoma,sans-serif;">'
+            +'<option value=""'+(!item.resultado?' selected':'')+'>— resultado</option>'
+            +'<option value="ganhou"'+(item.resultado==='ganhou'?' selected':'')+'>✅ Ganhamos</option>'
+            +'<option value="perdeu"'+(item.resultado==='perdeu'?' selected':'')+'>❌ Perdemos</option>'
+            +'<option value="deserto"'+(item.resultado==='deserto'?' selected':'')+'>— Deserto/Cancelado</option>'
+            +'<option value="suspensa"'+(item.resultado==='suspensa'?' selected':'')+'>⏸ Suspensa</option>'
+            +'<option value="nao_aconteceu"'+(item.resultado==='nao_aconteceu'?' selected':'')+'>⊘ Não aconteceu</option>'
+          +'</select>'
+        +'</span>'
+      +'</div>'
+      // Chips do histórico (pregão / plataforma / motivo / link)
+      +(function(){
+        var chips=[];
+        if(item.pregao)chips.push('<span style="font-size:10.5px;background:#eef;color:#3a3a7a;border-radius:8px;padding:1px 7px;white-space:nowrap;">📋 '+item.pregao.replace(/</g,'&lt;')+'</span>');
+        if(item.plataforma)chips.push('<span style="font-size:10.5px;background:#eef7f0;color:#1a6b3a;border-radius:8px;padding:1px 7px;white-space:nowrap;">🌐 '+item.plataforma.replace(/</g,'&lt;')+'</span>');
+        if(item.motivo)chips.push('<span style="font-size:10.5px;background:#fdefea;color:#b03a2e;border-radius:8px;padding:1px 7px;">❓ '+item.motivo.replace(/</g,'&lt;')+'</span>');
+        if(item.link)chips.push('<a href="'+item.link.replace(/"/g,'&quot;')+'" target="_blank" rel="noopener" style="font-size:10.5px;background:#eef;color:#2a4d8f;border-radius:8px;padding:1px 7px;text-decoration:none;white-space:nowrap;">🔗 abrir edital</a>');
+        return chips.length?('<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;padding-left:2px;">'+chips.join('')+'</div>'):'';
+      })()
       +'</div>';
   });
   h+='</div>';
@@ -4985,6 +5056,56 @@ function listagemSetCampoManual(id,campo,valor){
   reg[campo]=(valor||'').trim();
   listagemManualSave(arr);
   if(typeof mostrarToast==='function')mostrarToast('💾 Salvo — '+reg.mun,false);
+}
+function listagemSetCampoHist(id,campo,valor){
+  // campo: 'quemFaz' ou 'vencedor' — gravado no registro do histórico
+  var arr=licHistLoad();
+  var reg=arr.find(function(x){return x.id===id||String(x.id)===String(id);});
+  if(!reg)return;
+  reg[campo]=(valor||'').trim();
+  licHistSave(arr);
+  if(typeof mostrarToast==='function')mostrarToast('💾 Salvo — '+reg.municipio,false);
+}
+function _listagemHistDeAuto(mun){
+  // Encontra (ou cria) o registro do histórico para um município "em análise"
+  var grupos=_getLicGrupos();var n=_normMun(mun);
+  var gk=Object.keys(grupos).find(function(x){return _normMun(x)===n;});
+  var dd=gk?_lstDataDisputa(grupos[gk]):{data:'',hora:''};
+  var tp=gk?((grupos[gk]||[]).find(function(t){return t._licMunicipio||t._licTipo;})||{}):{};
+  var arr=licHistLoad();
+  var ex=arr.find(function(x){return _normMun(x.municipio)===n&&(x.data||'')===(dd.data||'');});
+  if(!ex){
+    ex={id:Date.now(),municipio:mun,data:dd.data||'',pregao:((tp._licTipo||'')+(tp._licNumero?(' '+tp._licNumero):'')).trim(),participou:'',resultado:'',quemFaz:(typeof _licQuemFazDe==='function'?_licQuemFazDe(mun,null):'')||'',vencedor:'',plataforma:(tp._licPlataforma||''),link:(tp.link||''),obs:'',motivo:'',criadoEm:new Date().toISOString(),origem:'listagem'};
+    arr.push(ex);
+  }
+  return {arr:arr,rec:ex};
+}
+function listagemPartic(kind,key,val){
+  // val: 'sim' | 'nao' | ''
+  if(kind==='hist'){
+    var a=licHistLoad();var r=a.find(function(x){return x.id===key||String(x.id)===String(key);});
+    if(r){r.participou=val;licHistSave(a);}
+  }else if(kind==='manual'){
+    var a2=listagemManualLoad();var m=a2.find(function(x){return x.id===key;});
+    if(m){m.participou=val;listagemManualSave(a2);}
+  }else{
+    var o=_listagemHistDeAuto(key);o.rec.participou=val;licHistSave(o.arr);
+  }
+  if(typeof mostrarToast==='function')mostrarToast(val==='sim'?'✅ Participamos':(val==='nao'?'🚫 Não participamos':'Marcação limpa.'),false);
+  renderListagem();
+}
+function listagemResultado(kind,key,val){
+  if(kind==='hist'){
+    var a=licHistLoad();var r=a.find(function(x){return x.id===key||String(x.id)===String(key);});
+    if(r){r.resultado=val;licHistSave(a);}
+  }else if(kind==='manual'){
+    var a2=listagemManualLoad();var m=a2.find(function(x){return x.id===key;});
+    if(m){m.resultado=val;listagemManualSave(a2);}
+  }else{
+    var o=_listagemHistDeAuto(key);o.rec.resultado=val;licHistSave(o.arr);
+  }
+  if(typeof mostrarToast==='function')mostrarToast('💾 Resultado salvo.',false);
+  renderListagem();
 }
 function _licEtapasCheckboxesHTML(mun){
   var KEY_PROG='gc_lic_prog_v1';
@@ -5317,7 +5438,7 @@ function licParticConcluir(mun,preset){
     licLogRegistrar(mun,naoPart?'❌ Não participamos':'🏁 Concluído em Participando',
       naoPart?('Motivo: '+(obsTxt||'não informado')):('Resultado: '+(resultado||'não definido')+(quemVenceu?' | Vencedor: '+quemVenceu:'')+(obsTxt?' | Obs: '+obsTxt:'')));
     mostrarToast(naoPart?('❌ '+mun+' registrado como NÃO participamos.'):('✅ '+mun+' concluído — enviado ao histórico!'),false);
-    mudarAba('lic-historico');
+    mudarAba('listagem');
   };
 }
 function licConcEditarModal(mun){
@@ -5632,7 +5753,7 @@ function licNaoParticiparTarefas(mun, idPrincipal){
   localStorage.setItem(KEY_PROG,JSON.stringify(data));
   save();render();
   mostrarToast('📋 Não participação registrada — '+mun+' | Histórico atualizado.',false);
-  setTimeout(function(){mudarAba('lic-historico');},500);
+  setTimeout(function(){mudarAba('listagem');},500);
 }
 function licNaoParticipar(mun){
   var motivo=prompt('Motivo de não participar de '+mun+' (opcional):','');
@@ -5680,7 +5801,7 @@ function licSuspender(mun){
   if(dataProg[mun]){delete dataProg[mun];localStorage.setItem(KEY_PROG,JSON.stringify(dataProg));}
   save();render();
   mostrarToast('⏸ Licitação suspensa — '+mun+' | Tarefas removidas e histórico atualizado.',false);
-  setTimeout(function(){mudarAba('lic-historico');},500);
+  setTimeout(function(){mudarAba('listagem');},500);
 }
 function licRegistrarEvento(mun,tipo,descricao){
   licLogRegistrar(mun,tipo,descricao||'');
@@ -5982,6 +6103,7 @@ function licHistRender(){
     html+='</div></div>';
   });
   lista.innerHTML=html;
+  if(typeof renderListagem==='function'){try{renderListagem();}catch(e){}}
 }
 function licLogExcluir(id){
   if(!confirm('Excluir este evento do histórico?')) return;
