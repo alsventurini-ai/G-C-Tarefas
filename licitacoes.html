@@ -417,7 +417,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <div class="clip"><div class="clip-inner"></div></div>
   <div class="header">
     <div>
-      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v337</span></div><!-- VERSAO_APP: v337 -->
+      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v338</span></div><!-- VERSAO_APP: v338 -->
       <div class="hsubtitle">Galhardo &amp; Canales — Licitações, Participando, Histórico e Certidões</div>
     </div>
     <div>
@@ -4727,6 +4727,42 @@ function salvarModalListagemObs(){
   if(typeof mostrarToast==='function')mostrarToast(txt?'📝 Observação salva em '+mun+'.':'Observação removida.',false);
   renderListagem();
 }
+// ── Renovação da Listagem (marca cidades já atendidas em renovação) ──
+var LISTAGEM_RENOV_KEY='gc_lic_listagem_renov_v1';
+function listagemRenovLoad(){try{return JSON.parse(localStorage.getItem(LISTAGEM_RENOV_KEY)||'{}');}catch(e){return {};}}
+function listagemRenovSave(obj){
+  localStorage.setItem(LISTAGEM_RENOV_KEY,JSON.stringify(obj));
+  if(window._fbSave){
+    var t=JSON.parse(localStorage.getItem(KEY)||'[]');
+    var r=JSON.parse(localStorage.getItem(RECORR_KEY)||'[]');
+    var a=JSON.parse(localStorage.getItem(ARCH_KEY)||'[]');
+    var tp=JSON.parse(localStorage.getItem(TPL_KEY)||'[]');
+    window._fbSave(t,r,a,tp);
+  }
+}
+function listagemRenovToggle(manual,key){
+  if(manual){
+    var arr=listagemManualLoad();var reg=arr.find(function(x){return x.id===key;});
+    if(reg){reg.renovacao=!reg.renovacao;if(!reg.renovacao)reg.renovacaoData='';listagemManualSave(arr);}
+  }else{
+    var mp=listagemRenovLoad();var n=_normMun(key);
+    if(!mp[n])mp[n]={on:false,data:''};
+    mp[n].on=!mp[n].on;if(!mp[n].on)mp[n].data='';
+    listagemRenovSave(mp);
+  }
+  renderListagem();
+}
+function listagemRenovData(manual,key,val){
+  if(manual){
+    var arr=listagemManualLoad();var reg=arr.find(function(x){return x.id===key;});
+    if(reg){reg.renovacaoData=val;reg.renovacao=true;listagemManualSave(arr);}
+  }else{
+    var mp=listagemRenovLoad();var n=_normMun(key);
+    if(!mp[n])mp[n]={on:true,data:''};
+    mp[n].data=val;mp[n].on=true;listagemRenovSave(mp);
+  }
+  if(typeof mostrarToast==='function')mostrarToast('💾 Renovação salva.',false);
+}
 // ── Lançamentos manuais da Listagem (sincronizados no Firebase) ──
 var LISTAGEM_MANUAL_KEY='gc_lic_listagem_manual_v1';
 function listagemManualLoad(){try{return JSON.parse(localStorage.getItem(LISTAGEM_MANUAL_KEY)||'[]');}catch(e){return [];}}
@@ -4828,11 +4864,12 @@ function renderListagem(){
   });
   var hojeStr=(function(){var h=new Date();h.setHours(0,0,0,0);var y=h.getFullYear(),m=('0'+(h.getMonth()+1)).slice(-2),d=('0'+h.getDate()).slice(-2);return y+'-'+m+'-'+d;})();
   var _obsMap=listagemObsLoad();
-  var itens=gruposPend.map(function(mun){var dd=_lstDataDisputa(grupos[mun]);var _vi=(typeof licVencedorGetMun==='function')?licVencedorGetMun(mun):{};return {mun:mun,data:dd.data,hora:dd.hora,manual:false,obs:_obsMap[_normMun(mun)]||'',quemFaz:(_vi.nome||''),quemVenceu:(_vi.quemVenceu||'')};});
+  var _renovMap=listagemRenovLoad();
+  var itens=gruposPend.map(function(mun){var dd=_lstDataDisputa(grupos[mun]);var _vi=(typeof licVencedorGetMun==='function')?licVencedorGetMun(mun):{};var _rv=_renovMap[_normMun(mun)]||{};return {mun:mun,data:dd.data,hora:dd.hora,manual:false,obs:_obsMap[_normMun(mun)]||'',quemFaz:(_vi.nome||''),quemVenceu:(_vi.quemVenceu||''),renov:!!_rv.on,renovData:(_rv.data||'')};});
   // Lançamentos manuais (lista consultiva: mostra todos)
   var manuais=listagemManualLoad();
   manuais.forEach(function(x){
-    itens.push({mun:x.mun,data:x.data||'',hora:x.hora||'',obs:x.obs||'',manual:true,id:x.id,quemFaz:x.quemFaz||'',quemVenceu:x.quemVenceu||''});
+    itens.push({mun:x.mun,data:x.data||'',hora:x.hora||'',obs:x.obs||'',manual:true,id:x.id,quemFaz:x.quemFaz||'',quemVenceu:x.quemVenceu||'',renov:!!x.renovacao,renovData:(x.renovacaoData||'')});
   });
   itens.sort(function(a,b){var da=a.data||'9999-99-99',db=b.data||'9999-99-99';return da<db?-1:da>db?1:(a.mun<b.mun?-1:1);});
   // Badge da aba
@@ -4880,14 +4917,19 @@ function renderListagem(){
     var qfVal=(item.quemFaz||'').replace(/"/g,'&quot;');
     var qvVal=(item.quemVenceu||'').replace(/"/g,'&quot;');
     var inputCss='min-width:0;flex:1;border:1px solid var(--border);background:#fff;padding:3px 8px;font-size:12px;border-radius:3px;font-family:\'Segoe UI\',Tahoma,sans-serif;color:var(--ink);outline:none;';
-    h+='<div style="padding:11px 14px;'+borda+'" '
+    var renovAcao=item.manual?('listagemRenovToggle(true,\''+item.id+'\')'):('listagemRenovToggle(false,\''+munEsc+'\')');
+    var renovDataAcao=item.manual?('listagemRenovData(true,\''+item.id+'\',this.value)'):('listagemRenovData(false,\''+munEsc+'\',this.value)');
+    var renovBadge=item.renov?'<span style="font-size:10px;font-weight:800;color:#fff;background:#b8860b;border-radius:10px;padding:1px 8px;margin-left:6px;white-space:nowrap;flex-shrink:0;">🔄 RENOVAÇÃO</span>':'';
+    h+='<div style="padding:11px 14px;'+borda+(item.renov?'border-left:3px solid #b8860b;':'')+'" '
       +'onmouseover="this.style.background=\'var(--cream2)\'" onmouseout="this.style.background=\'transparent\'">'
-      // Linha 1: município + data
+      // Linha 1: município (+ badge renovação) + data
       +'<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">'
         +'<span style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">'
           +'<span style="flex:1;min-width:0;">'
-            +'<span style="font-weight:600;color:var(--ink);font-size:14.5px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'
-              +(item.manual?'📌':'🏛')+' '+item.mun+'</span>'
+            +'<span style="display:flex;align-items:center;min-width:0;">'
+              +'<span style="font-weight:600;color:var(--ink);font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">'
+                +(item.manual?'📌':'🏛')+' '+item.mun+'</span>'+renovBadge
+            +'</span>'
             +obsHtml
           +'</span>'
         +'</span>'
@@ -4908,6 +4950,17 @@ function renderListagem(){
           +'<input type="text" list="lst-empresas-list" value="'+qvVal+'" placeholder="quem venceu…" '
             +'style="'+inputCss+'" onchange="'+qvAcao+'">'
         +'</span>'
+      +'</div>'
+      // Linha 3: Renovação (cidade que já atendemos)
+      +'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px;padding-left:2px;">'
+        +'<span style="font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap;">🔄 Renovação:</span>'
+        +'<button title="Marcar/desmarcar renovação de contrato desta cidade" onclick="'+renovAcao+'" '
+          +'style="background:'+(item.renov?'#b8860b':'#fff')+';color:'+(item.renov?'#fff':'#8a6d3b')+';border:1.5px solid #b8860b;border-radius:14px;padding:2px 14px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">'+(item.renov?'✔ Sim':'Não')+'</button>'
+        +(item.renov?('<span style="display:flex;align-items:center;gap:5px;">'
+            +'<span style="font-size:11px;color:var(--muted);white-space:nowrap;">renovar em:</span>'
+            +'<input type="date" value="'+(item.renovData||'')+'" onchange="'+renovDataAcao+'" '
+              +'style="border:1px solid var(--border);background:#fff;padding:2px 6px;font-size:12px;border-radius:3px;color:var(--ink);outline:none;">'
+          +'</span>'):'')
       +'</div>'
       +'</div>';
   });
