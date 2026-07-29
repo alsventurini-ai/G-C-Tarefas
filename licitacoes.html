@@ -417,7 +417,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <div class="clip"><div class="clip-inner"></div></div>
   <div class="header">
     <div>
-      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v334</span></div><!-- VERSAO_APP: v334 -->
+      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v337</span></div><!-- VERSAO_APP: v337 -->
       <div class="hsubtitle">Galhardo &amp; Canales — Licitações, Participando, Histórico e Certidões</div>
     </div>
     <div>
@@ -448,8 +448,8 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
     <button class="tab-btn active" id="tab-btn-licitacoes" onclick="mudarAba('licitacoes')"><span class="tab-lbl">🏛 Licitações<br>em Análise</span><span class="tab-badge" id="tab-lic-badge" style="display:none;">0</span></button>
     <button class="tab-btn" id="tab-btn-lic-concluidas" onclick="mudarAba('lic-concluidas')"><span class="tab-lbl">✅ Participando</span><span class="tab-badge" id="tab-lic-conc-badge" style="display:none;background:#3a8c4a;">0</span></button>
     <button class="tab-btn" id="tab-btn-lic-historico" onclick="mudarAba('lic-historico')"><span class="tab-lbl">📊 Hist.<br>Licitações</span><span class="tab-spacer"></span></button>
-    <button class="tab-btn" id="tab-btn-certidoes" onclick="mudarAba('certidoes')"><span class="tab-lbl">📜 Certidões</span><span class="tab-badge" id="tab-cert-badge" style="display:none;">!</span></button>
     <button class="tab-btn" id="tab-btn-listagem" onclick="mudarAba('listagem')"><span class="tab-lbl">📋 Listagem</span><span class="tab-badge" id="tab-listagem-badge" style="display:none;">0</span></button>
+    <button class="tab-btn" id="tab-btn-certidoes" onclick="mudarAba('certidoes')"><span class="tab-lbl">📜 Certidões</span><span class="tab-badge" id="tab-cert-badge" style="display:none;">!</span></button>
     <button class="tab-btn" id="tab-btn-busca" onclick="abrirBuscaGlobal()" style="margin-left:auto;"><span>🔍</span><span class="tab-spacer"></span></button>
   </div>
 
@@ -4827,24 +4827,19 @@ function renderListagem(){
     return !(noLog||noHist);
   });
   var hojeStr=(function(){var h=new Date();h.setHours(0,0,0,0);var y=h.getFullYear(),m=('0'+(h.getMonth()+1)).slice(-2),d=('0'+h.getDate()).slice(-2);return y+'-'+m+'-'+d;})();
-  var ocultas=listagemOcultaLoad();
   var _obsMap=listagemObsLoad();
   var itens=gruposPend.map(function(mun){var dd=_lstDataDisputa(grupos[mun]);var _vi=(typeof licVencedorGetMun==='function')?licVencedorGetMun(mun):{};return {mun:mun,data:dd.data,hora:dd.hora,manual:false,obs:_obsMap[_normMun(mun)]||'',quemFaz:(_vi.nome||''),quemVenceu:(_vi.quemVenceu||'')};});
-  itens=itens.filter(function(it){return ocultas.indexOf(_normMun(it.mun))<0;});
-  // Lançamentos manuais
+  // Lançamentos manuais (lista consultiva: mostra todos)
   var manuais=listagemManualLoad();
-  var manuaisOcultos=manuais.filter(function(x){return x.oculta;}).length;
-  manuais.filter(function(x){return !x.oculta;}).forEach(function(x){
+  manuais.forEach(function(x){
     itens.push({mun:x.mun,data:x.data||'',hora:x.hora||'',obs:x.obs||'',manual:true,id:x.id,quemFaz:x.quemFaz||'',quemVenceu:x.quemVenceu||''});
   });
   itens.sort(function(a,b){var da=a.data||'9999-99-99',db=b.data||'9999-99-99';return da<db?-1:da>db?1:(a.mun<b.mun?-1:1);});
   // Badge da aba
   var badge=document.getElementById('tab-listagem-badge');
   if(badge){if(itens.length>0){badge.textContent=itens.length;badge.style.display='inline';}else{badge.style.display='none';}}
-  // Botão restaurar
-  var totalOcultas=ocultas.length+manuaisOcultos;
   var restEl=document.getElementById('listagem-restaurar');
-  if(restEl){restEl.innerHTML=totalOcultas>0?'<span onclick="listagemRestaurar()" title="Trazer de volta as removidas" style="cursor:pointer;color:var(--navy);font-weight:600;">↩ restaurar ('+totalOcultas+')</span>':'';}
+  if(restEl)restEl.innerHTML='';
   if(itens.length===0){
     lista.innerHTML='<div class="cert-empty" style="padding:24px 0;text-align:center;color:var(--muted);">Nenhuma licitação na listagem. Use ➕ Adicionar para lançar manualmente.</div>';
     return;
@@ -4868,7 +4863,6 @@ function renderListagem(){
     var corData=hoje?'#b8860b':(atrasada?'#b03a2e':'var(--navy)');
     var flag=hoje?' 🔴 HOJE':(atrasada?' ⚠️':'');
     var borda=i<itens.length-1?'border-bottom:1px solid var(--border);':'';
-    var acaoConcluir=item.manual?('listagemManualConcluir(\''+item.id+'\')'):('listagemConcluir(\''+munEsc+'\')');
     var extras='';
     if(item.manual){
       extras='<button title="Editar lançamento" onclick="abrirModalListagem(\''+item.id+'\')" '
@@ -4888,11 +4882,9 @@ function renderListagem(){
     var inputCss='min-width:0;flex:1;border:1px solid var(--border);background:#fff;padding:3px 8px;font-size:12px;border-radius:3px;font-family:\'Segoe UI\',Tahoma,sans-serif;color:var(--ink);outline:none;';
     h+='<div style="padding:11px 14px;'+borda+'" '
       +'onmouseover="this.style.background=\'var(--cream2)\'" onmouseout="this.style.background=\'transparent\'">'
-      // Linha 1: concluir + município + data
+      // Linha 1: município + data
       +'<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">'
         +'<span style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">'
-          +'<button title="Concluir — remover da listagem" onclick="'+acaoConcluir+'" '
-            +'style="background:#3a8c4a;color:#fff;border:none;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;">✓ Concluir</button>'
           +'<span style="flex:1;min-width:0;">'
             +'<span style="font-weight:600;color:var(--ink);font-size:14.5px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'
               +(item.manual?'📌':'🏛')+' '+item.mun+'</span>'
@@ -5751,6 +5743,26 @@ function licHistExcluir(id){
   var lista=licHistLoad().filter(function(r){return r.id!==id;});
   licHistSave(lista);licHistRender();
 }
+function licHistParaListagem(id){
+  var lista=licHistLoad();
+  var r=lista.find(function(x){return x.id===id;});
+  if(!r){if(typeof mostrarToast==='function')mostrarToast('Registro não encontrado.',true);return;}
+  var arr=listagemManualLoad();
+  var norm=_normMun(r.municipio);
+  var jaTem=arr.some(function(x){return _normMun(x.mun)===norm&&(x.data||'')===(r.data||'');});
+  if(jaTem){
+    if(typeof mostrarToast==='function')mostrarToast('ℹ️ '+r.municipio+' já está na Listagem.',false);
+    mudarAba('listagem');return;
+  }
+  var resLbl={ganhou:'✅ Ganhamos',perdeu:'❌ Perdemos',deserto:'— Deserto/Cancelado',nao_aconteceu:'⊘ Não aconteceu'}[r.resultado]||'';
+  var obs=[r.pregao||'',r.plataforma?('🌐 '+r.plataforma):'',resLbl,r.obs||''].filter(Boolean).join(' · ');
+  var quemFaz=r.quemFaz||((typeof _licQuemFazDe==='function')?_licQuemFazDe(r.municipio,r):'')||'';
+  arr.push({id:'lstm_'+Date.now()+'_'+Math.floor(Math.random()*1000),mun:r.municipio,data:r.data||'',hora:'',obs:obs,quemFaz:quemFaz,quemVenceu:r.vencedor||'',oculta:false,criadoEm:new Date().toISOString(),origemHist:id});
+  listagemManualSave(arr);
+  if(typeof mostrarToast==='function')mostrarToast('➕ '+r.municipio+' enviada para a Listagem.',false);
+  if(typeof renderListagem==='function')renderListagem();
+  mudarAba('listagem');
+}
 var LIC_HIST_CARD_FILTRO='';
 function licHistFiltroCard(filtro,num){
   if(filtro===''){
@@ -5907,6 +5919,7 @@ function licHistRender(){
       }
       if(r.obs) html+='<div style="font-size:11px;color:var(--muted);font-style:italic;">📝 '+r.obs+'</div>';
       html+='<div style="display:flex;gap:4px;margin-top:4px;flex-wrap:wrap;">';
+      html+='<button onclick="licHistParaListagem('+r.id+')" style="background:none;border:1px solid #1a6b3a;border-radius:3px;padding:1px 8px;font-size:11px;cursor:pointer;color:#1a6b3a;font-weight:600;">📋 → Listagem</button>';
       html+='<button onclick="licHistEditarModal('+r.id+')" style="background:none;border:1px solid #ddd;border-radius:3px;padding:1px 8px;font-size:11px;cursor:pointer;color:#555;">✏️ Editar</button>';
       html+='<button onclick="licHistNaoAconteceu('+r.id+')" style="background:'+(r.resultado==='nao_aconteceu'?'#8a6d3b':'none')+';border:1px solid #8a6d3b;border-radius:3px;padding:1px 8px;font-size:11px;cursor:pointer;color:'+(r.resultado==='nao_aconteceu'?'#fff':'#8a6d3b')+';">⊘ Não Aconteceu</button>';
       html+='<button onclick="licHistExcluir('+r.id+')" style="background:none;border:1px solid #ffcccc;border-radius:3px;padding:1px 8px;font-size:11px;cursor:pointer;color:#c0392b;">× Excluir</button>';
