@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>G&C Licitações</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#1a2744">
@@ -417,7 +418,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
   <div class="clip"><div class="clip-inner"></div></div>
   <div class="header">
     <div>
-      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v339</span></div><!-- VERSAO_APP: v339 -->
+      <div class="htitle">G&C Licitações <span id="app-versao" style="font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:2px 8px;border-radius:10px;vertical-align:middle;margin-left:6px;letter-spacing:.5px;">v344</span></div><!-- VERSAO_APP: v344 -->
       <div class="hsubtitle">Galhardo &amp; Canales — Licitações, Participando, Histórico e Certidões</div>
     </div>
     <div>
@@ -484,6 +485,7 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
     <div style="display:flex;gap:6px;flex-wrap:wrap;">
       <button class="btn" style="font-size:12px;padding:5px 11px;border-color:#1a6b3a;color:#1a6b3a;font-weight:600;" onclick="partManualNovoModal()">+ Nova (manual)</button>
       <button class="btn" style="font-size:12px;padding:5px 11px;border-color:#3a8c4a;color:#3a8c4a;" onclick="imprimirLicitacoesConcluidas()">🖨 Imprimir</button>
+      <button class="btn" style="font-size:12px;padding:5px 11px;border-color:#b03a2e;color:#b03a2e;font-weight:600;" onclick="zerarParticipando()">🧹 Zerar</button>
     </div>
   </div>
   <div id="lic-conc-stats-row" style="display:flex;gap:10px;margin:0 30px 10px;flex-wrap:wrap;"></div>
@@ -574,6 +576,8 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
       <input type="text" id="listagem-busca" oninput="renderListagem()" placeholder="🔍 filtrar cidade…" style="border:1px solid var(--border);background:#fff;padding:5px 10px;font-size:12px;border-radius:4px;color:var(--ink);outline:none;width:150px;">
       <button class="btn" onclick="abrirModalListagem()" style="border-color:var(--navy);color:var(--navy);font-weight:600;">➕ Rápido</button>
       <button class="btn" onclick="licHistNovoModal()" style="background:var(--navy);color:#fff;border-color:var(--navy);font-weight:600;">➕ Entrada completa</button>
+      <button class="btn" onclick="abrirModalImportar()" style="border-color:#6c3483;color:#6c3483;font-weight:600;">📥 Importar planilha</button>
+      <button class="btn" onclick="limparTudoLicitacoes()" style="border-color:#b03a2e;color:#b03a2e;font-weight:600;" title="Reset completo — apaga todas as licitações (com backup).">🗑 Limpar tudo</button>
     </span>
   </div>
   <div id="listagem-lista" style="padding:0 30px 24px;background:var(--cream);"></div>
@@ -926,6 +930,50 @@ mark{background:#fff3b0;color:var(--ink);border-radius:2px;padding:0 2px;}
     <div class="modal-foot">
       <button class="btn-modal-cancel" onclick="partManualFechar()">Cancelar</button>
       <button class="btn-modal-primary" style="background:#1a6b3a;" onclick="partManualSalvar()">💾 Criar em Participando</button>
+    </div>
+  </div>
+</div>
+
+<div id="import-modal" class="modal-overlay" style="display:none;">
+  <div class="modal-box" style="max-width:820px;">
+    <div class="modal-head" style="background:#6c3483;">
+      <span class="modal-head-title">📥 Importar planilha para a Listagem</span>
+      <button class="modal-close" onclick="fecharModalImportar()">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12.5px;color:var(--ink);line-height:1.5;margin-bottom:10px;">
+        <strong style="color:#6c3483;">Escolha a sua planilha</strong> (o seu <code>alimentar_sistema.xlsx</code>) e o app importa direto, no formato dela:
+        <em>UF · Município · Modalidade · Nº · Data · Hora · Observação</em> — sem cabeçalho.
+        As datas e horas do Excel são lidas automaticamente, a observação vai junto, e as sessões marcadas como "Suspenso" vão para a Listagem sem data.
+        <br><strong style="color:#6c3483;">Roteamento por data:</strong> disputas <strong>posteriores a hoje</strong> → <strong>✅ Licitações em Análise</strong>; disputas de <strong>hoje ou já passadas</strong> → <strong>📋 Listagem</strong>.
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#f4ecf7;border:1px solid #d7bde2;border-radius:8px;padding:12px 14px;margin-bottom:10px;">
+        <input type="file" id="import-file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importarArquivo(this)">
+        <button class="btn" style="background:#6c3483;color:#fff;border-color:#6c3483;font-weight:700;" onclick="document.getElementById('import-file').click()">📂 Escolher a minha planilha (.xlsx)</button>
+        <span id="import-file-nome" style="font-size:12px;color:var(--muted);">Nenhum arquivo escolhido.</span>
+      </div>
+      <details style="margin-bottom:8px;">
+        <summary style="font-size:12px;color:var(--muted);cursor:pointer;">…ou colar linhas manualmente (opcional)</summary>
+        <div class="modal-row" style="margin-top:8px;">
+          <div class="modal-field">
+            <textarea id="import-txt" class="modal-input" style="min-height:130px;font-family:'Segoe UI',monospace;font-size:12px;white-space:pre;overflow:auto;" placeholder="SP	Pederneiras	Eletrônica	60	15/07/2026	09:00	
+SP	São João das Duas Pontes	Eletrônica		20/07/2026	09:00	Odontologia Nathália Lopes"></textarea>
+          </div>
+        </div>
+        <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin:4px 0 2px;">
+          <label style="font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" id="import-tem-cabecalho"> 1ª linha é cabeçalho</label>
+          <button class="btn" style="font-size:12px;border-color:#6c3483;color:#6c3483;font-weight:600;" onclick="importarPreview()">👁 Pré-visualizar o texto colado</button>
+        </div>
+      </details>
+      <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin:4px 0 2px;">
+        <label style="font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" id="import-pular-dup" checked> Pular duplicadas (mesma cidade + data)</label>
+        <label style="font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer;" title="Para as disputas posteriores a hoje, além da licitação em análise, gera também as tarefas de prazo (impugnação, análise, proposta…)."><input type="checkbox" id="import-gerar-prazos"> Gerar tarefas de prazo p/ as ativas</label>
+      </div>
+      <div id="import-preview" style="margin-top:8px;font-size:12px;"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-modal-cancel" onclick="fecharModalImportar()">Cancelar</button>
+      <button class="btn-modal-primary" id="import-btn-confirmar" style="background:#6c3483;display:none;" onclick="importarConfirmar()">✅ Importar para a Listagem</button>
     </div>
   </div>
 </div>
@@ -4834,6 +4882,435 @@ function listagemRestaurar(){
   if(mudou)listagemManualSave(arr);
   if(typeof mostrarToast==='function')mostrarToast('Listagem restaurada.',false);
   renderListagem();
+}
+// ═══════════ IMPORTADOR DE PLANILHA → LISTAGEM (manual) ═══════════
+function abrirModalImportar(){
+  var m=document.getElementById('import-modal');if(!m)return;
+  document.getElementById('import-txt').value='';
+  document.getElementById('import-preview').innerHTML='';
+  document.getElementById('import-btn-confirmar').style.display='none';
+  var fi=document.getElementById('import-file');if(fi)fi.value='';
+  var fn=document.getElementById('import-file-nome');if(fn)fn.textContent='Nenhum arquivo escolhido.';
+  window._importBuffer=null;
+  m.style.display='flex';
+}
+function fecharModalImportar(){var m=document.getElementById('import-modal');if(m)m.style.display='none';window._importBuffer=null;}
+// Formata Date/valor de célula em DD/MM/AAAA ou HH:MM conforme o tipo
+function _impFmtCelula(v,ehHora){
+  if(v==null)return '';
+  if(v instanceof Date){
+    if(ehHora){var h=v.getHours(),mi=v.getMinutes();if(h===0&&mi===0){var s=v.getSeconds();return s?('00:00'):'';}return ('0'+h).slice(-2)+':'+('0'+mi).slice(-2);}
+    return ('0'+v.getDate()).slice(-2)+'/'+('0'+(v.getMonth()+1)).slice(-2)+'/'+v.getFullYear();
+  }
+  if(typeof v==='number'){
+    // fração de dia = hora; inteiro/serial já vem como Date via cellDates, então número aqui é hora fracionária
+    if(ehHora||(v>0&&v<1)){var tot=Math.round(v*24*60);return ('0'+Math.floor(tot/60)).slice(-2)+':'+('0'+(tot%60)).slice(-2);}
+    return String(v);
+  }
+  return String(v).trim();
+}
+// Lê o .xlsx escolhido, monta o TSV no formato da planilha do André e pré-visualiza
+function importarArquivo(input){
+  var f=input&&input.files&&input.files[0];
+  if(!f)return;
+  var nomeEl=document.getElementById('import-file-nome');
+  if(nomeEl)nomeEl.textContent='Lendo "'+f.name+'"…';
+  if(typeof XLSX==='undefined'){
+    if(nomeEl)nomeEl.textContent='';
+    var box=document.getElementById('import-preview');
+    if(box)box.innerHTML='<div style="color:#b03a2e;">Não consegui carregar o leitor de planilha (sem internet?). Você ainda pode colar as linhas no campo abaixo.</div>';
+    return;
+  }
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});
+      var ws=wb.Sheets[wb.SheetNames[0]];
+      var linhas=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:''});
+      var tsv=[];
+      linhas.forEach(function(row){
+        if(!row||row.every(function(c){return c===''||c==null;}))return;
+        var uf=String(row[0]||'').trim();
+        var mun=String(row[1]||'').trim();
+        var modal=String(row[2]||'').trim();
+        var num=(row[3]==null?'':String(row[3])).trim();
+        var data=_impFmtCelula(row[4],false);
+        var hora=_impFmtCelula(row[5],true);
+        var obs=(row[6]==null?'':String(row[6])).trim();
+        tsv.push([uf,mun,modal,num,data,hora,obs].join('\t'));
+      });
+      var ta=document.getElementById('import-txt');
+      if(ta)ta.value=tsv.join('\n');
+      var cabEl=document.getElementById('import-tem-cabecalho');if(cabEl)cabEl.checked=false;
+      if(nomeEl)nomeEl.textContent='✅ '+f.name+' — '+tsv.length+' linha(s) lidas.';
+      importarPreview();
+    }catch(err){
+      console.error('importarArquivo:',err);
+      if(nomeEl)nomeEl.textContent='';
+      var box2=document.getElementById('import-preview');
+      if(box2)box2.innerHTML='<div style="color:#b03a2e;">Erro ao ler a planilha: '+String(err.message||err).replace(/</g,'&lt;')+'</div>';
+    }
+  };
+  reader.onerror=function(){if(nomeEl)nomeEl.textContent='Erro ao abrir o arquivo.';};
+  reader.readAsArrayBuffer(f);
+}
+function _impNormData(v){
+  v=(v||'').trim();if(!v)return '';
+  var m;
+  // AAAA-MM-DD
+  if((m=v.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})$/))){return m[1]+'-'+('0'+m[2]).slice(-2)+'-'+('0'+m[3]).slice(-2);}
+  // DD/MM/AAAA  (ou DD-MM-AAAA / DD.MM.AAAA)
+  if((m=v.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})$/))){return m[3]+'-'+('0'+m[2]).slice(-2)+'-'+('0'+m[1]).slice(-2);}
+  // DD/MM/AA
+  if((m=v.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2})$/))){return '20'+m[3]+'-'+('0'+m[2]).slice(-2)+'-'+('0'+m[1]).slice(-2);}
+  return '__ERRO__';
+}
+function _impSimNao(v){
+  v=(v||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  if(!v)return '';
+  if(['sim','s','1','x','true','v','yes'].indexOf(v)>=0)return 'sim';
+  if(['nao','n','0','false','f','no'].indexOf(v)>=0)return 'nao';
+  return '';
+}
+function _impSplitLinha(linha,sep){
+  // Split simples respeitando aspas duplas (CSV). Para TSV não há aspas, funciona igual.
+  var out=[],cur='',dentro=false;
+  for(var i=0;i<linha.length;i++){
+    var c=linha[i];
+    if(c==='"'){ if(dentro&&linha[i+1]==='"'){cur+='"';i++;} else {dentro=!dentro;} }
+    else if(c===sep&&!dentro){ out.push(cur);cur=''; }
+    else { cur+=c; }
+  }
+  out.push(cur);
+  return out.map(function(x){return x.trim();});
+}
+var _IMP_COLS=[
+  {campo:'mun',      nomes:['municipio','município','cidade','mun']},
+  {campo:'data',     nomes:['data','datadisputa','datadadisputa','datasessao','sessao','data sessão']},
+  {campo:'hora',     nomes:['hora','horario','horário']},
+  {campo:'pregao',   nomes:['pregao','pregão','edital','numero','número','processo']},
+  {campo:'plataforma',nomes:['plataforma','portal','sistema']},
+  {campo:'participou',nomes:['participamos','participou','participacao','participação','participa']},
+  {campo:'resultado',nomes:['resultado','situacao','situação','status']},
+  {campo:'quemFaz',  nomes:['quemfaz','quem faz','faz','responsavel','responsável','empresa']},
+  {campo:'quemVenceu',nomes:['quemvenceu','quem venceu','venceu','vencedor','ganhador']},
+  {campo:'renovacao',nomes:['renovacao','renovação','renova']},
+  {campo:'renovacaoData',nomes:['datarenovacao','data renovação','data renovacao','datarenov','renovacaodata','venc renovação','vencrenov']},
+  {campo:'motivo',   nomes:['motivo','justificativa','obs motivo']},
+  {campo:'link',     nomes:['link','url','endereco','endereço']},
+  {campo:'obs',      nomes:['obs','observacao','observação','observacoes','observações','nota','notas']}
+];
+function _impNormCab(s){return (s||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();}
+var _IMP_UFS=['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
+var _IMP_STATUS=['suspensa','suspenso','cancelada','cancelado','revogada','revogado','adiada','adiado','deserta','deserto','fracassada','fracassado'];
+function _impParse(){
+  var raw=(document.getElementById('import-txt').value||'').replace(/\r/g,'');
+  var linhas=raw.split('\n').filter(function(l){return l.trim()!=='';});
+  if(linhas.length===0)return {erro:'Nada para importar. Cole os dados da planilha.'};
+  // Detectar separador: tab (Excel/Sheets) tem prioridade; depois ; e ,
+  var amostra=linhas[0];
+  var sep=amostra.indexOf('\t')>=0?'\t':(amostra.indexOf(';')>=0?';':',');
+  // ── Detecção automática do formato "minha planilha": 1ª coluna = UF ──
+  // Layout: UF · Município · Modalidade · Número · Data · Hora · Observação (sem cabeçalho)
+  var prim=(_impSplitLinha(linhas[0],sep)[0]||'').trim().toUpperCase();
+  var formatoUF=_IMP_UFS.indexOf(prim)>=0;
+  if(formatoUF){
+    var registrosU=[],errosU=[];
+    for(var lu=0;lu<linhas.length;lu++){
+      var c=_impSplitLinha(linhas[lu],sep);
+      var mun=(c[1]||'').trim();
+      if(!mun)continue;
+      var modalidade=(c[2]||'').trim();
+      var numero=(c[3]||'').trim();
+      var dataRaw=(c[4]||'').trim();
+      var horaRaw=(c[5]||'').trim();
+      var obs=(c[6]||'').trim();
+      var pregao=(modalidade+(numero?(' '+numero):'')).trim();
+      var r={mun:mun,data:'',hora:horaRaw,pregao:pregao,plataforma:'',participou:'',resultado:'',quemFaz:'',quemVenceu:'',renovacao:false,renovacaoData:'',motivo:'',link:'',obs:obs};
+      var statusNorm=dataRaw.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+      if(_IMP_STATUS.indexOf(statusNorm)>=0){
+        // Sem data real: registra o status e manda para a Listagem
+        r.resultado=dataRaw.charAt(0).toUpperCase()+dataRaw.slice(1).toLowerCase();
+        r.data='';
+      }else{
+        var dOut=_impNormData(dataRaw);
+        if(dOut==='__ERRO__'){errosU.push('Linha '+(lu+1)+' ("'+mun+'"): data inválida "'+dataRaw+'".');continue;}
+        r.data=dOut;
+      }
+      registrosU.push(r);
+    }
+    return {registros:registrosU,erros:errosU,sep:sep,formato:'UF'};
+  }
+  // ── Formato "Modelo G&C" (com/sem cabeçalho) ──
+  var temCab=document.getElementById('import-tem-cabecalho').checked;
+  var mapa=null; // índice de coluna → campo
+  var iniLinha=0;
+  if(temCab){
+    var cab=_impSplitLinha(linhas[0],sep).map(_impNormCab);
+    mapa={};
+    cab.forEach(function(nome,idx){
+      for(var cc=0;cc<_IMP_COLS.length;cc++){
+        if(_IMP_COLS[cc].nomes.map(_impNormCab).indexOf(nome)>=0){mapa[idx]=_IMP_COLS[cc].campo;break;}
+      }
+    });
+    iniLinha=1;
+    if(Object.keys(mapa).length===0)mapa=null;
+  }
+  var registros=[],erros=[];
+  for(var li=iniLinha;li<linhas.length;li++){
+    var cols=_impSplitLinha(linhas[li],sep);
+    var r2={mun:'',data:'',hora:'',pregao:'',plataforma:'',participou:'',resultado:'',quemFaz:'',quemVenceu:'',renovacao:'',renovacaoData:'',motivo:'',link:'',obs:''};
+    if(mapa){
+      Object.keys(mapa).forEach(function(idx){r2[mapa[idx]]=(cols[idx]||'').trim();});
+    }else{
+      _IMP_COLS.forEach(function(col,idx){r2[col.campo]=(cols[idx]||'').trim();});
+    }
+    if(!r2.mun){continue;}
+    var st=(r2.data||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    if(_IMP_STATUS.indexOf(st)>=0){
+      if(!r2.resultado)r2.resultado=r2.data.charAt(0).toUpperCase()+r2.data.slice(1).toLowerCase();
+      r2.data='';
+    }else{
+      var dOut2=_impNormData(r2.data);
+      if(dOut2==='__ERRO__'){erros.push('Linha '+(li+1)+' ("'+r2.mun+'"): data inválida "'+r2.data+'".');continue;}
+      r2.data=dOut2;
+      if(!r2.data){erros.push('Linha '+(li+1)+' ("'+r2.mun+'"): sem data.');continue;}
+    }
+    r2.participou=_impSimNao(r2.participou);
+    var rn=_impSimNao(r2.renovacao);
+    r2.renovacao=(rn==='sim');
+    r2.renovacaoData=(r2.renovacaoData?(_impNormData(r2.renovacaoData)==='__ERRO__'?'':_impNormData(r2.renovacaoData)):'');
+    registros.push(r2);
+  }
+  return {registros:registros,erros:erros,sep:sep};
+}
+function _impHojeStr(){var h=new Date();h.setHours(0,0,0,0);var y=h.getFullYear(),m=('0'+(h.getMonth()+1)).slice(-2),d=('0'+h.getDate()).slice(-2);return y+'-'+m+'-'+d;}
+function importarPreview(){
+  var res=_impParse();
+  var box=document.getElementById('import-preview');
+  var btn=document.getElementById('import-btn-confirmar');
+  if(res.erro){box.innerHTML='<div style="color:#b03a2e;">'+res.erro+'</div>';btn.style.display='none';window._importBuffer=null;return;}
+  var regs=res.registros;
+  var hoje=_impHojeStr();
+  // Dedup contra manuais + histórico + tarefas de licitação existentes
+  var pularDup=document.getElementById('import-pular-dup').checked;
+  var jaExiste={};
+  try{listagemManualLoad().forEach(function(x){jaExiste[_normMun(x.mun)+'|'+(x.data||'')]=true;});}catch(e){}
+  try{licHistLoad().forEach(function(r){jaExiste[_normMun(r.municipio)+'|'+(r.data||'')]=true;});}catch(e){}
+  try{(typeof _getLicGrupos==='function'?Object.keys(_getLicGrupos()):[]).forEach(function(m){var g=_getLicGrupos()[m]||[];var dd=(typeof _lstDataDisputa==='function')?_lstDataDisputa(g):{data:''};jaExiste[_normMun(m)+'|'+(dd.data||'')]=true;});}catch(e){}
+  var novos=[],dups=[];
+  regs.forEach(function(r){
+    var ch=_normMun(r.mun)+'|'+r.data;
+    if(pularDup&&jaExiste[ch]){dups.push(r);}else{r._destino=(r.data>hoje?'analise':'listagem');novos.push(r);jaExiste[ch]=true;}
+  });
+  window._importBuffer=novos;
+  var nAnalise=novos.filter(function(r){return r._destino==='analise';}).length;
+  var nListagem=novos.filter(function(r){return r._destino==='listagem';}).length;
+  var html='';
+  html+='<div style="background:#f4ecf7;border:1px solid #d7bde2;border-radius:6px;padding:8px 12px;margin-bottom:6px;line-height:1.6;">'
+     +'<strong style="color:#6c3483;">'+novos.length+'</strong> linha(s) prontas'
+     +(dups.length?' · <span style="color:#b8860b;">'+dups.length+' duplicada(s) puladas</span>':'')
+     +(res.erros.length?' · <span style="color:#b03a2e;">'+res.erros.length+' com erro</span>':'')+'.<br>'
+     +'➡️ <strong style="color:#1a6b3a;">'+nAnalise+'</strong> para ✅ Licitações em Análise (posteriores a hoje) · '
+     +'<strong style="color:#1a5276;">'+nListagem+'</strong> para 📋 Listagem (já passadas).</div>';
+  if(res.erros.length){
+    html+='<div style="color:#b03a2e;font-size:11.5px;margin-bottom:6px;line-height:1.5;">'+res.erros.slice(0,8).map(function(e){return '• '+e.replace(/</g,'&lt;');}).join('<br>')+(res.erros.length>8?'<br>…':'')+'</div>';
+  }
+  if(novos.length){
+    var amostra=novos.slice(0,8);
+    html+='<div style="max-height:170px;overflow:auto;border:1px solid var(--border);border-radius:6px;">'
+      +'<table style="width:100%;border-collapse:collapse;font-size:11px;">'
+      +'<thead><tr style="background:#faf6fc;">'
+      +['Destino','Município','Data','Pregão','Part.','Faz','Venceu'].map(function(h){return '<th style="text-align:left;padding:4px 6px;border-bottom:1px solid var(--border);white-space:nowrap;">'+h+'</th>';}).join('')
+      +'</tr></thead><tbody>';
+    amostra.forEach(function(r){
+      var dest=r._destino==='analise'?'<span style="color:#1a6b3a;font-weight:700;">✅ Análise</span>':'<span style="color:#1a5276;font-weight:700;">📋 Listagem</span>';
+      html+='<tr>'
+        +'<td style="padding:3px 6px;border-bottom:1px solid #eee;white-space:nowrap;">'+dest+'</td>'
+        +'<td style="padding:3px 6px;border-bottom:1px solid #eee;">'+(r.mun||'').replace(/</g,'&lt;')+'</td>'
+        +'<td style="padding:3px 6px;border-bottom:1px solid #eee;white-space:nowrap;">'+(r.data?fmtDate(r.data):'')+'</td>'
+        +'<td style="padding:3px 6px;border-bottom:1px solid #eee;">'+(r.pregao||'').replace(/</g,'&lt;')+'</td>'
+        +'<td style="padding:3px 6px;border-bottom:1px solid #eee;">'+(r.participou==='sim'?'✅':(r.participou==='nao'?'🚫':'—'))+'</td>'
+        +'<td style="padding:3px 6px;border-bottom:1px solid #eee;">'+(r.quemFaz||'').replace(/</g,'&lt;')+'</td>'
+        +'<td style="padding:3px 6px;border-bottom:1px solid #eee;">'+(r.quemVenceu||'').replace(/</g,'&lt;')+'</td>'
+        +'</tr>';
+    });
+    html+='</tbody></table></div>';
+    if(novos.length>8)html+='<div style="font-size:11px;color:var(--muted);margin-top:4px;">…e mais '+(novos.length-8)+' linha(s).</div>';
+    btn.style.display='inline-block';
+    btn.textContent='✅ Importar '+novos.length+' registro(s)';
+  }else{
+    html+='<div style="color:var(--muted);">Nenhuma linha nova para importar.</div>';
+    btn.style.display='none';
+  }
+  box.innerHTML=html;
+}
+// Cria a licitação na aba "Licitações em Análise": tarefa principal (+ prazos opcionais)
+function _impCriarLicAnalise(r,gerarPrazos,idBase){
+  var municipio=r.mun;var dataDisputa=r.data;var horaDisputa=r.hora||'09:00';
+  var licTipo=(r.pregao||'').trim()||'Pregão Eletrônico';
+  var labelTipo=licTipo;
+  var licLink=r.link||'';
+  var obsBase=(r.obs?(r.obs+' | '):'')+'['+labelTipo+']'+(r.quemFaz?' | Quem Faz: '+r.quemFaz:'')+(r.plataforma?' | Plataforma: '+r.plataforma:'');
+  var now2=idBase;
+  tasks.push({id:now2,text:'Licitação - '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataDisputa,alertFired:false,paraQuem:'Licitações',obs:obsBase,priority:'alta',tags:['licitação',municipio,licTipo],pinned:false,duracao:'',link:licLink,_licMunicipio:municipio,_licDataDisputa:dataDisputa,_licHoraDisputa:horaDisputa,_licTipo:licTipo,_licNumero:'',_licQuemFaz:(r.quemFaz||''),_licPlataforma:(r.plataforma||'')});
+  if(gerarPrazos){
+    var dataImpug=somarDiasUteis_subtrair(dataDisputa,3);
+    var dataAnalise=somarDiasUteis_subtrair(dataDisputa,8);
+    var dataInicioProposta=somarDiasCorridos(dataDisputa,1);
+    var dataRespostaImpug=somarDiasUteis(dataImpug,3);
+    var ultimoDiaUtil=somarDiasUteis_subtrair(dataDisputa,1);
+    if(dataRespostaImpug>ultimoDiaUtil)dataRespostaImpug=ultimoDiaUtil;
+    tasks.push({id:now2+1,text:'⚠️ Impugnação — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataImpug,alertFired:false,paraQuem:'Licitações',obs:'Prazo de impugnação — '+municipio+' ('+labelTipo+')\nLei nº 14.133/2021, Art. 164.',priority:'alta',tags:['licitação','impugnação',municipio],pinned:false,duracao:'',link:licLink,_licMunicipio:municipio,_licDataDisputa:dataDisputa,_licHoraDisputa:horaDisputa,_impugnacaoEnviada:null,_licTipo:licTipo,_licNumero:''});
+    tasks.push({id:now2+2,text:'📋 Análise de Edital — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataAnalise,alertFired:false,paraQuem:'Licitações',obs:'Análise do edital — '+municipio+' ('+labelTipo+')',priority:'alta',tags:['licitação','edital',municipio],pinned:false,duracao:'',link:licLink,_licMunicipio:municipio,_licTipo:licTipo,_licNumero:''});
+    tasks.push({id:now2+3,text:'📤 Prazo Final Inclusão da Proposta — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataInicioProposta,alertFired:false,paraQuem:'Licitações',obs:'⚠️ ATENÇÃO: incluir proposta no sistema até o dia da disputa!\n'+municipio+' ('+labelTipo+')',priority:'alta',tags:['licitação','proposta',municipio],pinned:true,duracao:'',link:licLink,_licMunicipio:municipio,_licTipo:licTipo,_licNumero:'',_intradayTimes:['08:00','15:00']});
+    tasks.push({id:now2+5,text:'📨 Início Envio da Proposta — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:somarDiasUteis_subtrair(dataDisputa,4),alertFired:false,paraQuem:'Licitações',obs:'Iniciar elaboração e envio da proposta — '+municipio+' ('+labelTipo+')',priority:'alta',tags:['licitação','proposta',municipio],pinned:false,duracao:'',link:licLink,_licMunicipio:municipio,_licTipo:licTipo,_licNumero:''});
+    tasks.push({id:now2+4,text:'⚖️ Prazo Final de Impugnação — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:horaDisputa,taskDate:dataImpug,alertFired:false,paraQuem:'Licitações',obs:'ATENÇÃO: encerra hoje o prazo de impugnação — '+municipio+' ('+labelTipo+')\nLei nº 14.133/2021, Art. 164.',priority:'alta',tags:['licitação','impugnação',municipio],pinned:false,duracao:'',link:licLink,_licMunicipio:municipio,_licTipo:licTipo,_licNumero:''});
+    tasks.push({id:now2+6,text:'📩 Prazo Final p/ Resposta da Impugnação — '+municipio,done:false,addedAt:timeNow(),doneAt:'',schedule:'08:00',taskDate:dataRespostaImpug,alertFired:false,paraQuem:'Licitações',obs:'⚠️ O órgão tem até esta data para responder a impugnação — '+municipio+' ('+labelTipo+')\nLei nº 14.133/2021, Art. 164, parágrafo único.',priority:'alta',tags:['licitação','resposta-impugnação',municipio],pinned:true,duracao:'',link:licLink,_licMunicipio:municipio,_licTipo:licTipo,_licNumero:'',_intradayTimes:['08:00','14:00']});
+  }
+  // Registrar Quem Faz no store da Participando (sem marcar participação)
+  if(r.quemFaz){try{var vd=licVencedorLoad();var norm=_normMun(municipio);var ck=Object.keys(vd).find(function(k){return _normMun(k)===norm;})||municipio;if(!vd[ck])vd[ck]={nome:'',resultado:''};if(!vd[ck].nome)vd[ck].nome=r.quemFaz;licVencedorSave(vd);}catch(e){}}
+}
+function importarConfirmar(){
+  var novos=window._importBuffer;
+  if(!novos||!novos.length){if(typeof mostrarToast==='function')mostrarToast('Nada para importar. Pré-visualize primeiro.',true);return;}
+  var gerarPrazos=document.getElementById('import-gerar-prazos').checked;
+  var arr=listagemManualLoad();
+  var base=Date.now();
+  var nAnalise=0,nListagem=0;
+  novos.forEach(function(r,i){
+    if(r._destino==='analise'){
+      _impCriarLicAnalise(r,gerarPrazos,base+i*10);
+      nAnalise++;
+    }else{
+      arr.push({
+        id:'lstm_'+(base+i)+'_'+Math.floor(Math.random()*1000),
+        mun:r.mun,data:r.data,hora:r.hora||'',obs:r.obs||'',
+        pregao:r.pregao||'',plataforma:r.plataforma||'',
+        participou:r.participou||'',resultado:r.resultado||'',
+        quemFaz:r.quemFaz||'',quemVenceu:r.quemVenceu||'',
+        renovacao:!!r.renovacao,renovacaoData:r.renovacaoData||'',
+        motivo:r.motivo||'',link:r.link||'',
+        oculta:false,criadoEm:new Date().toISOString(),origem:'import'
+      });
+      nListagem++;
+    }
+  });
+  if(nListagem>0)listagemManualSave(arr);
+  if(nAnalise>0){if(typeof save==='function')save();}
+  window._importBuffer=null;
+  fecharModalImportar();
+  if(typeof mostrarToast==='function')mostrarToast('📥 Importado: '+nAnalise+' em Análise · '+nListagem+' na Listagem.',false);
+  if(typeof render==='function')render();
+  if(typeof renderLicitacoes==='function')renderLicitacoes();
+  if(typeof renderListagem==='function')renderListagem();
+  if(typeof atualizarBadgesLic==='function')atualizarBadgesLic();
+}
+// ═══════════ ZERAR APENAS A ABA PARTICIPANDO (com backup) ═══════════
+function zerarParticipando(){
+  var vd={};try{vd=licVencedorLoad();}catch(e){}
+  var logR=[];try{logR=licLogLoad();}catch(e){}
+  var histR=[];try{histR=licHistLoad();}catch(e){}
+  var nVenc=Object.keys(vd).length;
+  var nPartLog=logR.filter(function(e){return (e.tipo||'').indexOf('Participamos')>=0&&(e.tipo||'').indexOf('Não')<0;}).length;
+  var nHistSim=histR.filter(function(r){return r.participou==='sim';}).length;
+  if(nVenc===0&&nPartLog===0&&nHistSim===0){
+    if(typeof mostrarToast==='function')mostrarToast('A aba Participando já está vazia.',false);return;
+  }
+  if(!confirm('🧹 ZERAR a aba PARTICIPANDO?\n\nIsto vai:\n• Limpar os dados de Participando/Vencedor ('+nVenc+' registro(s))\n• Remover as marcações "Participamos" do log ('+nPartLog+')\n• Tirar a marca participou=Sim de '+nHistSim+' registro(s) do Histórico (eles PERMANECEM na Listagem)\n\nSERÁ PRESERVADO:\n• As tarefas em "Licitações em Análise"\n• Todo o conteúdo da Listagem e do Histórico\n\nUm backup automático é gravado antes. Continuar?'))return;
+  if(!confirm('Confirma? Esta é a última chance antes de zerar a aba Participando.'))return;
+  // Backup automático no Firebase antes de qualquer alteração
+  try{
+    if(window._fbBackup){
+      window._fbBackup({
+        data:new Date().toISOString(),
+        origem:'zerarParticipando',
+        licVencedor:JSON.stringify(vd),
+        licLog:JSON.stringify(logR),
+        licHistorico:JSON.stringify(histR)
+      },'backup-participando-'+Date.now());
+    }
+  }catch(e){console.warn('backup zerarParticipando:',e);}
+  // 1) Limpar store de Participando/Vencedor
+  try{licVencedorSave({});}catch(e){try{localStorage.setItem('gc_lic_vencedor_v1','{}');}catch(_){}}
+  // 2) Remover do log apenas os eventos de "Participamos" (mantém demais eventos)
+  try{
+    var logLimpo=logR.filter(function(e){return !((e.tipo||'').indexOf('Participamos')>=0&&(e.tipo||'').indexOf('Não')<0);});
+    if(typeof licLogSave==='function')licLogSave(logLimpo);else localStorage.setItem('gc_lic_log_v1',JSON.stringify(logLimpo));
+  }catch(e){console.warn(e);}
+  // 3) Tirar participou=sim do histórico (registros continuam existindo/na Listagem)
+  try{
+    var mudou=false;
+    histR.forEach(function(r){if(r.participou==='sim'){r.participou='';mudou=true;}});
+    if(mudou){if(typeof licHistSave==='function')licHistSave(histR);else localStorage.setItem('gc_lic_historico_v1',JSON.stringify(histR));}
+  }catch(e){console.warn(e);}
+  // Persistir tudo no Firebase (reaproveita o save geral)
+  try{
+    if(window._fbSave){
+      var t=JSON.parse(localStorage.getItem(KEY)||'[]');
+      var rr=JSON.parse(localStorage.getItem(RECORR_KEY)||'[]');
+      var a=JSON.parse(localStorage.getItem(ARCH_KEY)||'[]');
+      var tp=JSON.parse(localStorage.getItem(TPL_KEY)||'[]');
+      window._fbSave(t,rr,a,tp);
+    }
+  }catch(e){console.warn(e);}
+  if(typeof renderLicitacoesConcluidas==='function')renderLicitacoesConcluidas();
+  if(typeof renderListagem==='function')renderListagem();
+  if(typeof atualizarBadgesLic==='function')atualizarBadgesLic();
+  if(typeof mostrarToast==='function')mostrarToast('🧹 Aba Participando zerada. Backup gravado.',false);
+}
+// ═══════════ LIMPAR TUDO — RESET COMPLETO (com backup) ═══════════
+function limparTudoLicitacoes(){
+  if(!confirm('🗑 LIMPAR TUDO — começar do zero?\n\nIsto APAGA TODAS as licitações do app:\n• Tarefas de licitação (Em Análise + prazos)\n• Participando / Vencedor\n• Etapas e progresso\n• Log de eventos\n• Histórico de Licitações\n• Todos os lançamentos e observações da Listagem\n\nNADA será preservado. Um backup automático é gravado antes.\n\nContinuar?'))return;
+  var txt=prompt('Para confirmar o reset TOTAL, digite: ZERAR');
+  if((txt||'').trim().toUpperCase()!=='ZERAR'){if(typeof mostrarToast==='function')mostrarToast('Reset cancelado.',false);return;}
+  // Backup completo no Firebase antes de apagar
+  try{
+    if(window._fbBackup){
+      window._fbBackup({
+        data:new Date().toISOString(),
+        origem:'limparTudo',
+        tasks:localStorage.getItem(KEY)||'[]',
+        licVencedor:localStorage.getItem('gc_lic_vencedor_v1')||'{}',
+        licProgresso:localStorage.getItem('gc_lic_prog_v1')||'{}',
+        licEtapas:localStorage.getItem('gc_lic_etapas_v1')||'{}',
+        licLog:localStorage.getItem('gc_lic_log_v1')||'[]',
+        licHistorico:localStorage.getItem('gc_lic_historico_v1')||'[]',
+        licListagemManual:localStorage.getItem('gc_lic_listagem_manual_v1')||'[]',
+        licListagemObs:localStorage.getItem('gc_lic_listagem_obs_v1')||'{}',
+        licListagemRenov:localStorage.getItem('gc_lic_listagem_renov_v1')||'{}'
+      },'backup-limpartudo-'+Date.now());
+    }
+  }catch(e){console.warn('backup limparTudo:',e);}
+  // 1) Remover TODAS as tarefas de licitação do array tasks
+  try{
+    tasks=tasks.filter(function(t){
+      var ehLic=t._licMunicipio||(t.tags&&t.tags.indexOf('licitação')>=0)||/^licita[çc][aã]o\b/i.test((t.text||'').trim());
+      return !ehLic;
+    });
+  }catch(e){console.warn(e);}
+  // 2) Zerar todas as chaves de licitação (arrays → [], objetos → {})
+  var arrKeys=['gc_lic_log_v1','gc_lic_historico_v1','gc_lic_listagem_manual_v1','gc_lic_listagem_oculta'];
+  ['gc_lic_prog_v1','gc_lic_etapas_v1','gc_lic_vencedor_v1','gc_lic_log_v1','gc_lic_historico_v1',
+   'gc_lic_listagem_manual_v1','gc_lic_listagem_obs_v1','gc_lic_listagem_renov_v1','gc_lic_listagem_oculta']
+   .forEach(function(k){try{localStorage.setItem(k, arrKeys.indexOf(k)>=0?'[]':'{}');}catch(e){}});
+  // 3) Persistir tasks + tudo no Firebase
+  try{if(typeof save==='function')save();}catch(e){}
+  try{
+    if(window._fbSave){
+      var r=JSON.parse(localStorage.getItem(RECORR_KEY)||'[]');
+      var a=JSON.parse(localStorage.getItem(ARCH_KEY)||'[]');
+      var tp=JSON.parse(localStorage.getItem(TPL_KEY)||'[]');
+      window._fbSave(tasks,r,a,tp);
+    }
+  }catch(e){console.warn(e);}
+  // 4) Re-render tudo
+  try{if(typeof render==='function')render();}catch(e){}
+  try{if(typeof renderLicitacoes==='function')renderLicitacoes();}catch(e){}
+  try{if(typeof renderLicitacoesConcluidas==='function')renderLicitacoesConcluidas();}catch(e){}
+  try{if(typeof renderListagem==='function')renderListagem();}catch(e){}
+  try{if(typeof atualizarBadgesLic==='function')atualizarBadgesLic();}catch(e){}
+  if(typeof mostrarToast==='function')mostrarToast('🗑 Tudo limpo. Backup gravado. Comece do zero pela 📥 Importar planilha.',false);
 }
 function _lstSlug(s){return 'lstblk-'+(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');}
 function _lstDataDisputa(ts){
